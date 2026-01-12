@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      bunki-brunch:
+      banki-brunch:
         specifier: 'link:'
         version: 'link:'
       drizzle-orm:

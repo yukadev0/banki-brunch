@@ -1,4 +1,9 @@
 import { createRequestHandler } from "react-router";
+import { drizzle } from "drizzle-orm/d1";
+
+export interface Env {
+  banki_brunch_db: D1Database;
+}
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -6,6 +11,7 @@ declare module "react-router" {
       env: Env;
       ctx: ExecutionContext;
     };
+    db: ReturnType<typeof drizzle>;
   }
 }
 
@@ -16,8 +22,11 @@ const requestHandler = createRequestHandler(
 
 export default {
   async fetch(request, env, ctx) {
+    const db = drizzle(env.banki_brunch_db);
+
     return requestHandler(request, {
       cloudflare: { env, ctx },
+      db,
     });
   },
 } satisfies ExportedHandler<Env>;

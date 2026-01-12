@@ -1,5 +1,5 @@
 {
-	"name": "bunki-brunch",
+	"name": "banki-brunch",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -12,7 +12,7 @@
 		"typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
 	},
 	"dependencies": {
-		"bunki-brunch": "link:",
+		"banki-brunch": "link:",
 		"drizzle-orm": "^0.45.1",
 		"isbot": "^5.1.31",
 		"react": "^19.1.1",

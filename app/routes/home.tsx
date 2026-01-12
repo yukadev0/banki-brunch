@@ -8,16 +8,16 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export function loader({ context }: Route.LoaderArgs) {
-  return { message: context.VALUE_FROM_CLOUDFLARE };
-}
-
-export default function Home({ loaderData }: Route.ComponentProps) {
+export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <h1 className="text-3xl">Welcome to React Router!</h1>
-      <span className="text-sm text-gray-500">{loaderData.message}</span>
-      <Link to="/users" className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2">Users</Link>
+      <Link
+        to="/users"
+        className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+      >
+        Users
+      </Link>
     </div>
-  )
+  );
 }

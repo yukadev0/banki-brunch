@@ -1,1 +1,1 @@
-INSERT INTO users (name) VALUES ('Yuka'), ('Rask');
+INSERT INTO users (name) VALUES ('Negativel');
