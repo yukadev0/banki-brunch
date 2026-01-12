@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Form, isRouteErrorResponse, Link, useActionData } from "react-router";
 import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/create.user";
-import { is } from "drizzle-orm";
 
 type ActionData = Awaited<ReturnType<typeof action>>;
 
