@@ -43,13 +43,15 @@ export default function Users() {
         {users.length === 0 ? (
           <p>No users found</p>
         ) : (
-          <ul className="text-center flex gap-2 max-w-xl flex-wrap">
+          <ul className="text-center flex gap-2 max-w-xl flex-wrap justify-center">
             {users.map((user: UserSelectArgs) => (
               <li
                 key={user.id}
-                className="bg-green-500 hover:bg-green-600 transition cursor-pointer rounded-xl px-4 py-2"
+                className="bg-green-500 hover:bg-green-600 transition cursor-pointer rounded-xl"
               >
-                <Link to={`./${user.id}`}>{user.name}</Link>
+                <Link to={`./${user.id}`} className="px-4 py-2 block">
+                  {user.name}
+                </Link>
               </li>
             ))}
           </ul>
