@@ -30,9 +30,9 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function CreateQuestion() {
-  const [titleInput, setTitleInput] = useState("");
-  const [contentInput, setContentInput] = useState("");
-  const [userIdInput, setUserIdInput] = useState("");
+  const [titleInput, setTitleInput] = useState("Test");
+  const [contentInput, setContentInput] = useState("Test");
+  const [userIdInput, setUserIdInput] = useState("1");
   const [showSuccess, setShowSuccess] = useState(false);
 
   const actionData = useActionData<ActionData>();
@@ -68,40 +68,48 @@ export default function CreateQuestion() {
         <h1 className="text-3xl font-semibold text-center">Create Question</h1>
 
         <Form method="post" className="flex flex-col gap-6">
-          {/* Title */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Title</label>
+            <label className="text-sm font-medium" htmlFor="title">
+              Title
+            </label>
             <input
               type="text"
+              id="title"
               name="title"
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
-              className={`rounded-lg bg-slate-900/70 px-4 py-2 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500
+              className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
                 ${actionData?.error ? "ring-red-500" : ""}`}
             />
           </div>
 
-          {/* Content */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Content</label>
+            <label className="text-sm font-medium" htmlFor="content">
+              Content
+            </label>
             <textarea
               name="content"
+              id="content"
               rows={4}
               value={contentInput}
               onChange={(e) => setContentInput(e.target.value)}
-              className="rounded-lg bg-slate-900/70 px-4 py-2 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500"
+              className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
+                ${actionData?.error ? "ring-red-500" : ""}`}
             />
           </div>
 
-          {/* Created By */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">User ID</label>
+            <label className="text-sm font-medium" htmlFor="createdByUserId">
+              User ID
+            </label>
             <input
               type="text"
+              id="createdByUserId"
               name="createdByUserId"
               value={userIdInput}
               onChange={(e) => setUserIdInput(e.target.value)}
-              className="rounded-lg bg-slate-900/70 px-4 py-2 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-500"
+              className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
+                ${actionData?.error ? "ring-red-500" : ""}`}
             />
           </div>
 

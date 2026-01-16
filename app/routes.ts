@@ -18,5 +18,11 @@ export default [
     index("routes/questions/questions.tsx"),
     route(":id", "routes/questions/question.$id.tsx"),
     route("create", "routes/questions/create.question.tsx"),
+
+    ...prefix(":questionId/answers", [
+      index("routes/answers/answers.tsx"),
+      route(":id", "routes/answers/answer.$id.tsx"),
+      route("create", "routes/answers/create.answer.tsx"),
+    ]),
   ]),
 ] satisfies RouteConfig;

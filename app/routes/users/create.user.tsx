@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Form, isRouteErrorResponse, Link, useActionData } from "react-router";
+import { Form, Link, useActionData } from "react-router";
 import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/create.user";
 
@@ -13,25 +13,29 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const name = formData.get("name");
 
-  const user = await UsersRepository.create(context.db, {
-    name: name as string,
+  if (!name) {
+    return { error: "Name is required" };
+  }
+
+  await UsersRepository.create(context.db, {
+    username: name as string,
   });
 
-  return user;
+  return { success: true };
 }
 
 export default function CreateUser() {
   const [nameInput, setNameInput] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+
   const actionData = useActionData<ActionData>();
 
   useEffect(() => {
-    if (!actionData?.success) {
-      return;
-    }
+    if (!actionData?.success) return;
 
     setNameInput("");
     setShowSuccess(true);
+
     const timer = setTimeout(() => setShowSuccess(false), 3000);
     return () => clearTimeout(timer);
   }, [actionData]);
@@ -44,7 +48,7 @@ export default function CreateUser() {
       >
         Users
       </Link>
-      
+
       {showSuccess && (
         <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg animate-fadeIn">
           User added
@@ -89,28 +93,4 @@ export default function CreateUser() {
       </div>
     </div>
   );
-}
-
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error)) {
-    return (
-      <main className="pt-16 p-4 container mx-auto">
-        <h1>
-          {error.status} {error.statusText}
-        </h1>
-        <p>{error.data}</p>
-      </main>
-    );
-  } else if (error instanceof Error) {
-    return (
-      <main className="pt-16 p-4 container mx-auto">
-        <h1>Error</h1>
-        <p>{error.message}</p>
-        <p>The stack trace is:</p>
-        <pre>{error.stack}</pre>
-      </main>
-    );
-  } else {
-    return <h1>Unknown Error</h1>;
-  }
 }

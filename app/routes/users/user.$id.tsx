@@ -27,7 +27,7 @@ export default function User() {
   const { user } = useLoaderData<LoaderData>();
 
   useEffect(() => {
-    document.title = `User: ${user.name}`;
+    document.title = `User: ${user.username}`;
   }, [user]);
 
   return (
@@ -39,7 +39,7 @@ export default function User() {
         Users
       </Link>
 
-      <h1 className="text-2xl">User: {user.name}</h1>
+      <h1 className="text-2xl">User: {user.username}</h1>
 
       <Form method="post">
         <input type="hidden" name="id" value={user.id} />

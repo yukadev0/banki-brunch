@@ -61,22 +61,28 @@ export default function Question() {
         <div>
           <div className="text-sm text-slate-400 flex flex-col gap-1">
             <span>Status: {question.status}</span>
-          </div>
-
-          <div className="text-sm text-slate-400 flex flex-col gap-1">
-            <span>Created by: {user.name}</span>
+            <span>Created at: {question.createdAt.toLocaleDateString()}</span>
+            <span>-{user.username}</span>
           </div>
         </div>
 
-        <Form method="post" className="mt-4">
-          <input type="hidden" name="id" value={question.id} />
-          <button
-            type="submit"
-            className="bg-red-500 hover:bg-red-600 transition cursor-pointer rounded-xl px-4 py-2 text-white"
+        <div className="flex gap-2 mt-4">
+          <Link
+            to={`./answers`}
+            className="bg-blue-500 hover:bg-blue-600 transition cursor-pointer rounded-xl px-4 py-2 text-white"
           >
-            Delete Question
-          </button>
-        </Form>
+            Answers
+          </Link>
+          <Form method="post">
+            <input type="hidden" name="id" value={question.id} />
+            <button
+              type="submit"
+              className="bg-red-500 hover:bg-red-600 transition cursor-pointer rounded-xl px-4 py-2 text-white"
+            >
+              Delete Question
+            </button>
+          </Form>
+        </div>
       </div>
     </div>
   );

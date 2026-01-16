@@ -3,15 +3,15 @@ import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "New Banki Brunch App" },
+    { name: "description", content: "Welcome to Banki Brunch!" },
   ];
 }
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl">Welcome to React Router!</h1>
+      <h1 className="text-3xl">Welcome to Banki Brunch!</h1>
       <div className="flex gap-2">
         <Link
           to="/users"

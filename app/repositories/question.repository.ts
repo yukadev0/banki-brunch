@@ -1,51 +1,75 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { usersTable } from "./user.repository";
 
 export const questionsTable = sqliteTable("questions", {
   id: integer("id").primaryKey(),
+
   title: text("title").notNull(),
   content: text("content").notNull(),
+
+  tags: text("tags", { mode: "json" }).$type<string[]>().notNull().default([]),
+
   status: text("status", {
     enum: ["pending", "approved", "rejected"],
-  }).default("pending"),
+  })
+    .notNull()
+    .default("pending"),
+
+  upvotes: integer("upvotes").notNull().default(0),
+  downvotes: integer("downvotes").notNull().default(0),
+
+  interviewCount: integer("interview_count").notNull().default(0),
+
   createdByUserId: integer("created_by_user_id")
     .notNull()
-    .references(() => usersTable.id),
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(new Date()),
 });
 
 export type QuestionSelectArgs = typeof questionsTable.$inferSelect;
 export type QuestionInsertArgs = typeof questionsTable.$inferInsert;
 
 export const QuestionsRepository = {
-  async getAll(db: DrizzleD1Database<any>) {
-    return await db.select().from(questionsTable);
+  async getAll(db: DrizzleD1Database) {
+    return db.select().from(questionsTable);
   },
 
   async getById(db: DrizzleD1Database<any>, id: number) {
-    const [result] = await db
+    const [question] = await db
       .select()
       .from(questionsTable)
       .where(eq(questionsTable.id, id));
 
-    if (!result) {
-      throw new Response("Question not found", { status: 404 });
-    }
+    return question ?? null;
+  },
 
-    return result;
+  async getApproved(db: DrizzleD1Database) {
+    return db
+      .select()
+      .from(questionsTable)
+      .where(eq(questionsTable.status, "approved"));
+  },
+
+  async incrementInterviewCount(db: DrizzleD1Database<any>, id: number) {
+    await db
+      .update(questionsTable)
+      .set({
+        interviewCount: sql`${questionsTable.interviewCount} + 1`,
+      })
+      .where(eq(questionsTable.id, id));
   },
 
   async create(db: DrizzleD1Database<any>, data: QuestionInsertArgs) {
     if (!data.title || !data.content) {
-      throw new Response("Missing required fields", { status: 400 });
+      throw new Error("Missing required fields");
     }
 
     return await db.insert(questionsTable).values(data);
-  },
-
-  async delete(db: DrizzleD1Database<any>, id: number) {
-    return await db.delete(questionsTable).where(eq(questionsTable.id, id));
   },
 
   async updateStatus(
@@ -53,9 +77,13 @@ export const QuestionsRepository = {
     id: number,
     status: "pending" | "approved" | "rejected"
   ) {
-    return await db
+    await db
       .update(questionsTable)
       .set({ status })
       .where(eq(questionsTable.id, id));
+  },
+
+  async delete(db: DrizzleD1Database<any>, id: number) {
+    await db.delete(questionsTable).where(eq(questionsTable.id, id));
   },
 };
