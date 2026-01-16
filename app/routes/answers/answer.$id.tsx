@@ -3,16 +3,7 @@ import { AnswersRepository } from "~/repositories/answer.repository";
 import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/answer.$id";
 
-type LoaderData = {
-  answer: {
-    id: number;
-    content: string;
-    isValidated: boolean;
-    createdAt: number;
-    createdByUserId?: number;
-  };
-  user: { id: number; username: string } | null;
-};
+type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Answer: ${params.id}` }];
@@ -32,13 +23,14 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   return { answer, user };
 }
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ request, context, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const id = formData.get("id");
   if (!id) throw new Response("Answer id is required", { status: 400 });
 
   await AnswersRepository.delete(context.db, Number(id));
-  return redirect(`/questions/${id}/answers`);
+
+  return redirect(`/questions/${params.questionId}/answers`);
 }
 
 export default function AnswerPage() {
@@ -47,10 +39,10 @@ export default function AnswerPage() {
   return (
     <div className="min-h-screen flex flex-col gap-4 items-center justify-center">
       <Link
-        to={`/questions/${answer.id}`}
+        to={`/questions/${answer.questionId}`}
         className="absolute top-4 left-4 rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2 text-white"
       >
-        ← Back to question
+        Back
       </Link>
 
       <div className="mt-12 w-full max-w-2xl rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl p-6 flex flex-col gap-6">
@@ -66,7 +58,9 @@ export default function AnswerPage() {
         <p className="text-slate-200 whitespace-pre-wrap">{answer.content}</p>
 
         <div className="text-sm text-slate-400 flex flex-col gap-1">
-          <span>Created at: {new Date(answer.createdAt).toLocaleDateString()}</span>
+          <span>
+            Created at: {new Date(answer.createdAt).toLocaleDateString()}
+          </span>
           <span>Author: {user ? user.username : "Anonymous"}</span>
         </div>
 

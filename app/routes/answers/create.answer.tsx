@@ -2,7 +2,7 @@ import { Form, Link, useActionData, redirect } from "react-router";
 import { AnswersRepository } from "~/repositories/answer.repository";
 import type { Route } from "./+types/create.answer";
 
-type ActionData = { error: string } | { success: true };
+type ActionData = Awaited<ReturnType<typeof action>>;
 
 export function meta() {
   return [{ title: "Add Answer" }];
@@ -32,13 +32,13 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   return redirect(`/questions/${questionId}/answers`);
 }
 
-export default function CreateAnswer() {
+export default function CreateAnswer({ params }: Route.LoaderArgs) {
   const actionData = useActionData<ActionData>();
 
   return (
     <div className="min-h-screen flex items-center justify-center text-slate-100 px-2">
       <Link
-        to={`../`}
+        to={`/questions/${params.questionId}/answers`}
         className="absolute top-4 left-4 rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2 text-white"
       >
         Back

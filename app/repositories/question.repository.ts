@@ -35,7 +35,7 @@ export type QuestionSelectArgs = typeof questionsTable.$inferSelect;
 export type QuestionInsertArgs = typeof questionsTable.$inferInsert;
 
 export const QuestionsRepository = {
-  async getAll(db: DrizzleD1Database) {
+  async getAll(db: DrizzleD1Database<any>) {
     return db.select().from(questionsTable);
   },
 
@@ -48,7 +48,7 @@ export const QuestionsRepository = {
     return question ?? null;
   },
 
-  async getApproved(db: DrizzleD1Database) {
+  async getApproved(db: DrizzleD1Database<any>) {
     return db
       .select()
       .from(questionsTable)
@@ -69,7 +69,7 @@ export const QuestionsRepository = {
       throw new Error("Missing required fields");
     }
 
-    return await db.insert(questionsTable).values(data);
+    await db.insert(questionsTable).values(data);
   },
 
   async updateStatus(

@@ -28,6 +28,13 @@ export default function Users() {
 
   return (
     <div className="min-h-screen flex flex-col gap-4 items-center justify-center">
+      <Link
+        to="/"
+        className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+      >
+        Home
+      </Link>
+
       <h1 className="text-4xl">Users</h1>
       <div className="py-12">
         {users.length === 0 ? (

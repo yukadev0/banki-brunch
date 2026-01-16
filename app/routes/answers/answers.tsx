@@ -26,11 +26,18 @@ export async function loader({ context, params }: Route.LoaderArgs) {
   return { answers };
 }
 
-export default function Answers() {
+export default function Answers({ params }: Route.LoaderArgs) {
   const { answers } = useLoaderData<LoaderData>();
 
   return (
     <div className="min-h-screen flex flex-col gap-4 items-center justify-center">
+      <Link
+        to={`/questions/${params.questionId}`}
+        className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+      >
+        Back to question
+      </Link>
+
       <h1 className="text-4xl">Answers</h1>
       <div className="py-12">
         {answers.length === 0 ? (

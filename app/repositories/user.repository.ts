@@ -51,7 +51,7 @@ export const UsersRepository = {
       throw new Error("Username is required");
     }
 
-    return await db.insert(usersTable).values(data);
+    await db.insert(usersTable).values(data);
   },
 
   async delete(db: DrizzleD1Database<any>, id: number) {
