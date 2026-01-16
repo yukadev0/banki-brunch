@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { Form, isRouteErrorResponse, Link, useActionData } from "react-router";
 import { QuestionsRepository } from "~/repositories/question.repository";
 import type { Route } from "./+types/create.question";
+import { UsersRepository } from "~/repositories/user.repository";
+import { useLoaderData } from "react-router";
 
 type ActionData = Awaited<ReturnType<typeof action>>;
+type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -29,10 +32,17 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { success: true };
 }
 
+export async function loader({ context }: Route.LoaderArgs) {
+  const users = await UsersRepository.getAll(context.db);
+  return { firstUser: users[0] };
+}
+
 export default function CreateQuestion() {
-  const [titleInput, setTitleInput] = useState("Test");
-  const [contentInput, setContentInput] = useState("Test");
-  const [userIdInput, setUserIdInput] = useState("1");
+  const { firstUser } = useLoaderData<LoaderData>();
+
+  const [titleInput, setTitleInput] = useState(`${firstUser.username}'s`);
+  const [contentInput, setContentInput] = useState(`${firstUser.username}'s content`);
+  const [userIdInput, setUserIdInput] = useState(firstUser.id.toString());
   const [showSuccess, setShowSuccess] = useState(false);
 
   const actionData = useActionData<ActionData>();
@@ -40,9 +50,9 @@ export default function CreateQuestion() {
   useEffect(() => {
     if (!actionData?.success) return;
 
-    setTitleInput("");
-    setContentInput("");
-    setUserIdInput("");
+    setTitleInput(`${firstUser.username}'s Question`);
+    setContentInput(`${firstUser.username}'s Question content`);
+    setUserIdInput(firstUser.id.toString());
     setShowSuccess(true);
 
     const timer = setTimeout(() => setShowSuccess(false), 3000);

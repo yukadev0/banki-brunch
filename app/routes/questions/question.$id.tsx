@@ -62,7 +62,7 @@ export default function Question() {
           <div className="text-sm text-slate-400 flex flex-col gap-1">
             <span>Status: {question.status}</span>
             <span>Created at: {question.createdAt.toLocaleDateString()}</span>
-            <span>-{user.username}</span>
+            <span>Author: {user.username}</span>
           </div>
         </div>
 

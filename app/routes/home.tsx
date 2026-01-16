@@ -26,6 +26,13 @@ export default function Home() {
         >
           Questions
         </Link>
+
+        <Link
+          to="/test"
+          className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        >
+          Test
+        </Link>
       </div>
     </div>
   );
