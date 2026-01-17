@@ -33,10 +33,28 @@ export const questionsTable = sqliteTable("questions", {
 
 export type QuestionSelectArgs = typeof questionsTable.$inferSelect;
 export type QuestionInsertArgs = typeof questionsTable.$inferInsert;
+export type GetAllQuestionsArgs = Awaited<
+  ReturnType<typeof QuestionsRepository.getAll>
+>;
 
 export const QuestionsRepository = {
   async getAll(db: DrizzleD1Database<any>) {
-    return db.select().from(questionsTable);
+    const questions = await db.select().from(questionsTable).all();
+
+    const questionsWithAuthors = await Promise.all(
+      questions.map(async (question) => {
+        const author = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.id, question.createdByUserId))
+          .limit(1)
+          .then(([user]) => user);
+
+        return { ...question, author };
+      }),
+    );
+
+    return questionsWithAuthors;
   },
 
   async getById(db: DrizzleD1Database<any>, id: number) {
@@ -45,7 +63,18 @@ export const QuestionsRepository = {
       .from(questionsTable)
       .where(eq(questionsTable.id, id));
 
-    return question ?? null;
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    const author = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, question.createdByUserId))
+      .limit(1)
+      .then(([user]) => user);
+
+    return { ...question, author };
   },
 
   async getApproved(db: DrizzleD1Database<any>) {
@@ -75,7 +104,7 @@ export const QuestionsRepository = {
   async updateStatus(
     db: DrizzleD1Database<any>,
     id: number,
-    status: "pending" | "approved" | "rejected"
+    status: "pending" | "approved" | "rejected",
   ) {
     await db
       .update(questionsTable)

@@ -37,16 +37,16 @@ export default function AnswerPage() {
   const { answer, user } = useLoaderData<LoaderData>();
 
   return (
-    <div className="min-h-screen flex flex-col gap-4 items-center justify-center">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
       <Link
-        to={`/questions/${answer.questionId}`}
-        className="absolute top-4 left-4 rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2 text-white"
+        to={`/questions/${answer.questionId}/answers`}
+        className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
       >
-        Back
+        Back to answers
       </Link>
 
-      <div className="mt-12 w-full max-w-2xl rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl p-6 flex flex-col gap-6">
-        <div className="flex justify-between items-start gap-4">
+      <div className="w-full max-w-2xl bg-slate-800 rounded-2xl border border-slate-700 p-6 shadow-lg">
+        <div className="flex justify-between items-start mb-4">
           <h1 className="text-2xl font-semibold text-white">Answer Details</h1>
           {answer.isValidated && (
             <span className="text-green-400 font-medium text-sm bg-green-900/30 px-2 py-1 rounded-lg">
@@ -55,24 +55,34 @@ export default function AnswerPage() {
           )}
         </div>
 
-        <p className="text-slate-200 whitespace-pre-wrap">{answer.content}</p>
+        <p className="whitespace-pre-wrap text-slate-200 leading-relaxed mb-4">
+          {answer.content}
+        </p>
 
-        <div className="text-sm text-slate-400 flex flex-col gap-1">
+        <div className="text-sm text-slate-400 flex flex-col gap-2">
           <span>
             Created at: {new Date(answer.createdAt).toLocaleDateString()}
           </span>
           <span>Author: {user ? user.username : "Anonymous"}</span>
         </div>
 
-        <Form method="post" className="mt-4 flex justify-end">
-          <input type="hidden" name="id" value={answer.id} />
-          <button
-            type="submit"
-            className="bg-red-500 hover:bg-red-600 transition cursor-pointer rounded-xl px-4 py-2 text-white"
-          >
-            Delete Answer
-          </button>
-        </Form>
+        <div className="mt-6 flex justify-between items-center">
+          <div className="flex flex-col items-center text-sm text-gray-400 gap-2">
+            <button className="hover:text-green-500 transition">▲</button>
+            <span className="text-xl font-semibold text-white">0</span>
+            <button className="hover:text-red-500 transition">▼</button>
+          </div>
+
+          <Form method="post" className="flex justify-end">
+            <input type="hidden" name="id" value={answer.id} />
+            <button
+              type="submit"
+              className="bg-red-500 hover:bg-red-600 transition px-6 py-2 rounded-xl text-white"
+            >
+              Delete Answer
+            </button>
+          </Form>
+        </div>
       </div>
     </div>
   );

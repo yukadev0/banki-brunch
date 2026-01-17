@@ -13,16 +13,16 @@ export const answersTable = sqliteTable("answers", {
 
   content: text("content").notNull(),
 
-  createdByUserId: integer("created_by_user_id").references(
-    () => usersTable.id
-  ),
+  createdByUserId: integer("created_by_user_id")
+    .references(() => usersTable.id)
+    .notNull(),
 
   isValidated: integer("is_validated", { mode: "boolean" })
     .notNull()
     .default(false),
 
   validatedByUserId: integer("validated_by_user_id").references(
-    () => usersTable.id
+    () => usersTable.id,
   ),
 
   isHiddenByDefault: integer("is_hidden_by_default", {
@@ -60,10 +60,28 @@ export const AnswersRepository = {
       throw new Error("Question not found");
     }
 
-    return db
+    const answers = await db
       .select()
       .from(answersTable)
       .where(eq(answersTable.questionId, questionId));
+
+    const answersWithAuthors = await Promise.all(
+      answers.map(async (answer) => {
+        const author = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.id, answer.createdByUserId))
+          .limit(1)
+          .then(([user]) => user);
+
+        return {
+          ...answer,
+          author,
+        };
+      }),
+    );
+
+    return answersWithAuthors;
   },
 
   async getCuratedByQuestionId(db: DrizzleD1Database<any>, questionId: number) {
@@ -73,8 +91,8 @@ export const AnswersRepository = {
       .where(
         and(
           eq(answersTable.questionId, questionId),
-          eq(answersTable.isValidated, true)
-        )
+          eq(answersTable.isValidated, true),
+        ),
       );
 
     return answer ?? null;
@@ -91,7 +109,7 @@ export const AnswersRepository = {
   async validate(
     db: DrizzleD1Database<any>,
     answerId: number,
-    validatedByUserId: number
+    validatedByUserId: number,
   ) {
     await db
       .update(answersTable)

@@ -21,7 +21,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 export async function loader({ context, params }: Route.LoaderArgs) {
   const answers = await AnswersRepository.getByQuestionId(
     context.db,
-    Number(params.questionId)
+    Number(params.questionId),
   );
   return { answers };
 }
@@ -30,36 +30,61 @@ export default function Answers({ params }: Route.LoaderArgs) {
   const { answers } = useLoaderData<LoaderData>();
 
   return (
-    <div className="min-h-screen flex flex-col gap-4 items-center justify-center">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
       <Link
         to={`/questions/${params.questionId}`}
-        className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"
       >
         Back to question
       </Link>
 
-      <h1 className="text-4xl">Answers</h1>
-      <div className="py-12">
+      <h1 className="text-4xl font-semibold text-center mb-12">Answers</h1>
+
+      <div className="w-full max-w-6xl py-6">
         {answers.length === 0 ? (
-          <p>No answers found</p>
+          <p className="text-center text-gray-400">No answers found</p>
         ) : (
-          <ul className="text-center flex gap-2 max-w-xl flex-wrap justify-center">
+          <ul className="space-y-6">
             {answers.map((answer: AnswerSelectArgs) => (
               <li
                 key={answer.id}
-                className="bg-green-500 hover:bg-green-600 transition cursor-pointer rounded-xl"
+                className="bg-slate-800 rounded-lg border border-slate-700 p-6 shadow-lg hover:bg-slate-700 transition-all"
               >
-                <Link to={`./${answer.id}`} className="px-4 py-2 block">
-                  <p>{answer.content}</p>
+                <Link to={`./${answer.id}`} className="block">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-col items-center text-sm text-gray-400 gap-2">
+                      <button className="hover:text-green-500 transition">
+                        ▲
+                      </button>
+                      <span className="text-xl font-semibold text-white">
+                        0
+                      </span>
+                      <button className="hover:text-red-500 transition">
+                        ▼
+                      </button>
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="text-slate-200 line-clamp-3">
+                        {answer.content}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-slate-400">
+                    Created at:{" "}
+                    {new Date(answer.createdAt).toLocaleDateString()}
+                  </div>
                 </Link>
               </li>
             ))}
           </ul>
         )}
       </div>
+
       <Link
         to="./create"
-        className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        className="mt-6 inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
       >
         Create Answer
       </Link>

@@ -41,29 +41,28 @@ export default function CreateUser() {
   }, [actionData]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center via-slate-800 to-slate-900 text-slate-100 px-2 relative">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-gray-100 py-10 px-4">
       <Link
         to="/users"
-        className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        className="absolute top-4 left-4 text-sm text-blue-500 hover:underline"
       >
-        Users
+        Back to Users
       </Link>
 
       {showSuccess && (
         <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg animate-fadeIn">
-          User added
+          User added successfully!
         </div>
       )}
 
-      <div className="flex flex-col gap-4 w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-lg shadow-2xl border border-white/20 p-8">
-        <h1 className="text-3xl font-semibold text-center">Create User</h1>
+      <div className="flex flex-col gap-6 w-full max-w-lg bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-8">
+        <h1 className="text-3xl font-semibold text-center text-white mb-6">
+          Create User
+        </h1>
 
         <Form method="post" className="flex flex-col gap-8">
           <div className="flex flex-col gap-2">
-            <label
-              htmlFor="name"
-              className="text-sm font-medium text-slate-200"
-            >
+            <label htmlFor="name" className="text-sm font-medium text-gray-300">
               Name
             </label>
             <input
@@ -73,8 +72,8 @@ export default function CreateUser() {
               placeholder="Enter name"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
-              className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
-                ${actionData?.error ? "ring-red-500" : ""}`}
+              className={`bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all
+                ${actionData?.error ? "ring-2 ring-red-500" : "ring-1 ring-gray-600"}`}
             />
             {actionData?.error && (
               <span className="text-red-400 text-sm mt-1">
@@ -85,7 +84,7 @@ export default function CreateUser() {
 
           <button
             type="submit"
-            className="rounded-xl py-2.5 font-semibold text-white bg-blue-500 hover:bg-blue-600 active:scale-[0.98] transition duration-200 cursor-pointer"
+            className="py-2 px-6 rounded-xl bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition duration-150"
           >
             Create
           </button>

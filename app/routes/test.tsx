@@ -1,7 +1,7 @@
 import { Link, useLoaderData } from "react-router";
 import type { Route } from "./+types/test";
 import { QuestionsRepository } from "~/repositories/question.repository";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 type Answer = {
   id: number;
@@ -11,6 +11,10 @@ type Answer = {
 };
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
+
+export function meta() {
+  return [{ title: "Test" }];
+}
 
 export async function loader({ context }: Route.LoaderArgs) {
   const questions = await QuestionsRepository.getAll(context.db);
@@ -42,13 +46,7 @@ export default function Test() {
     try {
       const res = await fetch(`/questions/${currentQ.id}/answers/answers.json`);
       const data: { answers: Answer[] } = await res.json();
-
-      const visibleAnswers = data.answers;
-      // .filter(
-      //   (a) => a.isValidated && !a.isHiddenByDefault
-      // );
-
-      setAnswers(visibleAnswers);
+      setAnswers(data.answers);
       setShowAnswers(true);
     } catch {
       setAnswers([]);
@@ -58,63 +56,66 @@ export default function Test() {
 
   if (!questions.length) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        No questions
+      <div className="min-h-screen flex items-center justify-center bg-gray-800 text-white">
+        No questions available.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-slate-100 px-2">
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white px-4 py-12">
       <Link
         to={`/`}
-        className="absolute top-4 left-4 rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2 text-white"
+        className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2 text-white"
       >
         Back
       </Link>
 
-      <div className="flex flex-col gap-6 w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-lg shadow-2xl border border-white/20 p-8">
-        <h1 className="text-2xl font-semibold text-center">Test</h1>
+      <div className="flex flex-col gap-8 w-full max-w-3xl rounded-2xl bg-white/10 shadow-2xl border border-white/20 p-8">
+        <h1 className="text-3xl font-semibold text-center">Test</h1>
 
-        <div className="flex flex-col gap-4">
-          <h2 className="text-xl text-center">{currentQ.title}</h2>
-          <p>{currentQ.content}</p>
+        <div className="flex flex-col gap-6">
+          <h2 className="text-2xl text-center">{currentQ.title}</h2>
+          <p className="text-lg text-slate-300">{currentQ.content}</p>
 
           <button
             onClick={handleShowAnswers}
-            className="bg-green-500 hover:bg-green-600 transition rounded-xl px-4 py-2"
+            className="bg-green-500 hover:bg-green-600 transition rounded-xl px-6 py-3 text-lg"
           >
             {showAnswers ? "Hide answers" : "Show answers"}
           </button>
 
           {showAnswers && (
-            <div className="mt-4 flex flex-col gap-2 bg-white/10 p-4 rounded-xl border border-white/20">
+            <div className="mt-6 flex flex-col gap-4 bg-white/10 p-6 rounded-xl border border-white/20">
               {answers.length === 0 ? (
                 <p className="text-slate-300 text-sm">
                   No visible answers yet.
                 </p>
               ) : (
                 answers.map((a) => (
-                  <p key={a.id} className="text-slate-200">
-                    {a.content}
-                  </p>
+                  <div
+                    key={a.id}
+                    className="text-slate-200 text-lg border-b border-slate-600 pb-4"
+                  >
+                    <p>{a.content}</p>
+                  </div>
                 ))
               )}
             </div>
           )}
 
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between mt-8">
             <button
               disabled={currentQuestionIndex === 0}
               onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
-              className="bg-blue-500 hover:bg-blue-600 transition cursor-pointer rounded-xl px-4 py-2 disabled:opacity-50"
+              className="bg-blue-500 hover:bg-blue-600 transition cursor-pointer rounded-xl px-6 py-3 text-lg disabled:opacity-50"
             >
               Previous
             </button>
             <button
               disabled={currentQuestionIndex === questions.length - 1}
               onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
-              className="bg-blue-500 hover:bg-blue-600 transition cursor-pointer rounded-xl px-4 py-2 disabled:opacity-50"
+              className="bg-blue-500 hover:bg-blue-600 transition cursor-pointer rounded-xl px-6 py-3 text-lg disabled:opacity-50"
             >
               Next
             </button>

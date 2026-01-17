@@ -60,22 +60,22 @@ export default function CreateAnswer({ params }: Route.LoaderArgs) {
   }, [actionData]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-slate-100 px-2">
+    <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-10 flex flex-col gap-6 items-center justify-center">
       <Link
         to={`/questions/${params.questionId}/answers`}
-        className="absolute top-4 left-4 rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2 text-white"
+        className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"
       >
-        Back
+        Back to answers
       </Link>
 
       {showSuccess && (
         <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg">
-          Question created
+          Answer successfully added!
         </div>
       )}
 
-      <div className="flex flex-col gap-6 w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-lg shadow-2xl border border-white/20 p-8">
-        <h1 className="text-2xl font-semibold text-center">Add Answer</h1>
+      <div className="w-full max-w-2xl rounded-2xl bg-slate-800 border border-slate-700 p-8 shadow-lg">
+        <h1 className="text-2xl font-semibold text-center mb-8">Add Answer</h1>
 
         <Form method="post" className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
@@ -88,7 +88,7 @@ export default function CreateAnswer({ params }: Route.LoaderArgs) {
               rows={6}
               value={contentInput}
               onChange={(e) => setContentInput(e.target.value)}
-              className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
+              className={`rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
                 ${actionData && "error" in actionData ? "ring-red-500" : ""}`}
               placeholder="Write a clear, structured answer…"
             />

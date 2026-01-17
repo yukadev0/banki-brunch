@@ -41,7 +41,9 @@ export default function CreateQuestion() {
   const { firstUser } = useLoaderData<LoaderData>();
 
   const [titleInput, setTitleInput] = useState(`${firstUser.username}'s`);
-  const [contentInput, setContentInput] = useState(`${firstUser.username}'s content`);
+  const [contentInput, setContentInput] = useState(
+    `${firstUser.username}'s content`,
+  );
   const [userIdInput, setUserIdInput] = useState(firstUser.id.toString());
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -60,22 +62,24 @@ export default function CreateQuestion() {
   }, [actionData]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-slate-100 px-2 relative">
+    <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-10 flex flex-col gap-6 items-center justify-center">
       <Link
         to="/questions"
-        className="absolute top-4 left-4 rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"
       >
-        Questions
+        Back to Questions
       </Link>
 
       {showSuccess && (
         <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg">
-          Question created
+          Question created successfully!
         </div>
       )}
 
-      <div className="flex flex-col gap-6 w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-lg shadow-2xl border border-white/20 p-8">
-        <h1 className="text-3xl font-semibold text-center">Create Question</h1>
+      <div className="w-full max-w-xl rounded-2xl bg-slate-800 border border-slate-700 p-8 shadow-lg">
+        <h1 className="text-3xl font-semibold text-center mb-8">
+          Create a New Question
+        </h1>
 
         <Form method="post" className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
@@ -100,7 +104,7 @@ export default function CreateQuestion() {
             <textarea
               name="content"
               id="content"
-              rows={4}
+              rows={6}
               value={contentInput}
               onChange={(e) => setContentInput(e.target.value)}
               className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
@@ -131,35 +135,10 @@ export default function CreateQuestion() {
             type="submit"
             className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
           >
-            Create
+            Create Question
           </button>
         </Form>
       </div>
     </div>
   );
-}
-
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error)) {
-    return (
-      <main className="pt-16 p-4 container mx-auto">
-        <h1>
-          {error.status} {error.statusText}
-        </h1>
-        <p>{error.data}</p>
-      </main>
-    );
-  }
-
-  if (error instanceof Error) {
-    return (
-      <main className="pt-16 p-4 container mx-auto">
-        <h1>Error</h1>
-        <p>{error.message}</p>
-        <pre>{error.stack}</pre>
-      </main>
-    );
-  }
-
-  return <h1>Unknown Error</h1>;
 }

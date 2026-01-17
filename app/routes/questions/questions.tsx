@@ -1,12 +1,8 @@
-import {
-  Link,
-  useLoaderData,
-  type LoaderFunctionArgs,
-} from "react-router";
+import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/questions";
 import {
   QuestionsRepository,
-  type QuestionSelectArgs,
+  type GetAllQuestionsArgs,
 } from "~/repositories/question.repository";
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
@@ -31,37 +27,81 @@ export default function Questions() {
   const { questions } = useLoaderData<LoaderData>();
 
   return (
-    <div className="min-h-screen flex flex-col gap-4 items-center justify-center">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center py-10 px-4">
       <Link
         to="/"
-        className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
       >
         Home
       </Link>
 
-      <h1 className="text-4xl">Questions</h1>
-      <div className="py-12">
+      <h1 className="text-4xl font-semibold text-center mb-12">Questions</h1>
+
+      <div className="w-full max-w-6xl py-6">
         {questions.length === 0 ? (
-          <p>No questions found</p>
+          <p className="text-center text-gray-400">No questions found</p>
         ) : (
-          <ul className="text-center flex gap-2 max-w-xl flex-wrap justify-center">
-            {questions.map((question: QuestionSelectArgs) => (
+          <ul className="space-y-6">
+            {questions.map((question: GetAllQuestionsArgs[0]) => (
               <li
                 key={question.id}
-                className="bg-green-500 hover:bg-green-600 transition cursor-pointer rounded-xl"
+                className="bg-gray-800 rounded-lg border border-gray-700 p-6 hover:bg-gray-700 transition-all"
               >
-                <Link to={`./${question.id}`} className="px-4 py-2 block">
-                  <h1 className="text-lg">{question.title}</h1>
-                  <p>{question.content}</p>
+                <Link to={`./${question.id}`} className="block">
+                  <div className="flex items-center mb-4">
+                    <div className="flex flex-col items-center text-sm text-gray-400 mr-4">
+                      <button className="hover:text-green-400 transition">
+                        ▲
+                      </button>
+                      <span className="font-semibold text-xl">0</span>
+                      <button className="hover:text-red-400 transition">
+                        ▼
+                      </button>
+                    </div>
+
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-semibold text-gray-200">
+                        {question.title}
+                      </h2>
+                      <p className="text-sm text-gray-300 line-clamp-3">
+                        {question.content}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex gap-2">
+                      {question.tags?.map((tag) => (
+                        <span
+                          key={tag}
+                          className="bg-gray-700 text-sm px-3 py-1 rounded-lg"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="text-xs text-gray-400">
+                      <span>
+                        Asked{" "}
+                        {new Date(question.createdAt).toLocaleDateString()}
+                      </span>
+                      <br />
+                      <span className="font-semibold">
+                        {question.author.username ?? "Anonymous"}
+                      </span>
+                    </div>
+                  </div>
                 </Link>
               </li>
             ))}
           </ul>
         )}
       </div>
+
       <Link
         to="./create"
-        className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        className="mt-6 inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
       >
         Create Question
       </Link>

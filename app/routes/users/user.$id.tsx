@@ -23,7 +23,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   return { user };
 }
 
-export default function User() {
+export default function UserPage() {
   const { user } = useLoaderData<LoaderData>();
 
   useEffect(() => {
@@ -31,25 +31,33 @@ export default function User() {
   }, [user]);
 
   return (
-    <div className="min-h-screen flex flex-col gap-4 items-center justify-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-gray-100 py-12 px-6">
       <Link
         to="/users"
-        className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+        className="absolute top-4 left-4 text-sm text-blue-500 hover:underline"
       >
-        Users
+        Back to Users
       </Link>
 
-      <h1 className="text-2xl">User: {user.username}</h1>
+      <div className="flex flex-col items-center w-full max-w-md bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-8">
+        <h1 className="text-3xl font-semibold text-center mb-4">
+          {user.username}
+        </h1>
+        <p className="text-center text-gray-400 mb-8">
+          Discord ID: {user.discordId}
+        </p>
+        <p className="text-center text-gray-400 mb-8">Role: {user.role}</p>
 
-      <Form method="post">
-        <input type="hidden" name="id" value={user.id} />
-        <button
-          type="submit"
-          className="bg-red-400 hover:bg-red-500 transition cursor-pointer rounded-xl px-4 py-2"
-        >
-          Delete
-        </button>
-      </Form>
+        <Form method="post" className="flex flex-col items-center gap-6">
+          <input type="hidden" name="id" value={user.id} />
+          <button
+            type="submit"
+            className="bg-red-500 text-white py-2 px-6 rounded-xl hover:bg-red-600 active:scale-95 transition duration-200"
+          >
+            Delete User
+          </button>
+        </Form>
+      </div>
     </div>
   );
 }

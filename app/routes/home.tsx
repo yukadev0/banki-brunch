@@ -10,26 +10,29 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl">Welcome to Banki Brunch!</h1>
-      <div className="flex gap-2">
+    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-6">
+      <h1 className="text-4xl font-semibold text-center text-white">
+        Welcome to Banki Brunch!
+      </h1>
+
+      <div className="flex gap-2 flex-wrap justify-center">
         <Link
           to="/users"
-          className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-6 py-3 rounded-lg text-lg transition transform hover:scale-105 active:scale-95 shadow-md"
         >
           Users
         </Link>
 
         <Link
           to="/questions"
-          className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-6 py-3 rounded-lg text-lg transition transform hover:scale-105 active:scale-95 shadow-md"
         >
           Questions
         </Link>
 
         <Link
           to="/test"
-          className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-6 py-3 rounded-lg text-lg transition transform hover:scale-105 active:scale-95 shadow-md"
         >
           Test
         </Link>

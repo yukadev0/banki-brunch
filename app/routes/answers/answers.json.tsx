@@ -8,7 +8,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const answers = await AnswersRepository.getByQuestionId(
     context.db,
-    questionId
+    questionId,
   );
 
   return { answers };
