@@ -77,7 +77,7 @@ export default function AnswerPage() {
             <input type="hidden" name="id" value={answer.id} />
             <button
               type="submit"
-              className="bg-red-500 hover:bg-red-600 transition px-6 py-2 rounded-xl text-white"
+              className="text-sm text-red-400 hover:text-red-300 transition"
             >
               Delete Answer
             </button>

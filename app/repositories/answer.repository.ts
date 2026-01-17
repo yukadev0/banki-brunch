@@ -1,6 +1,6 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { usersTable } from "./user.repository";
 import { QuestionsRepository, questionsTable } from "./question.repository";
 
@@ -119,6 +119,24 @@ export const AnswersRepository = {
       .set({
         isValidated: true,
         validatedByUserId,
+      })
+      .where(eq(answersTable.id, answerId));
+  },
+
+  async upvote(db: DrizzleD1Database<any>, answerId: number) {
+    await db
+      .update(answersTable)
+      .set({
+        upvotes: sql`${answersTable.upvotes} + 1`,
+      })
+      .where(eq(answersTable.id, answerId));
+  },
+
+  async downvote(db: DrizzleD1Database<any>, answerId: number) {
+    await db
+      .update(answersTable)
+      .set({
+        downvotes: sql`${answersTable.downvotes} + 1`,
       })
       .where(eq(answersTable.id, answerId));
   },

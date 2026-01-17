@@ -52,7 +52,7 @@ export default function UserPage() {
           <input type="hidden" name="id" value={user.id} />
           <button
             type="submit"
-            className="bg-red-500 text-white py-2 px-6 rounded-xl hover:bg-red-600 active:scale-95 transition duration-200"
+            className="text-sm text-red-400 hover:text-red-300 transition"
           >
             Delete User
           </button>

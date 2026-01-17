@@ -52,11 +52,11 @@ export default function Users() {
             {users.map((user: UserSelectArgs) => (
               <li
                 key={user.id}
-                className="bg-gray-800 hover:bg-gray-700 transition cursor-pointer rounded-lg border border-gray-700 p-6 shadow-lg"
+                className="bg-gray-800 hover:bg-gray-700 transition cursor-pointer rounded-lg border border-gray-700 shadow-lg"
               >
                 <Link
                   to={`./${user.id}`}
-                  className="block text-center text-lg font-medium text-white"
+                  className="block text-center text-lg font-medium text-white p-6"
                 >
                   <div className="flex justify-between items-center mb-4">
                     <span>{user.username}</span>

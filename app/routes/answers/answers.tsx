@@ -4,6 +4,7 @@ import {
   type AnswerSelectArgs,
 } from "~/repositories/answer.repository";
 import type { Route } from "./+types/answers";
+import { Form } from "react-router";
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -13,9 +14,21 @@ export function meta({}: LoaderFunctionArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
-  const id = formData.get("id");
+  const intent = formData.get("intent");
+  const answerId = Number(formData.get("id"));
 
-  return await AnswersRepository.delete(context.db, Number(id));
+  switch (intent) {
+    case "upvote":
+      await AnswersRepository.upvote(context.db, answerId);
+      break;
+
+    case "downvote":
+      await AnswersRepository.downvote(context.db, answerId);
+      break;
+
+    default:
+      throw new Response();
+  }
 }
 
 export async function loader({ context, params }: Route.LoaderArgs) {
@@ -38,7 +51,7 @@ export default function Answers({ params }: Route.LoaderArgs) {
         Back to question
       </Link>
 
-      <h1 className="text-4xl font-semibold text-center mb-12">Answers</h1>
+      <h1 className="text-4xl font-semibold text-center">Answers</h1>
 
       <div className="w-full max-w-6xl py-6">
         {answers.length === 0 ? (
@@ -48,34 +61,48 @@ export default function Answers({ params }: Route.LoaderArgs) {
             {answers.map((answer: AnswerSelectArgs) => (
               <li
                 key={answer.id}
-                className="bg-slate-800 rounded-lg border border-slate-700 p-6 shadow-lg hover:bg-slate-700 transition-all"
+                className="bg-slate-800 rounded-lg border border-slate-700 shadow-lg hover:bg-slate-700 transition-colors"
               >
-                <Link to={`./${answer.id}`} className="block">
-                  <div className="flex justify-between items-start mb-4">
+                <div className="p-6 flex flex-col gap-4">
+                  <div className="flex justify-between items-start gap-4">
                     <div className="flex flex-col items-center text-sm text-gray-400 gap-2">
-                      <button className="hover:text-green-500 transition">
-                        ▲
-                      </button>
+                      <Form method="post">
+                        <input type="hidden" name="id" value={answer.id} />
+                        <input type="hidden" name="intent" value="upvote" />
+                        <button
+                          type="submit"
+                          className="hover:text-red-500 transition"
+                        >
+                          ▲
+                        </button>
+                      </Form>
                       <span className="text-xl font-semibold text-white">
-                        0
+                        {answer.upvotes - answer.downvotes}
                       </span>
-                      <button className="hover:text-red-500 transition">
-                        ▼
-                      </button>
+                      <Form method="post">
+                        <input type="hidden" name="id" value={answer.id} />
+                        <input type="hidden" name="intent" value="downvote" />
+                        <button
+                          type="submit"
+                          className="hover:text-red-500 transition"
+                        >
+                          ▼
+                        </button>
+                      </Form>
                     </div>
 
-                    <div className="flex-1">
+                    <Link to={`./${answer.id}`} className="flex-1">
                       <p className="text-slate-200 line-clamp-3">
                         {answer.content}
                       </p>
-                    </div>
+                    </Link>
                   </div>
 
                   <div className="text-xs text-slate-400">
                     Created at:{" "}
                     {new Date(answer.createdAt).toLocaleDateString()}
                   </div>
-                </Link>
+                </div>
               </li>
             ))}
           </ul>
@@ -84,7 +111,7 @@ export default function Answers({ params }: Route.LoaderArgs) {
 
       <Link
         to="./create"
-        className="mt-6 inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
+        className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
       >
         Create Answer
       </Link>

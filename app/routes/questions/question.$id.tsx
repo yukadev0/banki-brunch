@@ -30,10 +30,9 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     Number(params.id),
   );
 
-  const answers = await AnswersRepository.getByQuestionId(
-    context.db,
-    Number(params.id),
-  );
+  const answers = (
+    await AnswersRepository.getByQuestionId(context.db, Number(params.id))
+  ).sort((a, b) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes));
 
   const questionAuthor = await UsersRepository.getById(
     context.db,
@@ -104,7 +103,9 @@ export default function QuestionPage() {
                             <button className="hover:text-blue-400 transition">
                               ▲
                             </button>
-                            <span className="text-sm font-medium">0</span>
+                            <span className="text-sm font-medium">
+                              {answer.upvotes - answer.downvotes}
+                            </span>
                             <button className="hover:text-blue-400 transition">
                               ▼
                             </button>
@@ -146,7 +147,13 @@ export default function QuestionPage() {
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end items-center gap-2">
+          <Link
+            to={`/questions/${question.id}/answers`}
+            className="text-sm text-blue-400 hover:text-blue-300 transition"
+          >
+            See Answers
+          </Link>
           <Form method="post">
             <input type="hidden" name="id" value={question.id} />
             <button
