@@ -17,6 +17,9 @@ export const answersTable = sqliteTable("answers", {
     .references(() => usersTable.id)
     .notNull(),
 
+  upvotes: integer("upvotes").notNull().default(0),
+  downvotes: integer("downvotes").notNull().default(0),
+
   isValidated: integer("is_validated", { mode: "boolean" })
     .notNull()
     .default(false),

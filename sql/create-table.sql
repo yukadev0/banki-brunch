@@ -8,6 +8,9 @@ CREATE TABLE answers (
 
   created_by_user_id INTEGER,
 
+  upvotes INTEGER NOT NULL DEFAULT 0,
+  downvotes INTEGER NOT NULL DEFAULT 0,
+
   is_validated INTEGER NOT NULL DEFAULT 0,
   validated_by_user_id INTEGER,
 
