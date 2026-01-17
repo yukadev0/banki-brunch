@@ -21,7 +21,7 @@ export default [
     route("create", "routes/questions/create.question.tsx"),
 
     ...prefix(":questionId/answers", [
-      route("answers.json", "routes/answers/answers.tsx"),
+      route("answers.json", "routes/answers/answers.json.tsx"),
       index("routes/answers/answers.tsx"),
       route(":id", "routes/answers/answer.$id.tsx"),
       route("create", "routes/answers/create.answer.tsx"),
