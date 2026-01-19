@@ -27,7 +27,7 @@ export default function Users({ loaderData }: Route.ComponentProps) {
   const { users } = loaderData;
 
   return (
-    <div className="min-h-screen text-gray-100 flex flex-col gap-8 items-center justify-center py-12 px-6">
+    <div className="min-h-screen text-gray-100 flex flex-col gap-8 items-center justify-center">
       <Link
         to="/"
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"

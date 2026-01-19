@@ -33,7 +33,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         context.db,
         Number(id),
       );
-      
+
       if (session.user.id !== question.createdByUserId) {
         throw new Response("Unauthorized", { status: 401 });
       }
@@ -88,6 +88,9 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   const { question, questionAuthor, answers, session } = loaderData;
   const [answerInput, setAnswerInput] = useState("");
 
+  console.log(question);
+  console.log(session?.user);
+
   useEffect(() => {
     document.title = `Question: ${question.title}`;
   }, [question]);
@@ -97,7 +100,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   }, [answers]);
 
   return (
-    <div className="min-h-screen text-slate-100 px-4 py-10">
+    <div className="min-h-screen text-slate-100 py-10">
       <Link
         to="/questions"
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
@@ -227,7 +230,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
                     </div>
                   </div>
 
-                  {session?.user.id === question.createdByUserId && (
+                  {session?.user.id === answer.createdByUserId && (
                     <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
                       <div className="flex gap-4">
                         <Link

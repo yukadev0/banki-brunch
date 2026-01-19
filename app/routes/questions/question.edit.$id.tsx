@@ -89,7 +89,7 @@ export default function EditQuestion({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <div className="text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-6">
+    <div className="text-gray-100 flex flex-col items-center justify-center gap-8 pt-12 ">
       <Link
         to={`/questions/${question.id}`}
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"

@@ -15,7 +15,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export default function Login() {
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
       <div className="bg-gray-800 text-gray-100 rounded-xl shadow-lg border border-gray-700 p-10 max-w-md w-full text-center">
         <h1 className="text-3xl font-bold mb-6">Welcome to Banki Brunch</h1>
         <p className="mb-8 text-gray-400">

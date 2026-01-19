@@ -22,7 +22,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const { session } = loaderData;
 
   return (
-    <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-6">
+    <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12">
       {session && (
         <button
           onClick={() => {
@@ -43,14 +43,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <div className="flex gap-2 flex-wrap justify-center">
         <Link
           to="/users"
-          className="bg-blue-500 text-white hover:bg-blue-600 px-6 py-3 rounded-lg text-lg transition transform shadow-md"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
         >
           Users
         </Link>
 
         <Link
           to="/questions"
-          className="bg-blue-500 text-white hover:bg-blue-600 px-6 py-3 rounded-lg text-lg transition transform shadow-md"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
         >
           Questions
         </Link>
@@ -59,7 +59,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       {!session && (
         <Link
           to="/login"
-          className="bg-blue-500 text-white hover:bg-blue-600 px-6 py-3 rounded-lg text-lg transition transform shadow-md"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
         >
           Login
         </Link>

@@ -33,7 +33,7 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
   const [search, setSearch] = useState("");
 
   return (
-    <div className="min-h-screen text-white flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen text-white flex flex-col items-center py-10">
       <Link
         to="/"
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"

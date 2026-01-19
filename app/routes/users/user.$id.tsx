@@ -51,7 +51,7 @@ export default function UserPage({ loaderData }: Route.ComponentProps) {
   }, [user]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-gray-100 py-12 px-6">
+    <div className="min-h-screen flex flex-col items-center justify-center text-gray-100">
       <Link
         to="/users"
         className="absolute top-4 left-4 text-sm text-blue-500 hover:underline"

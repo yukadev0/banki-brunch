@@ -65,7 +65,7 @@ export default function EditAnswer({ loaderData }: Route.ComponentProps) {
   const [content, setContent] = useState(answer.content);
 
   return (
-    <div className="text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-6">
+    <div className="text-gray-100 flex flex-col items-center justify-center gap-8 py-12">
       <Link
         to={`/questions/${answer.questionId}`}
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"

@@ -23,6 +23,14 @@ export async function loader({ params, context, request }: Route.LoaderArgs) {
     headers: request.headers,
   });
 
+  if (!session) {
+    return redirect("/login");
+  }
+
+  if (session.user.id !== answer.createdByUserId) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+
   const user = await UsersRepository.getById(
     context.db,
     answer.createdByUserId,
@@ -64,7 +72,7 @@ export default function AnswerPage({
   const { answer, user, session } = loaderData;
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
+    <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10">
       <Link
         to={`/questions/${answer.questionId}/answers`}
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
