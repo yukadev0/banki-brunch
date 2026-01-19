@@ -14,7 +14,6 @@ export default [
   ...prefix("users", [
     index("routes/users/users.tsx"),
     route(":id", "routes/users/user.$id.tsx"),
-    route("create", "routes/users/create.user.tsx"),
   ]),
 
   ...prefix("questions", [
@@ -23,10 +22,11 @@ export default [
     route("create", "routes/questions/create.question.tsx"),
 
     ...prefix(":questionId/answers", [
-      route("answers.json", "routes/answers/answers.json.tsx"),
       index("routes/answers/answers.tsx"),
       route(":id", "routes/answers/answer.$id.tsx"),
       route("create", "routes/answers/create.answer.tsx"),
+      
+      route("answers.json", "routes/answers/answers.json.tsx"),
 
       ...prefix("api", [
         route("vote", "routes/questions/api/questions.vote.tsx"),

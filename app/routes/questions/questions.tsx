@@ -86,7 +86,7 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
                       </span>
                       <br />
                       <span className="font-semibold">
-                        {question.author.username ?? "Anonymous"}
+                        {question.author.name ?? "Anonymous"}
                       </span>
                     </div>
                   </div>

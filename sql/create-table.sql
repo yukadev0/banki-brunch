@@ -1,31 +1,17 @@
-DROP TABLE IF EXISTS answers;
-CREATE TABLE answers (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+DROP TABLE IF EXISTS user;
+CREATE TABLE user (
+  id TEXT PRIMARY KEY,
 
-  question_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
 
-  content TEXT NOT NULL,
+  email_verified INTEGER NOT NULL DEFAULT 0,
 
-  created_by_user_id INTEGER,
+  image TEXT,
 
-  upvotes INTEGER NOT NULL DEFAULT 0,
-  downvotes INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+    DEFAULT (CAST(unixepoch('subsecond') * 1000 AS INTEGER)),
 
-  is_validated INTEGER NOT NULL DEFAULT 0,
-  validated_by_user_id INTEGER,
-
-  is_hidden_by_default INTEGER NOT NULL DEFAULT 1,
-
-  created_at INTEGER NOT NULL,
-
-  FOREIGN KEY (question_id)
-    REFERENCES questions(id)
-    ON DELETE CASCADE,
-
-  FOREIGN KEY (created_by_user_id)
-    REFERENCES users(id),
-
-  FOREIGN KEY (validated_by_user_id)
-    REFERENCES users(id)
+  updated_at INTEGER NOT NULL
+    DEFAULT (CAST(unixepoch('subsecond') * 1000 AS INTEGER))
 );
-

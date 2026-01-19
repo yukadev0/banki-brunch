@@ -33,20 +33,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   return { success: true };
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
-  const users = await UsersRepository.getAll(context.db);
-  return { firstUser: users[0] };
-}
-
 export default function CreateAnswer({
   params,
   actionData,
-  loaderData,
 }: Route.ComponentProps) {
-  const { firstUser } = loaderData;
-
   const [showSuccess, setShowSuccess] = useState(false);
-  const [contentInput, setContentInput] = useState(`${firstUser.username}'s`);
+  const [contentInput, setContentInput] = useState("");
 
   useEffect(() => {
     if (!actionData?.success) return;

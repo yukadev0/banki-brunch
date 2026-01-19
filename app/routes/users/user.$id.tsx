@@ -11,13 +11,13 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const id = formData.get("id");
 
-  await UsersRepository.delete(context.db, Number(id));
+  await UsersRepository.delete(context.db, id as string);
 
   return redirect("/users");
 }
 
 export async function loader({ params, context }: Route.LoaderArgs) {
-  const user = await UsersRepository.getById(context.db, Number(params.id));
+  const user = await UsersRepository.getById(context.db, params.id);
   return { user };
 }
 
@@ -25,7 +25,7 @@ export default function UserPage({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
 
   useEffect(() => {
-    document.title = `User: ${user.username}`;
+    document.title = `User: ${user.name}`;
   }, [user]);
 
   return (
@@ -38,13 +38,7 @@ export default function UserPage({ loaderData }: Route.ComponentProps) {
       </Link>
 
       <div className="flex flex-col items-center w-full max-w-md bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-8">
-        <h1 className="text-3xl font-semibold text-center mb-4">
-          {user.username}
-        </h1>
-        <p className="text-center text-gray-400 mb-8">
-          Discord ID: {user.discordId}
-        </p>
-        <p className="text-center text-gray-400 mb-8">Role: {user.role}</p>
+        <h1 className="text-3xl font-semibold text-center mb-4">{user.name}</h1>
 
         <Form method="post" className="flex flex-col items-center gap-6">
           <input type="hidden" name="id" value={user.id} />

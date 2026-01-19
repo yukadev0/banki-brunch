@@ -13,7 +13,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const id = formData.get("id");
 
-  await UsersRepository.delete(context.db, Number(id));
+  await UsersRepository.delete(context.db, id as string);
 
   return redirect("/users");
 }
@@ -52,9 +52,8 @@ export default function Users({ loaderData }: Route.ComponentProps) {
                   className="block text-center text-lg font-medium text-white p-6"
                 >
                   <div className="flex justify-between items-center mb-4">
-                    <span>{user.username}</span>
+                    {user.name}
                   </div>
-                  <div className="text-sm text-gray-400">{user.role}</div>
                 </Link>
               </li>
             ))}

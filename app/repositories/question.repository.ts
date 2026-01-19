@@ -1,7 +1,7 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { eq, sql } from "drizzle-orm";
-import { usersTable } from "./user.repository";
+import { user } from "~/db/schema";
 
 export const questionsTable = sqliteTable("questions", {
   id: integer("id").primaryKey(),
@@ -22,9 +22,9 @@ export const questionsTable = sqliteTable("questions", {
 
   interviewCount: integer("interview_count").notNull().default(0),
 
-  createdByUserId: integer("created_by_user_id")
+  createdByUserId: text("created_by_user_id")
     .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
 
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
@@ -45,8 +45,8 @@ export const QuestionsRepository = {
       questions.map(async (question) => {
         const author = await db
           .select()
-          .from(usersTable)
-          .where(eq(usersTable.id, question.createdByUserId))
+          .from(user)
+          .where(eq(user.id, question.createdByUserId))
           .limit(1)
           .then(([user]) => user);
 
@@ -69,8 +69,8 @@ export const QuestionsRepository = {
 
     const author = await db
       .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, question.createdByUserId))
+      .from(user)
+      .where(eq(user.id, question.createdByUserId))
       .limit(1)
       .then(([user]) => user);
 

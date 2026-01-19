@@ -1,8 +1,8 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { eq, and, sql } from "drizzle-orm";
-import { usersTable } from "./user.repository";
 import { QuestionsRepository, questionsTable } from "./question.repository";
+import { user } from "~/db/schema";
 
 export const answersTable = sqliteTable("answers", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -13,8 +13,8 @@ export const answersTable = sqliteTable("answers", {
 
   content: text("content").notNull(),
 
-  createdByUserId: integer("created_by_user_id")
-    .references(() => usersTable.id)
+  createdByUserId: text("created_by_user_id")
+    .references(() => user.id)
     .notNull(),
 
   upvotes: integer("upvotes").notNull().default(0),
@@ -25,7 +25,7 @@ export const answersTable = sqliteTable("answers", {
     .default(false),
 
   validatedByUserId: integer("validated_by_user_id").references(
-    () => usersTable.id,
+    () => user.id,
   ),
 
   isHiddenByDefault: integer("is_hidden_by_default", {
@@ -72,8 +72,8 @@ export const AnswersRepository = {
       answers.map(async (answer) => {
         const author = await db
           .select()
-          .from(usersTable)
-          .where(eq(usersTable.id, answer.createdByUserId))
+          .from(user)
+          .where(eq(user.id, answer.createdByUserId))
           .limit(1)
           .then(([user]) => user);
 

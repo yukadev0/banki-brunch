@@ -61,7 +61,7 @@ export default function AnswerPage({ loaderData }: Route.ComponentProps) {
           <span>
             Created at: {new Date(answer.createdAt).toLocaleDateString()}
           </span>
-          <span>Author: {user ? user.username : "Anonymous"}</span>
+          <span>Author: {user ? user.name : "Anonymous"}</span>
         </div>
 
         <div className="mt-6 flex justify-between items-center">

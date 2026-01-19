@@ -123,7 +123,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
                                   ).toLocaleDateString()}
                                 </div>
                                 <div className="text-slate-200 font-medium">
-                                  {answer.author.username || "Anonymous"}
+                                  {answer.author.name || "Anonymous"}
                                 </div>
                               </div>
                             </div>
@@ -138,7 +138,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
               <div className="text-xs text-slate-400 bg-slate-800 rounded p-3">
                 <div>asked {question.createdAt.toLocaleDateString()}</div>
                 <div className="text-slate-200 font-medium">
-                  {questionAuthor.username}
+                  {questionAuthor.name}
                 </div>
               </div>
             </div>

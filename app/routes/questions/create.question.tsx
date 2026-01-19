@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Form, Link } from "react-router";
 import { QuestionsRepository } from "~/repositories/question.repository";
 import type { Route } from "./+types/create.question";
-import { UsersRepository } from "~/repositories/user.repository";
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -22,36 +21,24 @@ export async function action({ request, context }: Route.ActionArgs) {
   await QuestionsRepository.create(context.db, {
     title: title as string,
     content: content as string,
-    createdByUserId: Number(createdByUserId),
+    createdByUserId: createdByUserId as string,
   });
 
   return { success: true };
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
-  const users = await UsersRepository.getAll(context.db);
-  return { firstUser: users[0] };
-}
-
-export default function CreateQuestion({
-  loaderData,
-  actionData,
-}: Route.ComponentProps) {
-  const { firstUser } = loaderData;
-
-  const [titleInput, setTitleInput] = useState(`${firstUser.username}'s`);
-  const [contentInput, setContentInput] = useState(
-    `${firstUser.username}'s content`,
-  );
-  const [userIdInput, setUserIdInput] = useState(firstUser.id.toString());
+export default function CreateQuestion({ actionData }: Route.ComponentProps) {
+  const [titleInput, setTitleInput] = useState("");
+  const [contentInput, setContentInput] = useState("");
+  const [userIdInput, setUserIdInput] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (!actionData?.success) return;
 
-    setTitleInput(`${firstUser.username}'s Question`);
-    setContentInput(`${firstUser.username}'s Question content`);
-    setUserIdInput(firstUser.id.toString());
+    setTitleInput("");
+    setContentInput("");
+    setUserIdInput("");
     setShowSuccess(true);
 
     const timer = setTimeout(() => setShowSuccess(false), 3000);
