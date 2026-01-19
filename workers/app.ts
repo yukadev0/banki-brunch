@@ -1,10 +1,6 @@
 import { createRequestHandler } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 
-export interface Env {
-  banki_brunch_db: D1Database;
-}
-
 declare module "react-router" {
   export interface AppLoadContext {
     cloudflare: {

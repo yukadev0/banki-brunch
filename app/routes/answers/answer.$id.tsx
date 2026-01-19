@@ -1,9 +1,7 @@
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import { AnswersRepository } from "~/repositories/answer.repository";
 import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/answer.$id";
-
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Answer: ${params.id}` }];
@@ -33,8 +31,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   return redirect(`/questions/${params.questionId}/answers`);
 }
 
-export default function AnswerPage() {
-  const { answer, user } = useLoaderData<LoaderData>();
+export default function AnswerPage({ loaderData }: Route.ComponentProps) {
+  const { answer, user } = loaderData;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">

@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
-import { Form, isRouteErrorResponse, Link, useActionData } from "react-router";
+import { Form, Link } from "react-router";
 import { QuestionsRepository } from "~/repositories/question.repository";
 import type { Route } from "./+types/create.question";
 import { UsersRepository } from "~/repositories/user.repository";
-import { useLoaderData } from "react-router";
-
-type ActionData = Awaited<ReturnType<typeof action>>;
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -37,8 +33,11 @@ export async function loader({ context }: Route.LoaderArgs) {
   return { firstUser: users[0] };
 }
 
-export default function CreateQuestion() {
-  const { firstUser } = useLoaderData<LoaderData>();
+export default function CreateQuestion({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { firstUser } = loaderData;
 
   const [titleInput, setTitleInput] = useState(`${firstUser.username}'s`);
   const [contentInput, setContentInput] = useState(
@@ -46,8 +45,6 @@ export default function CreateQuestion() {
   );
   const [userIdInput, setUserIdInput] = useState(firstUser.id.toString());
   const [showSuccess, setShowSuccess] = useState(false);
-
-  const actionData = useActionData<ActionData>();
 
   useEffect(() => {
     if (!actionData?.success) return;

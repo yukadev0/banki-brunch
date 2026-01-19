@@ -1,12 +1,8 @@
-import { Form, Link, useActionData, redirect } from "react-router";
+import { Form, Link } from "react-router";
 import { AnswersRepository } from "~/repositories/answer.repository";
 import type { Route } from "./+types/create.answer";
 import { UsersRepository } from "~/repositories/user.repository";
-import { useLoaderData } from "react-router";
 import { useEffect, useState } from "react";
-
-type ActionData = Awaited<ReturnType<typeof action>>;
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta() {
   return [{ title: "Add Answer" }];
@@ -42,9 +38,12 @@ export async function loader({ context }: Route.LoaderArgs) {
   return { firstUser: users[0] };
 }
 
-export default function CreateAnswer({ params }: Route.LoaderArgs) {
-  const actionData = useActionData<ActionData>();
-  const { firstUser } = useLoaderData<LoaderData>();
+export default function CreateAnswer({
+  params,
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
+  const { firstUser } = loaderData;
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [contentInput, setContentInput] = useState(`${firstUser.username}'s`);

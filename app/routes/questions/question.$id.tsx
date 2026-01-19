@@ -1,11 +1,9 @@
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import { QuestionsRepository } from "~/repositories/question.repository";
 import { useEffect } from "react";
 import type { Route } from "./+types/question.$id";
 import { UsersRepository } from "~/repositories/user.repository";
 import { AnswersRepository } from "~/repositories/answer.repository";
-
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Question: ${params.id}` }];
@@ -42,8 +40,8 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   return { question, questionAuthor, answers };
 }
 
-export default function QuestionPage() {
-  const { question, questionAuthor, answers } = useLoaderData<LoaderData>();
+export default function QuestionPage({ loaderData }: Route.ComponentProps) {
+  const { question, questionAuthor, answers } = loaderData;
 
   useEffect(() => {
     document.title = `Question: ${question.title}`;

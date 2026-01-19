@@ -1,9 +1,7 @@
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/user.$id";
 import { useEffect } from "react";
-
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `User: ${params.id}` }];
@@ -23,8 +21,8 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   return { user };
 }
 
-export default function UserPage() {
-  const { user } = useLoaderData<LoaderData>();
+export default function UserPage({ loaderData }: Route.ComponentProps) {
+  const { user } = loaderData;
 
   useEffect(() => {
     document.title = `User: ${user.username}`;

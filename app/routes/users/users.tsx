@@ -1,16 +1,9 @@
-import {
-  Link,
-  redirect,
-  useLoaderData,
-  type LoaderFunctionArgs,
-} from "react-router";
+import { Link, redirect, type LoaderFunctionArgs } from "react-router";
 import {
   UsersRepository,
   type UserSelectArgs,
 } from "~/repositories/user.repository";
 import type { Route } from "./+types/users";
-
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Users" }];
@@ -30,8 +23,8 @@ export async function loader({ context }: Route.LoaderArgs) {
   return { users };
 }
 
-export default function Users() {
-  const { users } = useLoaderData<LoaderData>();
+export default function Users({ loaderData }: Route.ComponentProps) {
+  const { users } = loaderData;
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col gap-8 items-center justify-center py-12 px-6">

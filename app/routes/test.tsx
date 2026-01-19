@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from "react-router";
+import { Link } from "react-router";
 import type { Route } from "./+types/test";
 import { QuestionsRepository } from "~/repositories/question.repository";
 import { useState, useEffect } from "react";
@@ -10,8 +10,6 @@ type Answer = {
   isHiddenByDefault: boolean;
 };
 
-type LoaderData = Awaited<ReturnType<typeof loader>>;
-
 export function meta() {
   return [{ title: "Test" }];
 }
@@ -21,12 +19,12 @@ export async function loader({ context }: Route.LoaderArgs) {
   return { questions };
 }
 
-export default function Test() {
+export default function Test({ loaderData }: Route.ComponentProps) {
+  const { questions } = loaderData;
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showAnswers, setShowAnswers] = useState(false);
   const [answers, setAnswers] = useState<Answer[]>([]);
-
-  const { questions } = useLoaderData<LoaderData>();
 
   const currentQ = questions[currentQuestionIndex];
 

@@ -7,6 +7,8 @@ import {
 
 export default [
   index("routes/home.tsx"),
+  route("api/auth/*", "./routes/auth.tsx"),
+  
   route("test", "routes/test.tsx"),
 
   ...prefix("users", [

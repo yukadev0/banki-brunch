@@ -1,11 +1,9 @@
-import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router";
+import { Link, type LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/questions";
 import {
   QuestionsRepository,
   type GetAllQuestionsArgs,
 } from "~/repositories/question.repository";
-
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Questions" }];
@@ -23,8 +21,8 @@ export async function loader({ context }: Route.LoaderArgs) {
   return { questions };
 }
 
-export default function Questions() {
-  const { questions } = useLoaderData<LoaderData>();
+export default function Questions({ loaderData }: Route.ComponentProps) {
+  const { questions } = loaderData;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center py-10 px-4">

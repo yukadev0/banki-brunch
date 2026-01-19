@@ -1,12 +1,10 @@
-import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router";
+import { Link, type LoaderFunctionArgs } from "react-router";
 import {
   AnswersRepository,
   type AnswerSelectArgs,
 } from "~/repositories/answer.repository";
 import type { Route } from "./+types/answers";
 import { Form } from "react-router";
-
-type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Answers" }];
@@ -39,8 +37,8 @@ export async function loader({ context, params }: Route.LoaderArgs) {
   return { answers };
 }
 
-export default function Answers({ params }: Route.LoaderArgs) {
-  const { answers } = useLoaderData<LoaderData>();
+export default function Answers({ params, loaderData }: Route.ComponentProps) {
+  const { answers } = loaderData;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
