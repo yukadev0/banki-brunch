@@ -35,6 +35,11 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
   });
 
   const user = await UsersRepository.getById(context.db, params.id);
+
+  if (!user) {
+    throw new Response("User not found", { status: 404 });
+  }
+
   return { user, session };
 }
 

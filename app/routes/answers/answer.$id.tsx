@@ -54,10 +54,13 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 
   await AnswersRepository.delete(context.db, Number(id));
 
-  return redirect(`/questions/${params.questionId}/answers`);
+  return redirect(`/questions/${params.questionId}`);
 }
 
-export default function AnswerPage({ loaderData }: Route.ComponentProps) {
+export default function AnswerPage({
+  loaderData,
+  params,
+}: Route.ComponentProps) {
   const { answer, user, session } = loaderData;
 
   return (
@@ -98,15 +101,25 @@ export default function AnswerPage({ loaderData }: Route.ComponentProps) {
           </div>
 
           {session?.user.id === answer.createdByUserId && (
-            <Form method="post" className="flex justify-end">
-              <input type="hidden" name="id" value={answer.id} />
-              <button
-                type="submit"
-                className="text-sm text-red-400 hover:text-red-300 transition"
-              >
-                Delete Answer
-              </button>
-            </Form>
+            <div className="flex gap-2">
+              <div className="flex gap-4">
+                <Link
+                  to={`/questions/${params.questionId}/answers/${answer.id}/edit`}
+                  className="text-sm text-blue-400 hover:text-blue-300"
+                >
+                  Edit
+                </Link>
+              </div>
+              <Form method="post" className="flex justify-end">
+                <input type="hidden" name="id" value={answer.id} />
+                <button
+                  type="submit"
+                  className="text-sm text-red-400 hover:text-red-300 transition"
+                >
+                  Delete Answer
+                </button>
+              </Form>
+            </div>
           )}
         </div>
       </div>

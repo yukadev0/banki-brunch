@@ -26,9 +26,9 @@ export const questionsTable = sqliteTable("questions", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
 
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(new Date()),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
 });
 
 export type QuestionSelectArgs = typeof questionsTable.$inferSelect;
@@ -99,6 +99,20 @@ export const QuestionsRepository = {
     }
 
     await db.insert(questionsTable).values(data);
+  },
+
+  async update(
+    db: DrizzleD1Database<any>,
+    id: number,
+    data: QuestionInsertArgs,
+  ) {
+    const question = await this.getById(db, id);
+
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    await db.update(questionsTable).set(data).where(eq(questionsTable.id, id));
   },
 
   async updateStatus(

@@ -9,8 +9,6 @@ export default [
   index("routes/home.tsx"),
   route("login", "./routes/login.tsx"),
   route("api/auth/*", "./routes/auth.tsx"),
-  
-  route("test", "routes/test.tsx"),
 
   ...prefix("users", [
     index("routes/users/users.tsx"),
@@ -21,12 +19,12 @@ export default [
     index("routes/questions/questions.tsx"),
     route(":id", "routes/questions/question.$id.tsx"),
     route("create", "routes/questions/create.question.tsx"),
+    route(":id/edit", "routes/questions/question.edit.$id.tsx"),
 
     ...prefix(":questionId/answers", [
-      index("routes/answers/answers.tsx"),
       route(":id", "routes/answers/answer.$id.tsx"),
-      route("create", "routes/answers/create.answer.tsx"),
-      
+      route(":id/edit", "routes/answers/answer.edit.$id.tsx"),
+
       route("answers.json", "routes/answers/answers.json.tsx"),
 
       ...prefix("api", [

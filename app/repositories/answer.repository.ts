@@ -24,9 +24,7 @@ export const answersTable = sqliteTable("answers", {
     .notNull()
     .default(false),
 
-  validatedByUserId: integer("validated_by_user_id").references(
-    () => user.id,
-  ),
+  validatedByUserId: integer("validated_by_user_id").references(() => user.id),
 
   isHiddenByDefault: integer("is_hidden_by_default", {
     mode: "boolean",
@@ -34,9 +32,9 @@ export const answersTable = sqliteTable("answers", {
     .notNull()
     .default(true),
 
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(new Date()),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
 });
 
 export type AnswerSelectArgs = typeof answersTable.$inferSelect;
@@ -139,6 +137,16 @@ export const AnswersRepository = {
         downvotes: sql`${answersTable.downvotes} + 1`,
       })
       .where(eq(answersTable.id, answerId));
+  },
+
+  async update(db: DrizzleD1Database<any>, id: number, data: AnswerInsertArgs) {
+    const answer = await this.getById(db, id);
+
+    if (!answer) {
+      throw new Error("Answer not found");
+    }
+
+    await db.update(answersTable).set(data).where(eq(answersTable.id, id));
   },
 
   async delete(db: DrizzleD1Database<any>, id: number) {

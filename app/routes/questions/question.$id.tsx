@@ -1,7 +1,7 @@
 import { Form, Link, redirect } from "react-router";
-import { QuestionsRepository } from "~/repositories/question.repository";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Route } from "./+types/question.$id";
+import { QuestionsRepository } from "~/repositories/question.repository";
 import { UsersRepository } from "~/repositories/user.repository";
 import { AnswersRepository } from "~/repositories/answer.repository";
 import { createAuth } from "~/lib/auth.server";
@@ -10,13 +10,9 @@ export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Question: ${params.id}` }];
 }
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ request, context, params }: Route.ActionArgs) {
   const formData = await request.formData();
-  const id = formData.get("id");
-
-  if (!id) {
-    throw new Response("Question id is required", { status: 400 });
-  }
+  const intent = formData.get("intent");
 
   const session = await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
@@ -26,14 +22,44 @@ export async function action({ request, context }: Route.ActionArgs) {
     return redirect("/login");
   }
 
-  const question = await QuestionsRepository.getById(context.db, Number(id));
-  if (session.user.id !== question.createdByUserId) {
-    throw new Response("Unauthorized", { status: 401 });
+  switch (intent) {
+    case "delete":
+      const id = formData.get("id");
+      if (!id) {
+        throw new Response("Question id is required", { status: 400 });
+      }
+
+      const question = await QuestionsRepository.getById(
+        context.db,
+        Number(id),
+      );
+      
+      if (session.user.id !== question.createdByUserId) {
+        throw new Response("Unauthorized", { status: 401 });
+      }
+
+      await QuestionsRepository.delete(context.db, Number(id));
+      return redirect("/questions");
+
+    case "create-answer":
+      const questionId = params.id;
+      const content = formData.get("content");
+
+      if (!questionId || !content) {
+        throw new Response("Missing required fields", { status: 400 });
+      }
+
+      await AnswersRepository.create(context.db, {
+        questionId: Number(questionId),
+        content: content as string,
+        createdByUserId: session.user.id,
+      });
+
+      return redirect(`/questions/${questionId}`);
+
+    default:
+      throw new Response("Invalid intent", { status: 400 });
   }
-
-  await QuestionsRepository.delete(context.db, Number(id));
-
-  return redirect("/questions");
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
@@ -60,10 +86,15 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 
 export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   const { question, questionAuthor, answers, session } = loaderData;
+  const [answerInput, setAnswerInput] = useState("");
 
   useEffect(() => {
     document.title = `Question: ${question.title}`;
   }, [question]);
+
+  useEffect(() => {
+    setAnswerInput("");
+  }, [answers]);
 
   return (
     <div className="min-h-screen text-slate-100 px-4 py-10">
@@ -74,116 +105,171 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
         Questions
       </Link>
 
-      <div className="flex flex-col gap-4 mx-auto max-w-5xl bg-slate-800 border border-slate-800 rounded-xl p-6">
-        <h1 className="text-2xl font-semibold">{question.title}</h1>
+      <div className="mx-auto max-w-5xl bg-slate-800 border border-slate-800 rounded-xl p-6">
+        <h1 className="text-2xl font-semibold mb-6">{question.title}</h1>
 
         <div className="flex gap-6">
           <div className="flex flex-col items-center gap-2 text-slate-400">
-            <button className="hover:text-blue-400 transition">▲</button>
+            <button className="hover:text-blue-400">▲</button>
             <span className="text-lg font-medium">0</span>
-            <button className="hover:text-blue-400 transition">▼</button>
+            <button className="hover:text-blue-400">▼</button>
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 flex flex-col gap-4">
             <p className="whitespace-pre-wrap leading-relaxed text-slate-200">
               {question.content}
             </p>
 
-            <div className="flex gap-2">
-              {question.tags.length > 0 &&
-                question.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs bg-slate-800 px-2 py-1 rounded"
-                  >
-                    {tag}
-                  </span>
-                ))}
+            <div className="flex flex-wrap gap-2">
+              {question.tags.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-200"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
 
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2">
-                {answers.length > 0 && (
-                  <div className="mt-8 border-t border-slate-800 pt-6">
-                    <h2 className="text-xl font-semibold mb-6">
-                      {answers.length} Answer{answers.length !== 1 && "s"}
-                    </h2>
-
-                    <div className="flex flex-col gap-6">
-                      {answers.map((answer) => (
-                        <div
-                          key={answer.id}
-                          className="flex gap-6 border-t border-slate-900 pt-6"
-                        >
-                          <div className="flex flex-col items-center gap-2 text-slate-400">
-                            <button className="hover:text-blue-400 transition">
-                              ▲
-                            </button>
-                            <span className="text-sm font-medium">
-                              {answer.upvotes - answer.downvotes}
-                            </span>
-                            <button className="hover:text-blue-400 transition">
-                              ▼
-                            </button>
-                          </div>
-
-                          <div className="flex-1">
-                            <p className="whitespace-pre-wrap leading-relaxed text-slate-200">
-                              {answer.content}
-                            </p>
-
-                            <div className="flex justify-end mt-4">
-                              <div className="text-xs text-slate-400 bg-slate-800 rounded p-3">
-                                <div>
-                                  answered{" "}
-                                  {new Date(
-                                    answer.createdAt,
-                                  ).toLocaleDateString()}
-                                </div>
-                                <div className="text-slate-200 font-medium">
-                                  {answer.author.name || "Anonymous"}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-xs text-slate-400 bg-slate-800 rounded p-3">
-                <div>asked {question.createdAt.toLocaleDateString()}</div>
+            <div className="flex gap-2 items-center justify-center rounded-lg self-end text-xs text-slate-400 bg-slate-900 p-3">
+              {questionAuthor.image && (
+                <img
+                  src={questionAuthor.image}
+                  alt={questionAuthor.name}
+                  className="w-10 h-10 rounded-full"
+                />
+              )}
+              <div>
+                <div>
+                  asked {new Date(question.createdAt).toLocaleDateString()}
+                </div>
                 <div className="text-slate-200 font-medium">
-                  {questionAuthor.name}
+                  {questionAuthor.name || "Anonymous"}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end items-center gap-2">
-          <Link
-            to={`/questions/${question.id}/answers`}
-            className="text-sm text-blue-400 hover:text-blue-300 transition"
-          >
-            See Answers
-          </Link>
+        {session?.user.id === question.createdByUserId && (
+          <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
+            <div className="flex gap-4">
+              <Link
+                to={`/questions/${question.id}/edit`}
+                className="text-sm text-blue-400 hover:text-blue-300"
+              >
+                Edit
+              </Link>
+            </div>
 
-          {session?.user.id === question.createdByUserId && (
             <Form method="post">
+              <input type="hidden" name="intent" value="delete" />
               <input type="hidden" name="id" value={question.id} />
               <button
                 type="submit"
-                className="text-sm text-red-400 hover:text-red-300 transition"
+                onClick={(e) => {
+                  if (!confirm("Delete this question?")) e.preventDefault();
+                }}
+                className="text-sm text-red-400 hover:text-red-300"
               >
-                Delete Question
+                Delete
               </button>
             </Form>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      <div className="mt-10 mx-auto max-w-5xl">
+        <h2 className="text-xl font-semibold mb-6">
+          {answers.length > 0 ? answers.length : "No"} Answer
+          {answers.length !== 1 && "s"}
+        </h2>
+
+        {answers.length > 0 && (
+          <div className="flex flex-col gap-6">
+            {answers.map((answer) => (
+              <div
+                key={answer.id}
+                className="flex gap-6 bg-slate-800 border border-slate-800 rounded-xl p-6"
+              >
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <button className="hover:text-blue-400">▲</button>
+                  <span className="text-sm font-medium">
+                    {answer.upvotes - answer.downvotes}
+                  </span>
+                  <button className="hover:text-blue-400">▼</button>
+                </div>
+
+                <div className="flex flex-col flex-1">
+                  <div className="flex gap-4">
+                    <div className="flex flex-col gap-2 items-center"></div>
+                    <p className="whitespace-pre-wrap leading-relaxed text-slate-200">
+                      {answer.content}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 items-center justify-center rounded-lg self-end text-xs text-slate-400 bg-slate-900 p-3">
+                    {answer.author.image && (
+                      <img
+                        src={answer.author.image}
+                        alt={answer.author.name}
+                        className="w-10 h-10 rounded-full"
+                      />
+                    )}
+                    <div>
+                      <div>
+                        answered{" "}
+                        {new Date(answer.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="text-slate-200 font-medium">
+                        {answer.author.name || "Anonymous"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {session?.user.id === question.createdByUserId && (
+                    <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
+                      <div className="flex gap-4">
+                        <Link
+                          to={`/questions/${question.id}/answers/${answer.id}`}
+                          className="text-sm text-blue-400 hover:text-blue-300"
+                        >
+                          View
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {session && (
+        <div className="mt-10 mx-auto max-w-5xl bg-slate-800 border border-slate-800 rounded-xl p-6">
+          <h2 className="text-xl font-semibold mb-4">Your Answer</h2>
+
+          <Form method="post">
+            <input type="hidden" name="intent" value="create-answer" />
+            <textarea
+              name="content"
+              rows={6}
+              value={answerInput}
+              onChange={(e) => setAnswerInput(e.target.value)}
+              placeholder="Write your answer here..."
+              className="w-full rounded-lg bg-slate-900/70 px-4 py-3 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <button
+              type="submit"
+              className="mt-4 rounded-lg px-6 py-2 font-semibold bg-blue-500 hover:bg-blue-600 transition"
+            >
+              Post Answer
+            </button>
+          </Form>
+        </div>
+      )}
     </div>
   );
 }

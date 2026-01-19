@@ -4,7 +4,6 @@ import {
   type UserSelectArgs,
 } from "~/repositories/user.repository";
 import type { Route } from "./+types/users";
-import { createAuth } from "~/lib/auth.server";
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Users" }];
@@ -19,11 +18,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   return redirect("/users");
 }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
+export async function loader({ context }: Route.LoaderArgs) {
   const users = await UsersRepository.getAll(context.db);
   return { users };
 }

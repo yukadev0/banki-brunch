@@ -54,13 +54,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         >
           Questions
         </Link>
-
-        <Link
-          to="/test"
-          className="bg-blue-500 text-white hover:bg-blue-600 px-6 py-3 rounded-lg text-lg transition transform shadow-md"
-        >
-          Test
-        </Link>
       </div>
 
       {!session && (
