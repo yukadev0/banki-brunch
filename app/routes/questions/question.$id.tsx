@@ -170,9 +170,6 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
               <input type="hidden" name="id" value={question.id} />
               <button
                 type="submit"
-                onClick={(e) => {
-                  if (!confirm("Delete this question?")) e.preventDefault();
-                }}
                 className="text-sm text-red-400 hover:text-red-300"
               >
                 Delete
