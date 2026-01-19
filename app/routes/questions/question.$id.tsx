@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import type { Route } from "./+types/question.$id";
 import { UsersRepository } from "~/repositories/user.repository";
 import { AnswersRepository } from "~/repositories/answer.repository";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Question: ${params.id}` }];
@@ -17,12 +18,29 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw new Response("Question id is required", { status: 400 });
   }
 
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session) {
+    return redirect("/login");
+  }
+
+  const question = await QuestionsRepository.getById(context.db, Number(id));
+  if (session.user.id !== question.createdByUserId) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+
   await QuestionsRepository.delete(context.db, Number(id));
 
   return redirect("/questions");
 }
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ request, params, context }: Route.LoaderArgs) {
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
   const question = await QuestionsRepository.getById(
     context.db,
     Number(params.id),
@@ -37,11 +55,11 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     question.createdByUserId,
   );
 
-  return { question, questionAuthor, answers };
+  return { question, questionAuthor, answers, session };
 }
 
 export default function QuestionPage({ loaderData }: Route.ComponentProps) {
-  const { question, questionAuthor, answers } = loaderData;
+  const { question, questionAuthor, answers, session } = loaderData;
 
   useEffect(() => {
     document.title = `Question: ${question.title}`;
@@ -152,15 +170,18 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
           >
             See Answers
           </Link>
-          <Form method="post">
-            <input type="hidden" name="id" value={question.id} />
-            <button
-              type="submit"
-              className="text-sm text-red-400 hover:text-red-300 transition"
-            >
-              Delete Question
-            </button>
-          </Form>
+
+          {session?.user.id === question.createdByUserId && (
+            <Form method="post">
+              <input type="hidden" name="id" value={question.id} />
+              <button
+                type="submit"
+                className="text-sm text-red-400 hover:text-red-300 transition"
+              >
+                Delete Question
+              </button>
+            </Form>
+          )}
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
-import { Form, Link } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import { AnswersRepository } from "~/repositories/answer.repository";
 import type { Route } from "./+types/create.answer";
-import { UsersRepository } from "~/repositories/user.repository";
 import { useEffect, useState } from "react";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta() {
   return [{ title: "Add Answer" }];
@@ -21,16 +21,31 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     return { error: "Content is required" };
   }
 
-  const users = await UsersRepository.getAll(context.db);
-  const createdByUserId = users[0].id;
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session) {
+    return redirect("/login");
+  }
 
   await AnswersRepository.create(context.db, {
     questionId,
     content,
-    createdByUserId,
+    createdByUserId: session.user.id,
   });
 
   return { success: true };
+}
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session) {
+    return redirect("/login");
+  }
 }
 
 export default function CreateAnswer({

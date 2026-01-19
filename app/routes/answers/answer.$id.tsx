@@ -2,29 +2,55 @@ import { Form, Link, redirect } from "react-router";
 import { AnswersRepository } from "~/repositories/answer.repository";
 import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/answer.$id";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Answer: ${params.id}` }];
 }
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ params, context, request }: Route.LoaderArgs) {
   const id = Number(params.id);
-  if (!id) throw new Response("Invalid answer id", { status: 400 });
+  if (!id) {
+    throw new Response("Invalid answer id", { status: 400 });
+  }
 
   const answer = await AnswersRepository.getById(context.db, id);
-  if (!answer) throw new Response("Answer not found", { status: 404 });
+  if (!answer) {
+    throw new Response("Answer not found", { status: 404 });
+  }
 
-  const user = answer.createdByUserId
-    ? await UsersRepository.getById(context.db, answer.createdByUserId)
-    : null;
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
 
-  return { answer, user };
+  const user = await UsersRepository.getById(
+    context.db,
+    answer.createdByUserId,
+  );
+
+  return { session, answer, user };
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const id = formData.get("id");
-  if (!id) throw new Response("Answer id is required", { status: 400 });
+
+  if (!id) {
+    throw new Response("Answer id is required", { status: 400 });
+  }
+
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session) {
+    return redirect("/login");
+  }
+
+  const answer = await AnswersRepository.getById(context.db, Number(id));
+  if (session.user.id !== answer.createdByUserId) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
 
   await AnswersRepository.delete(context.db, Number(id));
 
@@ -32,7 +58,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 }
 
 export default function AnswerPage({ loaderData }: Route.ComponentProps) {
-  const { answer, user } = loaderData;
+  const { answer, user, session } = loaderData;
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
@@ -71,15 +97,17 @@ export default function AnswerPage({ loaderData }: Route.ComponentProps) {
             <button className="hover:text-red-500 transition">▼</button>
           </div>
 
-          <Form method="post" className="flex justify-end">
-            <input type="hidden" name="id" value={answer.id} />
-            <button
-              type="submit"
-              className="text-sm text-red-400 hover:text-red-300 transition"
-            >
-              Delete Answer
-            </button>
-          </Form>
+          {session?.user.id === answer.createdByUserId && (
+            <Form method="post" className="flex justify-end">
+              <input type="hidden" name="id" value={answer.id} />
+              <button
+                type="submit"
+                className="text-sm text-red-400 hover:text-red-300 transition"
+              >
+                Delete Answer
+              </button>
+            </Form>
+          )}
         </div>
       </div>
     </div>

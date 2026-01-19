@@ -5,6 +5,7 @@ import {
 } from "~/repositories/answer.repository";
 import type { Route } from "./+types/answers";
 import { Form } from "react-router";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Answers" }];
@@ -29,16 +30,20 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-export async function loader({ context, params }: Route.LoaderArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
   const answers = await AnswersRepository.getByQuestionId(
     context.db,
     Number(params.questionId),
   );
-  return { answers };
+  return { session, answers };
 }
 
 export default function Answers({ params, loaderData }: Route.ComponentProps) {
-  const { answers } = loaderData;
+  const { answers, session } = loaderData;
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
@@ -107,12 +112,14 @@ export default function Answers({ params, loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      <Link
-        to="./create"
-        className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
-      >
-        Create Answer
-      </Link>
+      {session && (
+        <Link
+          to="./create"
+          className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
+        >
+          Create Answer
+        </Link>
+      )}
     </div>
   );
 }
