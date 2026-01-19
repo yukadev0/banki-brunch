@@ -54,14 +54,14 @@ export default function Test({ loaderData }: Route.ComponentProps) {
 
   if (!questions.length) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-800 text-white">
+      <div className="min-h-screen flex items-center justify-center text-white">
         No questions available.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center text-white px-4 py-12">
       <Link
         to={`/`}
         className="absolute top-4 left-4 cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 transition px-4 py-2 text-white"

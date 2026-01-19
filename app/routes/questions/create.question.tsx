@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Form, Link } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import { QuestionsRepository } from "~/repositories/question.repository";
 import type { Route } from "./+types/create.question";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -12,25 +13,41 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const title = formData.get("title");
   const content = formData.get("content");
-  const createdByUserId = formData.get("createdByUserId");
 
-  if (!title || !content || !createdByUserId) {
+  if (!title || !content) {
     return { error: "All fields are required" };
+  }
+
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session) {
+    return redirect("/login");
   }
 
   await QuestionsRepository.create(context.db, {
     title: title as string,
     content: content as string,
-    createdByUserId: createdByUserId as string,
+    createdByUserId: session.user.id,
   });
 
   return { success: true };
 }
 
+export async function loader({ context, request }: Route.LoaderArgs) {
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session) {
+    return redirect("/login");
+  }
+}
+
 export default function CreateQuestion({ actionData }: Route.ComponentProps) {
   const [titleInput, setTitleInput] = useState("");
   const [contentInput, setContentInput] = useState("");
-  const [userIdInput, setUserIdInput] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
@@ -38,7 +55,6 @@ export default function CreateQuestion({ actionData }: Route.ComponentProps) {
 
     setTitleInput("");
     setContentInput("");
-    setUserIdInput("");
     setShowSuccess(true);
 
     const timer = setTimeout(() => setShowSuccess(false), 3000);
@@ -46,7 +62,7 @@ export default function CreateQuestion({ actionData }: Route.ComponentProps) {
   }, [actionData]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-10 flex flex-col gap-6 items-center justify-center">
+    <div className="min-h-screen text-slate-100 px-4 py-10 flex flex-col gap-6 items-center justify-center">
       <Link
         to="/questions"
         className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"
@@ -91,21 +107,6 @@ export default function CreateQuestion({ actionData }: Route.ComponentProps) {
               rows={6}
               value={contentInput}
               onChange={(e) => setContentInput(e.target.value)}
-              className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
-                ${actionData?.error ? "ring-red-500" : ""}`}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="createdByUserId">
-              User ID
-            </label>
-            <input
-              type="text"
-              id="createdByUserId"
-              name="createdByUserId"
-              value={userIdInput}
-              onChange={(e) => setUserIdInput(e.target.value)}
               className={`hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
                 ${actionData?.error ? "ring-red-500" : ""}`}
             />

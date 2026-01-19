@@ -4,6 +4,7 @@ import {
   type UserSelectArgs,
 } from "~/repositories/user.repository";
 import type { Route } from "./+types/users";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Users" }];
@@ -18,7 +19,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   return redirect("/users");
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
   const users = await UsersRepository.getAll(context.db);
   return { users };
 }
@@ -27,7 +32,7 @@ export default function Users({ loaderData }: Route.ComponentProps) {
   const { users } = loaderData;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col gap-8 items-center justify-center py-12 px-6">
+    <div className="min-h-screen text-gray-100 flex flex-col gap-8 items-center justify-center py-12 px-6">
       <Link
         to="/"
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
@@ -41,18 +46,32 @@ export default function Users({ loaderData }: Route.ComponentProps) {
         {users.length === 0 ? (
           <p className="text-center text-gray-400">No users found</p>
         ) : (
-          <ul className="space-y-6">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {users.map((user: UserSelectArgs) => (
               <li
                 key={user.id}
                 className="bg-gray-800 hover:bg-gray-700 transition cursor-pointer rounded-lg border border-gray-700 shadow-lg"
               >
-                <Link
-                  to={`./${user.id}`}
-                  className="block text-center text-lg font-medium text-white p-6"
-                >
-                  <div className="flex justify-between items-center mb-4">
+                <Link to={`./${user.id}`} className="block p-6 text-center">
+                  {user.image && (
+                    <img
+                      src={user.image}
+                      alt={user.name}
+                      className="w-16 h-16 rounded-full mx-auto mb-4 border-2 border-gray-600"
+                    />
+                  )}
+
+                  <div className="text-lg font-medium text-white mb-1">
                     {user.name}
+                  </div>
+
+                  <div className="text-sm text-gray-400">
+                    Joined on{" "}
+                    {new Date(user.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </div>
                 </Link>
               </li>
@@ -60,13 +79,6 @@ export default function Users({ loaderData }: Route.ComponentProps) {
           </ul>
         )}
       </div>
-
-      <Link
-        to="./create"
-        className="mt-8 inline-block bg-blue-500 text-white py-2 px-6 rounded-lg text-lg hover:bg-blue-600 transition duration-300"
-      >
-        Create User
-      </Link>
     </div>
   );
 }

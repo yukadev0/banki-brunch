@@ -41,7 +41,7 @@ export default function Answers({ params, loaderData }: Route.ComponentProps) {
   const { answers } = loaderData;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
+    <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10 px-4">
       <Link
         to={`/questions/${params.questionId}`}
         className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"

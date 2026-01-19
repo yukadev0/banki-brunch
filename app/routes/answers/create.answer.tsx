@@ -51,7 +51,7 @@ export default function CreateAnswer({
   }, [actionData]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-10 flex flex-col gap-6 items-center justify-center">
+    <div className="min-h-screen text-slate-100 px-4 py-10 flex flex-col gap-6 items-center justify-center">
       <Link
         to={`/questions/${params.questionId}/answers`}
         className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"

@@ -4,6 +4,7 @@ import {
   QuestionsRepository,
   type GetAllQuestionsArgs,
 } from "~/repositories/question.repository";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Questions" }];
@@ -16,16 +17,21 @@ export async function action({ request, context }: Route.ActionArgs) {
   return await QuestionsRepository.delete(context.db, Number(id));
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
   const questions = await QuestionsRepository.getAll(context.db);
-  return { questions };
+
+  return { session, questions };
 }
 
 export default function Questions({ loaderData }: Route.ComponentProps) {
-  const { questions } = loaderData;
+  const { questions, session } = loaderData;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen text-white flex flex-col items-center py-10 px-4">
       <Link
         to="/"
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
@@ -97,12 +103,14 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      <Link
-        to="./create"
-        className="mt-6 inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
-      >
-        Create Question
-      </Link>
+      {session && (
+        <Link
+          to="./create"
+          className="mt-6 inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
+        >
+          Create Question
+        </Link>
+      )}
     </div>
   );
 }
