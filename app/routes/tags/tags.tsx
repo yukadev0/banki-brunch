@@ -4,18 +4,23 @@ import {
   TagsRepository,
   type TagsSelectArgs,
 } from "~/repositories/tags.repository";
+import { createAuth } from "~/lib/auth.server";
 
 export function meta() {
   return [{ title: "Tags" }];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
+  const session = await createAuth(context.cloudflare.env).api.getSession({
+    headers: request.headers,
+  });
+
   const tags = await TagsRepository.getAll(context.db);
-  return { tags };
+  return { tags, session };
 }
 
 export default function TagsPage({ loaderData }: Route.ComponentProps) {
-  const { tags } = loaderData;
+  const { tags, session } = loaderData;
 
   return (
     <div className="min-h-screen flex flex-col gap-16 items-center justify-center">
@@ -29,9 +34,9 @@ export default function TagsPage({ loaderData }: Route.ComponentProps) {
       <h1 className="text-4xl font-semibold text-center">Tags</h1>
 
       <div className="flex gap-2 flex-wrap text-sm">
-        {tags.map((tag: TagsSelectArgs) => (
+        {tags.map((tag: TagsSelectArgs, index: number) => (
           <span
-            key={tag.id}
+            key={index}
             className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
           >
             {tag.name}
@@ -39,12 +44,14 @@ export default function TagsPage({ loaderData }: Route.ComponentProps) {
         ))}
       </div>
 
-      <Link
-        to="/tags/create"
-        className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
-      >
-        Create Tag
-      </Link>
+      {session && (
+        <Link
+          to="/tags/create"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
+        >
+          Create Tag
+        </Link>
+      )}
     </div>
   );
 }

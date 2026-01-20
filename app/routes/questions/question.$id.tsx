@@ -73,9 +73,10 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     Number(params.id),
   );
 
-  const answers = (
-    await AnswersRepository.getByQuestionId(context.db, Number(params.id))
-  ).sort((a, b) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes));
+  const answers = await AnswersRepository.getByQuestionId(
+    context.db,
+    Number(params.id),
+  ); //.sort((a, b) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes));
 
   const questionAuthor = await UsersRepository.getById(
     context.db,
@@ -121,6 +122,17 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
             <p className="whitespace-pre-wrap leading-relaxed text-slate-200">
               {question.content}
             </p>
+
+            <div className="flex flex-wrap gap-2">
+              {question.tags.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
 
             <div className="flex gap-2 items-center justify-center rounded-lg self-end text-xs text-slate-400 bg-slate-900 p-3">
               {questionAuthor.image && (

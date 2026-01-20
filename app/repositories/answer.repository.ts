@@ -17,9 +17,6 @@ export const answersTable = sqliteTable("answers", {
     .references(() => user.id)
     .notNull(),
 
-  upvotes: integer("upvotes").notNull().default(0),
-  downvotes: integer("downvotes").notNull().default(0),
-
   isValidated: integer("is_validated", { mode: "boolean" })
     .notNull()
     .default(false),
@@ -121,23 +118,23 @@ export const AnswersRepository = {
       .where(eq(answersTable.id, answerId));
   },
 
-  async upvote(db: DrizzleD1Database<any>, answerId: number) {
-    await db
-      .update(answersTable)
-      .set({
-        upvotes: sql`${answersTable.upvotes} + 1`,
-      })
-      .where(eq(answersTable.id, answerId));
-  },
+  // async upvote(db: DrizzleD1Database<any>, answerId: number) {
+  //   await db
+  //     .update(answersTable)
+  //     .set({
+  //       upvotes: sql`${answersTable.upvotes} + 1`,
+  //     })
+  //     .where(eq(answersTable.id, answerId));
+  // },
 
-  async downvote(db: DrizzleD1Database<any>, answerId: number) {
-    await db
-      .update(answersTable)
-      .set({
-        downvotes: sql`${answersTable.downvotes} + 1`,
-      })
-      .where(eq(answersTable.id, answerId));
-  },
+  // async downvote(db: DrizzleD1Database<any>, answerId: number) {
+  //   await db
+  //     .update(answersTable)
+  //     .set({
+  //       downvotes: sql`${answersTable.downvotes} + 1`,
+  //     })
+  //     .where(eq(answersTable.id, answerId));
+  // },
 
   async update(db: DrizzleD1Database<any>, id: number, data: AnswerInsertArgs) {
     const answer = await this.getById(db, id);

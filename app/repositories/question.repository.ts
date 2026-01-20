@@ -2,6 +2,7 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { eq, sql } from "drizzle-orm";
 import { user } from "~/db/schema";
+import { tagsTable } from "./tags.repository";
 
 export const questionsTable = sqliteTable("questions", {
   id: integer("id").primaryKey(),
@@ -15,9 +16,6 @@ export const questionsTable = sqliteTable("questions", {
     .notNull()
     .default("pending"),
 
-  upvotes: integer("upvotes").notNull().default(0),
-  downvotes: integer("downvotes").notNull().default(0),
-
   interviewCount: integer("interview_count").notNull().default(0),
 
   createdByUserId: text("created_by_user_id")
@@ -29,6 +27,13 @@ export const questionsTable = sqliteTable("questions", {
     .notNull(),
 });
 
+export const questionTagsTable = sqliteTable("question_tags", {
+  questionId: integer("question_id")
+    .notNull()
+    .references(() => questionsTable.id, { onDelete: "cascade" }),
+  tags: text("tags", { mode: "json" }).$type<string[]>().notNull().default([]),
+});
+
 export type QuestionSelectArgs = typeof questionsTable.$inferSelect;
 export type QuestionInsertArgs = typeof questionsTable.$inferInsert;
 export type GetAllQuestionsArgs = Awaited<
@@ -37,90 +42,104 @@ export type GetAllQuestionsArgs = Awaited<
 
 export const QuestionsRepository = {
   async getAll(db: DrizzleD1Database<any>) {
-    const questions = await db.select().from(questionsTable).all();
+    const rows = await db
+      .select({
+        question: questionsTable,
+        author: user,
+        tags: questionTagsTable,
+      })
+      .from(questionsTable)
+      .innerJoin(user, eq(user.id, questionsTable.createdByUserId))
+      .innerJoin(
+        questionTagsTable,
+        eq(questionTagsTable.questionId, questionsTable.id),
+      );
 
-    const questionsWithAuthors = await Promise.all(
-      questions.map(async (question) => {
-        const author = await db
-          .select()
-          .from(user)
-          .where(eq(user.id, question.createdByUserId))
-          .limit(1)
-          .then(([user]) => user);
-
-        return { ...question, author };
-      }),
-    );
-
-    return questionsWithAuthors;
+    return rows.map((row) => ({
+      ...row.question,
+      tags: row.tags.tags,
+      author: row.author,
+    }));
   },
 
   async getById(db: DrizzleD1Database<any>, id: number) {
     const [question] = await db
-      .select()
+      .select({
+        question: questionsTable,
+        author: user,
+        tags: questionTagsTable,
+      })
       .from(questionsTable)
-      .where(eq(questionsTable.id, id));
+      .where(eq(questionsTable.id, id))
+      .limit(1)
+      .innerJoin(user, eq(user.id, questionsTable.createdByUserId))
+      .innerJoin(
+        questionTagsTable,
+        eq(questionTagsTable.questionId, questionsTable.id),
+      );
 
     if (!question) {
       throw new Error("Question not found");
     }
 
-    const author = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, question.createdByUserId))
-      .limit(1)
-      .then(([user]) => user);
-
-    return { ...question, author };
+    return {
+      ...question.question,
+      author: question.author,
+      tags: question.tags.tags,
+    };
   },
 
-  async getApproved(db: DrizzleD1Database<any>) {
-    return db
+  async getRandom(db: DrizzleD1Database<any>) {
+    const [question] = await db
       .select()
       .from(questionsTable)
-      .where(eq(questionsTable.status, "approved"));
+      .orderBy(sql`RANDOM()`)
+      .limit(1);
+
+    return question;
   },
 
-  async incrementInterviewCount(db: DrizzleD1Database<any>, id: number) {
-    await db
-      .update(questionsTable)
-      .set({
-        interviewCount: sql`${questionsTable.interviewCount} + 1`,
-      })
-      .where(eq(questionsTable.id, id));
-  },
-
-  async create(db: DrizzleD1Database<any>, data: QuestionInsertArgs) {
+  async create(
+    db: DrizzleD1Database<any>,
+    data: QuestionInsertArgs & { tags: string[] },
+  ) {
     if (!data.title || !data.content) {
       throw new Error("Missing required fields");
     }
 
-    await db.insert(questionsTable).values(data);
+    const id = (await db.insert(questionsTable).values(data)).meta.last_row_id;
+
+    if (data.tags.length > 0) {
+      await db
+        .update(questionTagsTable)
+        .set({ tags: data.tags })
+        .where(eq(questionTagsTable.questionId, id));
+    }
   },
 
   async update(
     db: DrizzleD1Database<any>,
     id: number,
-    data: QuestionInsertArgs,
+    data: Partial<QuestionInsertArgs & { tags: string[] }>,
   ) {
-    const question = await this.getById(db, id);
+    const { tags, ...questionUpdate } = data;
 
-    if (!question) {
-      throw new Error("Question not found");
+    if (tags) {
+      const allTags = await db.select().from(tagsTable);
+
+      const validTags = tags.filter((tag) =>
+        allTags.some((t) => t.name === tag),
+      );
+
+      await db
+        .update(questionTagsTable)
+        .set({ tags: validTags })
+        .where(eq(questionTagsTable.questionId, id));
     }
 
-    await db.update(questionsTable).set(data).where(eq(questionsTable.id, id));
-  },
-
-  async updateStatus(
-    db: DrizzleD1Database<any>,
-    id: number,
-    status: "pending" | "approved" | "rejected",
-  ) {
     await db
       .update(questionsTable)
-      .set({ status })
+      .set(questionUpdate)
       .where(eq(questionsTable.id, id));
   },
 

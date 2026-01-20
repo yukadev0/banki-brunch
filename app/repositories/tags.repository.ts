@@ -1,9 +1,8 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const tagsTable = sqliteTable("tags", {
-  id: integer("id").primaryKey(),
-  name: text("name").notNull(),
+  name: text("name").primaryKey(),
 });
 
 export type TagsSelectArgs = typeof tagsTable.$inferSelect;
@@ -18,7 +17,7 @@ export const TagsRepository = {
     if (!data.name) {
       throw new Error("Tag name is required");
     }
-    
+
     await db.insert(tagsTable).values(data);
   },
 };

@@ -3,6 +3,7 @@ import { Form, Link, redirect } from "react-router";
 import { QuestionsRepository } from "~/repositories/question.repository";
 import type { Route } from "./+types/create.question";
 import { createAuth } from "~/lib/auth.server";
+import { tagsTable } from "~/repositories/tags.repository";
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -13,6 +14,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const title = formData.get("title");
   const content = formData.get("content");
+  const selectedTags = formData.getAll("tags") as string[];
 
   if (!title || !content) {
     return { error: "All fields are required" };
@@ -30,6 +32,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     title: title as string,
     content: content as string,
     createdByUserId: session.user.id,
+    tags: selectedTags,
   });
 
   return { success: true };
@@ -43,18 +46,36 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   if (!session) {
     return redirect("/login");
   }
+
+  const allTags = await context.db.select().from(tagsTable);
+  return { allTags };
 }
 
-export default function CreateQuestion({ actionData }: Route.ComponentProps) {
+export default function CreateQuestion({
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
   const [titleInput, setTitleInput] = useState("");
   const [contentInput, setContentInput] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const allTags = loaderData?.allTags ?? [];
+
+  const toggleTag = (tagName: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName],
+    );
+  };
 
   useEffect(() => {
     if (!actionData?.success) return;
 
     setTitleInput("");
     setContentInput("");
+    setSelectedTags([]);
     setShowSuccess(true);
 
     const timer = setTimeout(() => setShowSuccess(false), 3000);
@@ -110,9 +131,30 @@ export default function CreateQuestion({ actionData }: Route.ComponentProps) {
             />
           </div>
 
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => (
+              <button
+                key={tag.name}
+                type="button"
+                onClick={() => toggleTag(tag.name)}
+                className={`px-3 py-1 rounded-full text-sm transition ${
+                  selectedTags.includes(tag.name)
+                    ? "bg-blue-500 text-white"
+                    : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                }`}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+
           {actionData?.error && (
             <span className="text-red-400 text-sm">{actionData.error}</span>
           )}
+
+          {selectedTags.map((t) => (
+            <input key={t} type="hidden" name="tags" value={t} />
+          ))}
 
           <button
             type="submit"
