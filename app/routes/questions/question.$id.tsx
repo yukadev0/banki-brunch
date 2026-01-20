@@ -83,11 +83,28 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     question.createdByUserId,
   );
 
-  return { question, questionAuthor, answers, session };
+  const questionUpvotes = await QuestionsRepository.getUpvotes(
+    context.db,
+    Number(params.id),
+  );
+
+  const questionDownvotes = await QuestionsRepository.getDownvotes(
+    context.db,
+    Number(params.id),
+  );
+
+  return {
+    question,
+    questionAuthor,
+    answers,
+    session,
+    questionVote: questionUpvotes - questionDownvotes,
+  };
 }
 
 export default function QuestionPage({ loaderData }: Route.ComponentProps) {
-  const { question, questionAuthor, answers, session } = loaderData;
+  const { question, questionAuthor, answers, session, questionVote } =
+    loaderData;
   const [answerInput, setAnswerInput] = useState("");
 
   useEffect(() => {
@@ -112,9 +129,17 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
 
         <div className="flex gap-6">
           <UpvoteDownvote
-            display={0}
+            display={questionVote}
             state="unvoted"
-            onUpvoteClick={() => console.log("upvote")}
+            onUpvoteClick={async () => {
+              await fetch(`/questions/api/vote`, {
+                method: "POST",
+                body: JSON.stringify({
+                  questionId: question.id,
+                  voteType: "up",
+                }),
+              });
+            }}
             onDownvoteClick={() => console.log("downvote")}
           />
 

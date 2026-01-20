@@ -2,24 +2,6 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { user } from "~/db/schema";
 
-// export const usersTable = sqliteTable("users", {
-//   id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
-
-//   discordId: text("discord_id").unique(),
-//   username: text("username").notNull(),
-//   avatarUrl: text("avatar_url"),
-
-//   role: text("role", {
-//     enum: ["user", "admin", "moderator"],
-//   })
-//     .notNull()
-//     .default("user"),
-
-//   createdAt: integer("created_at", { mode: "timestamp" })
-//     .notNull()
-//     .default(new Date()),
-// });
-
 export type UserSelectArgs = typeof user.$inferSelect;
 export type UserInsertArgs = typeof user.$inferInsert;
 

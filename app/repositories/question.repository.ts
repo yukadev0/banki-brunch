@@ -1,6 +1,6 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { user } from "~/db/schema";
 import { tagsTable } from "./tags.repository";
 
@@ -25,6 +25,20 @@ export const questionsTable = sqliteTable("questions", {
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
+});
+
+export const questionVotesTable = sqliteTable("question_votes", {
+  questionId: integer("question_id")
+    .notNull()
+    .references(() => questionsTable.id, { onDelete: "cascade" }),
+
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  vote_type: text("vote_type", {
+    enum: ["upvote", "downvote"],
+  }).notNull(),
 });
 
 export const questionTagsTable = sqliteTable("question_tags", {
@@ -52,7 +66,7 @@ export const QuestionsRepository = {
       .innerJoin(user, eq(user.id, questionsTable.createdByUserId))
       .innerJoin(
         questionTagsTable,
-        eq(questionTagsTable.questionId, questionsTable.id),
+        eq(questionsTable.id, questionTagsTable.questionId),
       );
 
     return rows.map((row) => ({
@@ -109,12 +123,9 @@ export const QuestionsRepository = {
 
     const id = (await db.insert(questionsTable).values(data)).meta.last_row_id;
 
-    if (data.tags.length > 0) {
-      await db
-        .update(questionTagsTable)
-        .set({ tags: data.tags })
-        .where(eq(questionTagsTable.questionId, id));
-    }
+    await db
+      .insert(questionTagsTable)
+      .values({ questionId: id, tags: data.tags || [] });
   },
 
   async update(
@@ -141,6 +152,74 @@ export const QuestionsRepository = {
       .update(questionsTable)
       .set(questionUpdate)
       .where(eq(questionsTable.id, id));
+  },
+
+  async getUpvotes(db: DrizzleD1Database<any>, questionId: number) {
+    const votes = await db
+      .select()
+      .from(questionVotesTable)
+      .where(
+        and(
+          eq(questionVotesTable.vote_type, "upvote"),
+          eq(questionVotesTable.questionId, questionId),
+        ),
+      );
+
+    return votes.length;
+  },
+
+  async getDownvotes(db: DrizzleD1Database<any>, questionId: number) {
+    const votes = await db
+      .select()
+      .from(questionVotesTable)
+      .where(
+        and(
+          eq(questionVotesTable.vote_type, "downvote"),
+          eq(questionVotesTable.questionId, questionId),
+        ),
+      );
+
+    return votes.length;
+  },
+
+  async upvote(db: DrizzleD1Database<any>, questionId: number, userId: string) {
+    const [vote] = await db
+      .select()
+      .from(questionVotesTable)
+      .where(
+        and(
+          eq(questionVotesTable.questionId, questionId),
+          eq(questionVotesTable.userId, userId),
+        ),
+      );
+
+    if (!vote) {
+      await db
+        .insert(questionVotesTable)
+        .values({ questionId, userId, vote_type: "upvote" });
+    }
+  },
+
+  async downvote(
+    db: DrizzleD1Database<any>,
+    questionId: number,
+    userId: string,
+  ) {
+    const [vote] = await db
+      .select()
+      .from(questionVotesTable)
+      .where(
+        and(
+          eq(questionVotesTable.questionId, questionId),
+          eq(questionVotesTable.userId, userId),
+        ),
+      );
+
+    if (!vote) {
+      await db
+        .insert(questionVotesTable)
+        .values({ questionId, userId, vote_type: "downvote" });
+    }
   },
 
   async delete(db: DrizzleD1Database<any>, id: number) {

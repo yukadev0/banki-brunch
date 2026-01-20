@@ -31,10 +31,10 @@ export default [
       route(":id/edit", "routes/answers/answer.edit.$id.tsx"),
 
       route("answers.json", "routes/answers/answers.json.tsx"),
+    ]),
 
-      ...prefix("api", [
-        route("vote", "routes/questions/api/questions.vote.tsx"),
-      ]),
+    ...prefix("api", [
+      route("vote", "routes/questions/api/questions.vote.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
