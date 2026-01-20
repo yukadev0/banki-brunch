@@ -15,6 +15,11 @@ export default [
     route(":id", "routes/users/user.$id.tsx"),
   ]),
 
+  ...prefix("tags", [
+    index("routes/tags/tags.tsx"),
+    route("create", "routes/tags/create.tag.tsx"),
+  ]),
+
   ...prefix("questions", [
     index("routes/questions/questions.tsx"),
     route(":id", "routes/questions/question.$id.tsx"),

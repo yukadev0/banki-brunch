@@ -3,6 +3,7 @@ import { AnswersRepository } from "~/repositories/answer.repository";
 import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/answer.$id";
 import { createAuth } from "~/lib/auth.server";
+import UpvoteDownvote from "~/components/UpvoteDownvote";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Answer: ${params.id}` }];
@@ -101,12 +102,13 @@ export default function AnswerPage({
           <span>Author: {user ? user.name : "Anonymous"}</span>
         </div>
 
-        <div className="mt-6 flex justify-between items-center">
-          <div className="flex flex-col items-center text-sm text-gray-400 gap-2">
-            <button className="hover:text-green-500 transition">▲</button>
-            <span className="text-xl font-semibold text-white">0</span>
-            <button className="hover:text-red-500 transition">▼</button>
-          </div>
+        <div className="mt-6 flex justify-between items-end">
+          <UpvoteDownvote
+            display={0}
+            state="unvoted"
+            onUpvoteClick={() => console.log("upvote")}
+            onDownvoteClick={() => console.log("downvote")}
+          />
 
           {session?.user.id === answer.createdByUserId && (
             <div className="flex gap-2">

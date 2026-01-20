@@ -5,6 +5,7 @@ import { QuestionsRepository } from "~/repositories/question.repository";
 import { UsersRepository } from "~/repositories/user.repository";
 import { AnswersRepository } from "~/repositories/answer.repository";
 import { createAuth } from "~/lib/auth.server";
+import UpvoteDownvote from "~/components/UpvoteDownvote";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Question: ${params.id}` }];
@@ -88,9 +89,6 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   const { question, questionAuthor, answers, session } = loaderData;
   const [answerInput, setAnswerInput] = useState("");
 
-  console.log(question);
-  console.log(session?.user);
-
   useEffect(() => {
     document.title = `Question: ${question.title}`;
   }, [question]);
@@ -112,27 +110,17 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
         <h1 className="text-2xl font-semibold mb-6">{question.title}</h1>
 
         <div className="flex gap-6">
-          <div className="flex flex-col items-center gap-2 text-slate-400">
-            <button className="hover:text-blue-400">▲</button>
-            <span className="text-lg font-medium">0</span>
-            <button className="hover:text-blue-400">▼</button>
-          </div>
+          <UpvoteDownvote
+            display={0}
+            state="unvoted"
+            onUpvoteClick={() => console.log("upvote")}
+            onDownvoteClick={() => console.log("downvote")}
+          />
 
           <div className="flex-1 flex flex-col gap-4">
             <p className="whitespace-pre-wrap leading-relaxed text-slate-200">
               {question.content}
             </p>
-
-            <div className="flex flex-wrap gap-2">
-              {question.tags.map((tag: string) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-200"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
 
             <div className="flex gap-2 items-center justify-center rounded-lg self-end text-xs text-slate-400 bg-slate-900 p-3">
               {questionAuthor.image && (
@@ -192,13 +180,12 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
                 key={answer.id}
                 className="flex gap-6 bg-slate-800 border border-slate-800 rounded-xl p-6"
               >
-                <div className="flex flex-col items-center gap-2 text-slate-400">
-                  <button className="hover:text-blue-400">▲</button>
-                  <span className="text-sm font-medium">
-                    {answer.upvotes - answer.downvotes}
-                  </span>
-                  <button className="hover:text-blue-400">▼</button>
-                </div>
+                <UpvoteDownvote
+                  display={0}
+                  state="unvoted"
+                  onUpvoteClick={() => console.log("upvote")}
+                  onDownvoteClick={() => console.log("downvote")}
+                />
 
                 <div className="flex flex-col flex-1">
                   <div className="flex gap-4">

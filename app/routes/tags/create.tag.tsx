@@ -1,21 +1,20 @@
-import { useState, useEffect } from "react";
-import { Form, Link, redirect } from "react-router";
-import { QuestionsRepository } from "~/repositories/question.repository";
-import type { Route } from "./+types/create.question";
 import { createAuth } from "~/lib/auth.server";
+import { Form, Link, redirect } from "react-router";
+import { TagsRepository } from "~/repositories/tags.repository";
+import { useEffect, useState } from "react";
+import type { Route } from "./+types/create.tag";
 
 export function meta() {
-  return [{ title: "Create Question" }];
+  return [{ title: "Create Tag" }];
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
 
-  const title = formData.get("title");
-  const content = formData.get("content");
+  const tagName = formData.get("tag-name");
 
-  if (!title || !content) {
-    return { error: "All fields are required" };
+  if (!tagName) {
+    return { error: "Tag name is required" };
   }
 
   const session = await createAuth(context.cloudflare.env).api.getSession({
@@ -26,10 +25,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     return redirect("/login");
   }
 
-  await QuestionsRepository.create(context.db, {
-    title: title as string,
-    content: content as string,
-    createdByUserId: session.user.id,
+  await TagsRepository.create(context.db, {
+    name: tagName.toString(),
   });
 
   return { success: true };
@@ -45,16 +42,14 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   }
 }
 
-export default function CreateQuestion({ actionData }: Route.ComponentProps) {
-  const [titleInput, setTitleInput] = useState("");
-  const [contentInput, setContentInput] = useState("");
+export default function CreateTag({ actionData }: Route.ComponentProps) {
+  const [tagNameInput, setTagNameInput] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (!actionData?.success) return;
 
-    setTitleInput("");
-    setContentInput("");
+    setTagNameInput("");
     setShowSuccess(true);
 
     const timer = setTimeout(() => setShowSuccess(false), 3000);
@@ -64,48 +59,34 @@ export default function CreateQuestion({ actionData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen text-slate-100 py-10 flex flex-col gap-6 items-center justify-center">
       <Link
-        to="/questions"
+        to="/tags"
         className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"
       >
-        Back to Questions
+        Back to Tags
       </Link>
 
       {showSuccess && (
         <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg">
-          Question created successfully!
+          Tag created successfully!
         </div>
       )}
 
       <div className="w-full max-w-xl rounded-2xl bg-slate-800 border border-slate-700 p-8 shadow-lg">
         <h1 className="text-3xl font-semibold text-center mb-8">
-          Create a New Question
+          Create a New Tag
         </h1>
 
         <Form method="post" className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="title">
-              Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={titleInput}
-              onChange={(e) => setTitleInput(e.target.value)}
-              className="hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="content">
-              Content
+            <label className="text-sm font-medium" htmlFor="tag-name">
+              Tag Name
             </label>
             <textarea
-              name="content"
-              id="content"
+              name="tag-name"
+              id="tag-name"
               rows={6}
-              value={contentInput}
-              onChange={(e) => setContentInput(e.target.value)}
+              value={tagNameInput}
+              onChange={(e) => setTagNameInput(e.target.value)}
               className="hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
@@ -118,7 +99,7 @@ export default function CreateQuestion({ actionData }: Route.ComponentProps) {
             type="submit"
             className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
           >
-            Create Question
+            Create Tag
           </button>
         </Form>
       </div>

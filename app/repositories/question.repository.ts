@@ -9,8 +9,6 @@ export const questionsTable = sqliteTable("questions", {
   title: text("title").notNull(),
   content: text("content").notNull(),
 
-  tags: text("tags", { mode: "json" }).$type<string[]>().notNull().default([]),
-
   status: text("status", {
     enum: ["pending", "approved", "rejected"],
   })

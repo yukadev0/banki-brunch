@@ -54,12 +54,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const title = formData.get("title");
   const content = formData.get("content");
-  const tags = formData.getAll("tags");
 
   await QuestionsRepository.update(context.db, questionId, {
     title: title as string,
     content: content as string,
-    tags: tags as string[],
     createdByUserId: session.user.id,
   });
 
@@ -69,7 +67,6 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 export default function EditQuestion({ loaderData }: Route.ComponentProps) {
   const { question } = loaderData;
 
-  const [tags, setTags] = useState<string[]>(question.tags ?? []);
   const [tagInput, setTagInput] = useState("");
 
   function addTag(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -78,14 +75,8 @@ export default function EditQuestion({ loaderData }: Route.ComponentProps) {
 
     const value = tagInput.trim();
     if (!value) return;
-    if (tags.includes(value)) return;
 
-    setTags([...tags, value]);
     setTagInput("");
-  }
-
-  function removeTag(tag: string) {
-    setTags(tags.filter((t: string) => t !== tag));
   }
 
   return (
@@ -118,26 +109,6 @@ export default function EditQuestion({ loaderData }: Route.ComponentProps) {
 
           <div>
             <h3 className="text-sm font-semibold text-gray-300 mb-2">Tags</h3>
-
-            <div className="flex flex-wrap gap-2 mb-3">
-              {tags.map((tag: string) => (
-                <span
-                  key={tag}
-                  className="flex items-center gap-2 px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-200"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    ×
-                  </button>
-
-                  <input type="hidden" name="tags" value={tag} />
-                </span>
-              ))}
-            </div>
 
             <input
               type="text"

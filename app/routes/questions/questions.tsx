@@ -61,9 +61,9 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
               .map((question: GetAllQuestionsArgs[0]) => (
                 <li
                   key={question.id}
-                  className="bg-gray-800 rounded-lg border border-gray-700 p-6 hover:bg-gray-700 transition"
+                  className="bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 transition"
                 >
-                  <Link to={`./${question.id}`} className="block">
+                  <Link to={`./${question.id}`} className="block p-6">
                     <div className="flex items-center mb-4">
                       <div className="flex-1">
                         <h2 className="text-2xl font-semibold text-gray-200">
@@ -76,17 +76,6 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
                     </div>
 
                     <div className="flex items-center justify-between mt-4">
-                      <div className="flex gap-2">
-                        {question.tags?.map((tag) => (
-                          <span
-                            key={tag}
-                            className="bg-gray-700 text-sm px-3 py-1 rounded-lg"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
                       <div className="text-xs text-gray-400">
                         <span>
                           Asked{" "}
@@ -108,7 +97,7 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
       {session && (
         <Link
           to="./create"
-          className="mt-6 inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg text-lg"
+          className="mt-6 bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg"
         >
           Create Question
         </Link>
