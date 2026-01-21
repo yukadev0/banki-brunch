@@ -10,33 +10,33 @@ export default [
   route("login", "./routes/login.tsx"),
   route("api/auth/*", "./routes/auth.tsx"),
 
-  ...prefix("users", [
-    index("routes/users/users.tsx"),
-    route(":id", "routes/users/user.$id.tsx"),
+  route("test", "routes/test.tsx"),
+
+  ...prefix("api", [
+    ...prefix("question", [route("vote", "routes/api/question/vote.tsx")]),
+
+    ...prefix("answer", [route("vote", "routes/api/answer/vote.tsx")]),
   ]),
 
-  ...prefix("tags", [
-    index("routes/tags/tags.tsx"),
-    route("create", "routes/tags/create.tag.tsx"),
+  ...prefix("user", [
+    index("routes/user/getAll.tsx"),
+    route(":id", "routes/user/get.tsx"),
   ]),
 
-  ...prefix("answers", [
-    ...prefix("api", [route("vote", "routes/answers/api/answer.vote.tsx")]),
+  ...prefix("tag", [
+    index("routes/tag/getAll.tsx"),
+    route("create", "routes/tag/create.tsx"),
   ]),
 
-  ...prefix("questions", [
-    index("routes/questions/questions.tsx"),
-    route(":id", "routes/questions/question.$id.tsx"),
-    route("create", "routes/questions/create.question.tsx"),
-    route(":id/edit", "routes/questions/question.edit.$id.tsx"),
+  ...prefix("question", [
+    index("routes/question/getAll.tsx"),
+    route(":id", "routes/question/get.tsx"),
+    route("create", "routes/question/create.tsx"),
+    route(":id/edit", "routes/question/edit.tsx"),
 
-    ...prefix(":questionId/answers", [
-      route(":id", "routes/answers/answer.$id.tsx"),
-      route(":id/edit", "routes/answers/answer.edit.$id.tsx"),
-
-      route("answers.json", "routes/answers/answers.json.tsx"),
+    ...prefix(":questionId/answer", [
+      route(":id", "routes/answer/get.tsx"),
+      route(":id/edit", "routes/answer/edit.tsx"),
     ]),
-
-    ...prefix("api", [route("vote", "routes/questions/api/question.vote.tsx")]),
   ]),
 ] satisfies RouteConfig;

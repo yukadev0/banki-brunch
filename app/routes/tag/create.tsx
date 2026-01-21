@@ -1,8 +1,8 @@
 import { createAuth } from "~/lib/auth.server";
 import { Form, Link, redirect } from "react-router";
 import { useEffect, useState } from "react";
-import type { Route } from "./+types/create.tag";
 import { TagsRepository } from "~/repositories/tag/repository";
+import type { Route } from "./+types/create";
 
 export function meta() {
   return [{ title: "Create Tag" }];

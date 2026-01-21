@@ -1,8 +1,8 @@
 import { Link } from "react-router";
-import type { Route } from "./+types/tags";
 import { createAuth } from "~/lib/auth.server";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { TagsSelectArgs } from "~/repositories/tag/types";
+import type { Route } from "./+types/getAll";
 
 export function meta() {
   return [{ title: "Tags" }];

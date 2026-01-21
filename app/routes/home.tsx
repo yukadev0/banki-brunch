@@ -42,24 +42,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       <div className="flex gap-2 flex-wrap justify-center">
         <Link
-          to="/users"
+          to="/user"
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
         >
           Users
         </Link>
 
         <Link
-          to="/questions"
+          to="/question"
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
         >
           Questions
         </Link>
 
         <Link
-          to="/tags"
+          to="/tag"
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
         >
           Tags
+        </Link>
+
+        <Link
+          to="/test"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
+        >
+          Test
         </Link>
       </div>
 

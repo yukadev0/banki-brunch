@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Form, Link, redirect } from "react-router";
-import type { Route } from "./+types/create.question";
 import { createAuth } from "~/lib/auth.server";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { tagsSchema } from "~/db/tag-schema";
+import type { Route } from "./+types/create";
 
 export function meta() {
   return [{ title: "Create Question" }];

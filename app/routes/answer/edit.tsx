@@ -1,8 +1,8 @@
 import { createAuth } from "~/lib/auth.server";
 import { Form, Link, redirect } from "react-router";
 import { useState } from "react";
-import type { Route } from "./+types/answer.edit.$id";
 import { AnswersRepository } from "~/repositories/answer/repository";
+import type { Route } from "./+types/edit";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Edit Answer" }];
@@ -57,7 +57,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     questionId: Number(params.questionId),
   });
 
-  return redirect(`/questions/${params.questionId}`);
+  return redirect(`/question/${params.questionId}`);
 }
 
 export default function EditAnswer({ loaderData }: Route.ComponentProps) {
@@ -67,7 +67,7 @@ export default function EditAnswer({ loaderData }: Route.ComponentProps) {
   return (
     <div className="text-gray-100 flex flex-col items-center justify-center gap-8 py-12">
       <Link
-        to={`/questions/${answer.questionId}`}
+        to={`/question/${answer.questionId}`}
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
       >
         Back

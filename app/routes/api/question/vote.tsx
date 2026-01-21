@@ -1,7 +1,7 @@
 import { redirect } from "react-router";
 import { createAuth } from "~/lib/auth.server";
-import type { Route } from "./+types/answer.vote";
-import { AnswersRepository } from "~/repositories/answer/repository";
+import { QuestionsRepository } from "~/repositories/question/repository";
+import type { Route } from "./+types/vote";
 
 export async function action({ context, request }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
@@ -13,21 +13,22 @@ export async function action({ context, request }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  const answerId = formData.get("answerId");
-  const answer = await AnswersRepository.getById(context.db, Number(answerId));
+  const questionId = formData.get("questionId");
+  const voteType = formData.get("voteType");
 
-  if (!answer) {
-    throw new Response("Answer not found", { status: 404 });
+  const question = await QuestionsRepository.getById(
+    context.db,
+    Number(questionId),
+  );
+
+  if (!question) {
+    throw new Response("Question not found", { status: 404 });
   }
 
-  const voteType = formData.get("voteType");
-  const questionId = formData.get("questionId");
-
-  await AnswersRepository.vote(
+  await QuestionsRepository.vote(
     context.db,
-    session.user.id,
-    Number(answerId),
     Number(questionId),
+    session.user.id,
     voteType as "upvote" | "downvote",
   );
 }

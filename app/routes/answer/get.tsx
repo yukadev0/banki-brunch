@@ -1,9 +1,9 @@
 import { Form, Link, redirect, useFetcher } from "react-router";
-import type { Route } from "./+types/answer.$id";
 import { createAuth } from "~/lib/auth.server";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import { useCallback, useEffect, useState } from "react";
+import type { Route } from "./+types/get";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Answer: ${params.id}` }];
@@ -58,7 +58,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 
   await AnswersRepository.delete(context.db, Number(id));
 
-  return redirect(`/questions/${params.questionId}`);
+  return redirect(`/question/${params.questionId}`);
 }
 
 export default function AnswerPage({
@@ -79,7 +79,7 @@ export default function AnswerPage({
         voteType: "upvote",
         questionId: params.questionId,
       },
-      { method: "post", action: "/answers/api/vote" },
+      { method: "post", action: "/api/answer/vote" },
     );
   }, [fetcher, answer.id]);
 
@@ -90,7 +90,7 @@ export default function AnswerPage({
         voteType: "downvote",
         questionId: params.questionId,
       },
-      { method: "post", action: "/answers/api/vote" },
+      { method: "post", action: "/api/answer/vote" },
     );
   }, [fetcher, answer.id]);
 
@@ -107,7 +107,7 @@ export default function AnswerPage({
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10">
       <Link
-        to={`/questions/${answer.questionId}/answers`}
+        to={`/question/${answer.questionId}/answers`}
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
       >
         Back to answers
@@ -146,7 +146,7 @@ export default function AnswerPage({
             <div className="flex gap-2">
               <div className="flex gap-4">
                 <Link
-                  to={`/questions/${params.questionId}/answers/${answer.id}/edit`}
+                  to={`/question/${params.questionId}/answer/${answer.id}/edit`}
                   className="text-sm text-blue-400 hover:text-blue-300"
                 >
                   Edit

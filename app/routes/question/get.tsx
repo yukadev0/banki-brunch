@@ -1,10 +1,10 @@
 import { Form, Link, redirect, useFetcher } from "react-router";
 import { useCallback, useEffect, useState } from "react";
-import type { Route } from "./+types/question.$id";
 import { createAuth } from "~/lib/auth.server";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { AnswersRepository } from "~/repositories/answer/repository";
+import type { Route } from "./+types/get";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Question: ${params.id}` }];
@@ -55,7 +55,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         createdByUserId: session.user.id,
       });
 
-      return redirect(`/questions/${questionId}`);
+      return redirect(`/question/${questionId}`);
 
     default:
       throw new Response("Invalid intent", { status: 400 });
@@ -115,14 +115,14 @@ export function AnswerItem({
   const onUpvote = useCallback(() => {
     fetcher.submit(
       { answerId: answer.id, voteType: "upvote", questionId: questionId },
-      { method: "post", action: "/answers/api/vote" },
+      { method: "post", action: "/api/answer/vote" },
     );
   }, [fetcher, answer.id]);
 
   const onDownvote = useCallback(() => {
     fetcher.submit(
       { answerId: answer.id, voteType: "downvote", questionId: questionId },
-      { method: "post", action: "/answers/api/vote" },
+      { method: "post", action: "/api/answer/vote" },
     );
   }, [fetcher, answer.id]);
 
@@ -175,7 +175,7 @@ export function AnswerItem({
           <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
             <div className="flex gap-4">
               <Link
-                to={`/questions/${questionId}/answers/${answer.id}`}
+                to={`/question/${questionId}/answer/${answer.id}`}
                 className="text-sm text-blue-400 hover:text-blue-300"
               >
                 View
@@ -249,14 +249,14 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   const onUpvote = useCallback(() => {
     fetcher.submit(
       { questionId: question.id, voteType: "upvote" },
-      { method: "post", action: "/questions/api/vote" },
+      { method: "post", action: "/api/question/vote" },
     );
   }, [fetcher, question.id]);
 
   const onDownvote = useCallback(() => {
     fetcher.submit(
       { questionId: question.id, voteType: "downvote" },
-      { method: "post", action: "/questions/api/vote" },
+      { method: "post", action: "/api/question/vote" },
     );
   }, [fetcher, question.id]);
 
@@ -320,7 +320,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
           <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
             <div className="flex gap-4">
               <Link
-                to={`/questions/${question.id}/edit`}
+                to={`/question/${question.id}/edit`}
                 className="text-sm text-blue-400 hover:text-blue-300"
               >
                 Edit
