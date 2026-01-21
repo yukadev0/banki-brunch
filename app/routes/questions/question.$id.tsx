@@ -78,33 +78,32 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     Number(params.id),
   ); //.sort((a, b) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes));
 
-  const questionAuthor = await UsersRepository.getById(
+  const questionVoteCount = await QuestionsRepository.getVoteCount(
     context.db,
+    Number(params.id),
+  );
+
+  const vote = await QuestionsRepository.getVote(
+    context.db,
+    question.id,
     question.createdByUserId,
   );
 
-  const questionUpvotes = await QuestionsRepository.getUpvotes(
-    context.db,
-    Number(params.id),
-  );
-
-  const questionDownvotes = await QuestionsRepository.getDownvotes(
-    context.db,
-    Number(params.id),
-  );
-
   return {
+    vote,
     question,
-    questionAuthor,
     answers,
     session,
-    questionVote: questionUpvotes - questionDownvotes,
+    questionVoteCount,
   };
 }
 
 export default function QuestionPage({ loaderData }: Route.ComponentProps) {
-  const { question, questionAuthor, answers, session, questionVote } =
-    loaderData;
+  const { vote, question, answers, session, questionVoteCount } = loaderData;
+
+  const [voteState, setVoteState] = useState<
+    "upvoted" | "downvoted" | "unvoted"
+  >("unvoted");
 
   const fetcher = useFetcher();
   const [answerInput, setAnswerInput] = useState("");
@@ -117,14 +116,38 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
     setAnswerInput("");
   }, [answers]);
 
-  const upvoteCallback = useCallback(() => {
+  useEffect(() => {
+    if (vote?.vote_type === "upvote") {
+      setVoteState("upvoted");
+    } else if (vote?.vote_type === "downvote") {
+      setVoteState("downvoted");
+    } else {
+      setVoteState("unvoted");
+    }
+  }, [vote]);
+
+  const upvoteQuestionCallback = useCallback(() => {
     fetcher.submit(
       { questionId: question.id, voteType: "upvote" },
       { method: "post", action: "/questions/api/vote" },
     );
   }, [fetcher, question.id]);
 
-  const downvoteCallback = useCallback(() => {
+  const downvoteQuestionCallback = useCallback(() => {
+    fetcher.submit(
+      { questionId: question.id, voteType: "downvote" },
+      { method: "post", action: "/questions/api/vote" },
+    );
+  }, [fetcher, question.id]);
+
+  const upvoteAnswerCallback = useCallback(() => {
+    fetcher.submit(
+      { questionId: question.id, voteType: "upvote" },
+      { method: "post", action: "/questions/api/vote" },
+    );
+  }, [fetcher, question.id]);
+
+  const downvoteAnswerCallback = useCallback(() => {
     fetcher.submit(
       { questionId: question.id, voteType: "downvote" },
       { method: "post", action: "/questions/api/vote" },
@@ -145,10 +168,10 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
 
         <div className="flex gap-6">
           <UpvoteDownvote
-            display={questionVote}
-            state="unvoted"
-            onUpvoteClick={upvoteCallback}
-            onDownvoteClick={downvoteCallback}
+            display={questionVoteCount}
+            state={voteState}
+            onUpvoteClick={upvoteQuestionCallback}
+            onDownvoteClick={downvoteQuestionCallback}
           />
 
           <div className="flex-1 flex flex-col gap-4">
@@ -168,10 +191,10 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
             </div>
 
             <div className="flex gap-2 items-center justify-center rounded-lg self-end text-xs text-slate-400 bg-slate-900 p-3">
-              {questionAuthor.image && (
+              {question.author.image && (
                 <img
-                  src={questionAuthor.image}
-                  alt={questionAuthor.name}
+                  src={question.author.image}
+                  alt={question.author.name}
                   className="w-10 h-10 rounded-full"
                 />
               )}
@@ -180,7 +203,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
                   asked {new Date(question.createdAt).toLocaleDateString()}
                 </div>
                 <div className="text-slate-200 font-medium">
-                  {questionAuthor.name || "Anonymous"}
+                  {question.author.name || "Anonymous"}
                 </div>
               </div>
             </div>
@@ -226,10 +249,10 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
                 className="flex gap-6 bg-slate-800 border border-slate-800 rounded-xl p-6"
               >
                 <UpvoteDownvote
-                  display={0}
-                  state="unvoted"
-                  onUpvoteClick={() => console.log("upvote")}
-                  onDownvoteClick={() => console.log("downvote")}
+                  display={questionVoteCount}
+                  state={voteState}
+                  onUpvoteClick={upvoteQuestionCallback}
+                  onDownvoteClick={downvoteQuestionCallback}
                 />
 
                 <div className="flex flex-col flex-1">

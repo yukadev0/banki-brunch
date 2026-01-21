@@ -68,6 +68,35 @@ export const QuestionsRepository = {
     return question;
   },
 
+  async getVote(
+    db: DrizzleD1Database<any>,
+    questionId: number,
+    userId: string,
+  ) {
+    const [vote] = await db
+      .select()
+      .from(questionVotesSchema)
+      .where(
+        and(
+          eq(questionVotesSchema.questionId, questionId),
+          eq(questionVotesSchema.userId, userId),
+        ),
+      );
+
+    return vote;
+  },
+
+  async getVoteCount(db: DrizzleD1Database<any>, questionId: number) {
+    const [{ count }] = await db
+      .select({
+        count: sql<number>`SUM(CASE WHEN ${questionVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${questionVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
+      })
+      .from(questionVotesSchema)
+      .where(eq(questionVotesSchema.questionId, questionId));
+
+    return count || 0;
+  },
+
   async create(
     db: DrizzleD1Database<any>,
     data: QuestionInsertArgs & { tags: string[] },
@@ -109,32 +138,8 @@ export const QuestionsRepository = {
       .where(eq(questionsSchema.id, id));
   },
 
-  async getUpvotes(db: DrizzleD1Database<any>, questionId: number) {
-    const votes = await db
-      .select()
-      .from(questionVotesSchema)
-      .where(
-        and(
-          eq(questionVotesSchema.vote_type, "upvote"),
-          eq(questionVotesSchema.questionId, questionId),
-        ),
-      );
-
-    return votes.length;
-  },
-
-  async getDownvotes(db: DrizzleD1Database<any>, questionId: number) {
-    const votes = await db
-      .select()
-      .from(questionVotesSchema)
-      .where(
-        and(
-          eq(questionVotesSchema.vote_type, "downvote"),
-          eq(questionVotesSchema.questionId, questionId),
-        ),
-      );
-
-    return votes.length;
+  async delete(db: DrizzleD1Database<any>, id: number) {
+    await db.delete(questionsSchema).where(eq(questionsSchema.id, id));
   },
 
   async vote(
@@ -182,9 +187,5 @@ export const QuestionsRepository = {
           ),
         );
     }
-  },
-
-  async delete(db: DrizzleD1Database<any>, id: number) {
-    await db.delete(questionsSchema).where(eq(questionsSchema.id, id));
   },
 };

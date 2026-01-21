@@ -31,6 +31,8 @@ export default [
       route(":id/edit", "routes/answers/answer.edit.$id.tsx"),
 
       route("answers.json", "routes/answers/answers.json.tsx"),
+
+      ...prefix("api", [route("vote", "routes/answers/api/answer.vote.tsx")]),
     ]),
 
     ...prefix("api", [route("vote", "routes/questions/api/question.vote.tsx")]),

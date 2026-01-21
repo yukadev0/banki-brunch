@@ -3,7 +3,7 @@ import { createAuth } from "~/lib/auth.server";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import type { Route } from "./+types/question.vote";
 
-export async function action({ context, request }: Route.LoaderArgs) {
+export async function action({ context, request }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
   });

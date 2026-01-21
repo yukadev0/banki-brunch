@@ -12,11 +12,23 @@ export const AnswersRepository = {
 
   async getById(db: DrizzleD1Database<any>, id: number) {
     const [answer] = await db
-      .select()
+      .select({
+        answer: answersSchema,
+        author: user,
+      })
       .from(answersSchema)
-      .where(eq(answersSchema.id, id));
+      .where(eq(answersSchema.id, id))
+      .limit(1)
+      .innerJoin(user, eq(user.id, answersSchema.createdByUserId));
 
-    return answer ?? null;
+    if (!answer) {
+      throw new Error("Question not found");
+    }
+
+    return {
+      ...answer.answer,
+      author: answer.author,
+    };
   },
 
   async getByQuestionId(db: DrizzleD1Database<any>, questionId: number) {
@@ -27,27 +39,19 @@ export const AnswersRepository = {
     }
 
     const answers = await db
-      .select()
+      .select({
+        answer: answersSchema,
+        author: user,
+      })
       .from(answersSchema)
-      .where(eq(answersSchema.questionId, questionId));
+      .where(eq(answersSchema.questionId, questionId))
+      .limit(1)
+      .innerJoin(user, eq(user.id, answersSchema.createdByUserId));
 
-    const answersWithAuthors = await Promise.all(
-      answers.map(async (answer) => {
-        const author = await db
-          .select()
-          .from(user)
-          .where(eq(user.id, answer.createdByUserId))
-          .limit(1)
-          .then(([user]) => user);
-
-        return {
-          ...answer,
-          author,
-        };
-      }),
-    );
-
-    return answersWithAuthors;
+    return answers.map((answer) => ({
+      ...answer.answer,
+      author: answer.author,
+    }));
   },
 
   async getCuratedByQuestionId(db: DrizzleD1Database<any>, questionId: number) {
@@ -71,38 +75,6 @@ export const AnswersRepository = {
 
     await db.insert(answersSchema).values(data);
   },
-
-  async validate(
-    db: DrizzleD1Database<any>,
-    answerId: number,
-    validatedByUserId: number,
-  ) {
-    await db
-      .update(answersSchema)
-      .set({
-        isValidated: true,
-        validatedByUserId,
-      })
-      .where(eq(answersSchema.id, answerId));
-  },
-
-  // async upvote(db: DrizzleD1Database<any>, answerId: number) {
-  //   await db
-  //     .update(answersTable)
-  //     .set({
-  //       upvotes: sql`${answersTable.upvotes} + 1`,
-  //     })
-  //     .where(eq(answersTable.id, answerId));
-  // },
-
-  // async downvote(db: DrizzleD1Database<any>, answerId: number) {
-  //   await db
-  //     .update(answersTable)
-  //     .set({
-  //       downvotes: sql`${answersTable.downvotes} + 1`,
-  //     })
-  //     .where(eq(answersTable.id, answerId));
-  // },
 
   async update(db: DrizzleD1Database<any>, id: number, data: AnswerInsertArgs) {
     const answer = await this.getById(db, id);
