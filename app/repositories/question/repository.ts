@@ -73,7 +73,7 @@ export const QuestionsRepository = {
     questionId: number,
     userId: string,
   ) {
-    const [vote] = await db
+    const votes = await db
       .select()
       .from(questionVotesSchema)
       .where(
@@ -81,9 +81,10 @@ export const QuestionsRepository = {
           eq(questionVotesSchema.questionId, questionId),
           eq(questionVotesSchema.userId, userId),
         ),
-      );
+      )
+      .limit(1);
 
-    return vote;
+    return votes.length > 0 ? votes[0] : null;
   },
 
   async getVoteCount(db: DrizzleD1Database<any>, questionId: number) {

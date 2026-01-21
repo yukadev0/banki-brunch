@@ -72,10 +72,9 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     Number(params.id),
   );
 
-  const answers = await AnswersRepository.getByQuestionId(
-    context.db,
-    Number(params.id),
-  ); //.sort((a, b) => b.upvotes - b.downvotes - (a.upvotes - a.downvotes));
+  const answers = (
+    await AnswersRepository.getByQuestionId(context.db, Number(params.id))
+  ).sort((a, b) => b.voteCount - a.voteCount);
 
   const questionVoteCount = await QuestionsRepository.getVoteCount(
     context.db,
@@ -85,7 +84,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
   const questionVote = await QuestionsRepository.getVote(
     context.db,
     question.id,
-    question.createdByUserId,
+    session?.user?.id || "0",
   );
 
   return {
@@ -128,12 +127,15 @@ export function AnswerItem({
   }, [fetcher, answer.id]);
 
   useEffect(() => {
-    if (answer.vote?.vote_type === "upvote") {
-      setVoteState("upvoted");
-    } else if (answer.vote?.vote_type === "downvote") {
-      setVoteState("downvoted");
-    } else {
+    if (!answer.vote) {
       setVoteState("unvoted");
+      return;
+    }
+
+    if (answer.vote.vote_type === "upvote") {
+      setVoteState("upvoted");
+    } else if (answer.vote.vote_type === "downvote") {
+      setVoteState("downvoted");
     }
   }, [answer.vote]);
 
@@ -232,12 +234,15 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   }, [question]);
 
   useEffect(() => {
-    if (question.vote?.vote_type === "upvote") {
-      setVoteState("upvoted");
-    } else if (question.vote?.vote_type === "downvote") {
-      setVoteState("downvoted");
-    } else {
+    if (question.vote === null) {
       setVoteState("unvoted");
+      return;
+    }
+
+    if (question.vote.vote_type === "upvote") {
+      setVoteState("upvoted");
+    } else if (question.vote.vote_type === "downvote") {
+      setVoteState("downvoted");
     }
   }, [question.vote]);
 
