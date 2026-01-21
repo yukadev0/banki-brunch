@@ -1,7 +1,7 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { questionsSchema } from "./question-schemas";
-import { user } from "./schema";
 import { sql } from "drizzle-orm";
+import { questionsSchema } from "./question";
+import { user } from "../schema";
 
 export const answersSchema = sqliteTable("answers", {
   id: integer("id").primaryKey({ autoIncrement: true }),

@@ -1,19 +1,10 @@
-import { Link, redirect, type LoaderFunctionArgs } from "react-router";
+import { Link, type LoaderFunctionArgs } from "react-router";
 import { UsersRepository } from "~/repositories/user/repository";
 import type { UserSelectArgs } from "~/repositories/user/types";
 import type { Route } from "./+types/getAll";
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Users" }];
-}
-
-export async function action({ request, context }: Route.ActionArgs) {
-  const formData = await request.formData();
-  const id = formData.get("id");
-
-  await UsersRepository.delete(context.db, id as string);
-
-  return redirect("/users");
 }
 
 export async function loader({ context }: Route.LoaderArgs) {

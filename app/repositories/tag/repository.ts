@@ -1,6 +1,7 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { type TagsInsertArgs } from "./types";
-import { tagsSchema } from "~/db/tag-schema";
+import { tagsSchema } from "~/db/schemas/tag";
+import { eq } from "drizzle-orm";
 
 export const TagsRepository = {
   async getAll(db: DrizzleD1Database<any>) {
@@ -13,5 +14,9 @@ export const TagsRepository = {
     }
 
     await db.insert(tagsSchema).values(data);
+  },
+
+  async delete(db: DrizzleD1Database<any>, name: string) {
+    await db.delete(tagsSchema).where(eq(tagsSchema.name, name));
   },
 };

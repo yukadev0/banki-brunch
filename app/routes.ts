@@ -8,14 +8,28 @@ import {
 export default [
   index("routes/home.tsx"),
   route("login", "./routes/login.tsx"),
-  route("api/auth/*", "./routes/auth.tsx"),
-
-  route("test", "routes/test.tsx"),
 
   ...prefix("api", [
-    ...prefix("question", [route("vote", "routes/api/question/vote.tsx")]),
+    route("auth/*", "./routes/auth.tsx"),
 
-    ...prefix("answer", [route("vote", "routes/api/answer/vote.tsx")]),
+    ...prefix("question", [
+      route("vote", "routes/api/question/vote.tsx"),
+      route("create", "routes/api/question/create.tsx"),
+      route("update", "routes/api/question/update.tsx"),
+      route("delete", "routes/api/question/delete.tsx"),
+    ]),
+
+    ...prefix("answer", [
+      route("vote", "routes/api/answer/vote.tsx"),
+      route("create", "routes/api/answer/create.tsx"),
+      route("update", "routes/api/answer/update.tsx"),
+      route("delete", "routes/api/answer/delete.tsx"),
+    ]),
+
+    ...prefix("tag", [
+      route("create", "routes/api/tag/create.tsx"),
+      route("delete", "routes/api/tag/delete.tsx"),
+    ]),
   ]),
 
   ...prefix("user", [

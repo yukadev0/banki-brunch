@@ -1,13 +1,13 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { eq, sql, and } from "drizzle-orm";
 import { user } from "~/db/schema";
+import type { QuestionInsertArgs } from "./types";
 import {
   questionsSchema,
   questionTagsSchema,
   questionVotesSchema,
-} from "~/db/question-schemas";
-import type { QuestionInsertArgs } from "./types";
-import { tagsSchema } from "~/db/tag-schema";
+} from "~/db/schemas/question";
+import { tagsSchema } from "~/db/schemas/tag";
 
 export const QuestionsRepository = {
   async getAll(db: DrizzleD1Database<any>) {
@@ -123,7 +123,7 @@ export const QuestionsRepository = {
     if (tags) {
       const allTags = await db.select().from(tagsSchema);
 
-      const validTags = tags.filter((tag) =>
+      const validTags = tags.filter((tag: any) =>
         allTags.some((t) => t.name === tag),
       );
 

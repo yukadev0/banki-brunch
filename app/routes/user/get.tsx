@@ -1,4 +1,4 @@
-import { Form, Link, redirect } from "react-router";
+import { Link } from "react-router";
 import { useEffect } from "react";
 import { createAuth } from "~/lib/auth.server";
 import { UsersRepository } from "~/repositories/user/repository";
@@ -6,27 +6,6 @@ import type { Route } from "./+types/get";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `User: ${params.id}` }];
-}
-
-export async function action({ request, context }: Route.ActionArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session || !session.user?.id) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
-
-  const formData = await request.formData();
-  const id = formData.get("id");
-
-  if (!id || session.user.id !== id.toString()) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
-
-  await UsersRepository.delete(context.db, id.toString());
-
-  return redirect("/users");
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
@@ -44,7 +23,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 }
 
 export default function GetPage({ loaderData }: Route.ComponentProps) {
-  const { user, session } = loaderData;
+  const { user } = loaderData;
 
   useEffect(() => {
     document.title = `User: ${user.name}`;
@@ -53,7 +32,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-gray-100">
       <Link
-        to="/users"
+        to="/user"
         className="absolute top-4 left-4 text-sm text-blue-500 hover:underline"
       >
         Back to Users
@@ -78,18 +57,6 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
             day: "numeric",
           })}
         </p>
-
-        {session?.user.id == user.id && (
-          <Form method="post" className="flex flex-col items-center gap-6">
-            <input type="hidden" name="id" value={user.id} />
-            <button
-              type="submit"
-              className="text-sm text-red-400 hover:text-red-300 transition"
-            >
-              Delete User
-            </button>
-          </Form>
-        )}
       </div>
     </div>
   );

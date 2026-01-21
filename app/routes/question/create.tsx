@@ -1,41 +1,11 @@
-import { useState, useEffect } from "react";
-import { Form, Link, redirect } from "react-router";
+import { useState, useEffect, useCallback } from "react";
+import { Link, redirect, useFetcher } from "react-router";
 import { createAuth } from "~/lib/auth.server";
-import { QuestionsRepository } from "~/repositories/question/repository";
-import { tagsSchema } from "~/db/tag-schema";
 import type { Route } from "./+types/create";
+import { tagsSchema } from "~/db/schemas/tag";
 
 export function meta() {
   return [{ title: "Create Question" }];
-}
-
-export async function action({ request, context }: Route.ActionArgs) {
-  const formData = await request.formData();
-
-  const title = formData.get("title");
-  const content = formData.get("content");
-  const selectedTags = formData.getAll("tags") as string[];
-
-  if (!title || !content) {
-    return { error: "All fields are required" };
-  }
-
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session) {
-    return redirect("/login");
-  }
-
-  await QuestionsRepository.create(context.db, {
-    title: title as string,
-    content: content as string,
-    createdByUserId: session.user.id,
-    tags: selectedTags,
-  });
-
-  return { success: true };
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
@@ -51,13 +21,10 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   return { allTags };
 }
 
-export default function CreatePage({
-  actionData,
-  loaderData,
-}: Route.ComponentProps) {
+export default function CreatePage({ loaderData }: Route.ComponentProps) {
+  const fetcher = useFetcher();
   const [titleInput, setTitleInput] = useState("");
   const [contentInput, setContentInput] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const allTags = loaderData?.allTags ?? [];
@@ -70,39 +37,42 @@ export default function CreatePage({
     );
   };
 
+  const createQuestion = useCallback(
+    () =>
+      fetcher.submit(
+        {
+          title: titleInput,
+          content: contentInput,
+          tags: JSON.stringify(selectedTags),
+        },
+        { method: "post", action: "/api/question/create" },
+      ),
+    [titleInput, contentInput, selectedTags],
+  );
+
   useEffect(() => {
-    if (!actionData?.success) return;
+    if (fetcher.state !== "loading") return;
 
     setTitleInput("");
     setContentInput("");
     setSelectedTags([]);
-    setShowSuccess(true);
-
-    const timer = setTimeout(() => setShowSuccess(false), 3000);
-    return () => clearTimeout(timer);
-  }, [actionData]);
+  }, [fetcher.state]);
 
   return (
     <div className="min-h-screen text-slate-100 py-10 flex flex-col gap-6 items-center justify-center">
       <Link
-        to="/questions"
+        to="/question"
         className="absolute top-4 left-4 cursor-pointer text-sm text-blue-400 hover:underline"
       >
         Back to Questions
       </Link>
-
-      {showSuccess && (
-        <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg">
-          Question created successfully!
-        </div>
-      )}
 
       <div className="w-full max-w-xl rounded-2xl bg-slate-800 border border-slate-700 p-8 shadow-lg">
         <h1 className="text-3xl font-semibold text-center mb-8">
           Create a New Question
         </h1>
 
-        <Form method="post" className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium" htmlFor="title">
               Title
@@ -148,21 +118,17 @@ export default function CreatePage({
             ))}
           </div>
 
-          {actionData?.error && (
-            <span className="text-red-400 text-sm">{actionData.error}</span>
-          )}
-
           {selectedTags.map((t) => (
             <input key={t} type="hidden" name="tags" value={t} />
           ))}
 
           <button
-            type="submit"
+            onClick={createQuestion}
             className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
           >
             Create Question
           </button>
-        </Form>
+        </div>
       </div>
     </div>
   );

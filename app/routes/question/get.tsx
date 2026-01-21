@@ -5,61 +5,11 @@ import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/get";
+import { AnswerForm } from "./components/AnswerForm";
+import { AnswerItem } from "./components/AnswerItem";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Question: ${params.id}` }];
-}
-
-export async function action({ request, context, params }: Route.ActionArgs) {
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session) {
-    return redirect("/login");
-  }
-
-  switch (intent) {
-    case "delete":
-      const id = formData.get("id");
-      if (!id) {
-        throw new Response("Question id is required", { status: 400 });
-      }
-
-      const question = await QuestionsRepository.getById(
-        context.db,
-        Number(id),
-      );
-
-      if (session.user.id !== question.createdByUserId) {
-        throw new Response("Unauthorized", { status: 401 });
-      }
-
-      await QuestionsRepository.delete(context.db, Number(id));
-      return redirect("/questions");
-
-    case "create-answer":
-      const questionId = params.id;
-      const content = formData.get("content");
-
-      if (!questionId || !content) {
-        throw new Response("Missing required fields", { status: 400 });
-      }
-
-      await AnswersRepository.create(context.db, {
-        questionId: Number(questionId),
-        content: content as string,
-        createdByUserId: session.user.id,
-      });
-
-      return redirect(`/question/${questionId}`);
-
-    default:
-      throw new Response("Invalid intent", { status: 400 });
-  }
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
@@ -96,129 +46,6 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     answers,
     session,
   };
-}
-
-export function AnswerItem({
-  answer,
-  sessionUserId,
-  questionId,
-}: {
-  answer: any;
-  sessionUserId?: string;
-  questionId: number;
-}) {
-  const fetcher = useFetcher();
-  const [voteState, setVoteState] = useState<
-    "upvoted" | "downvoted" | "unvoted"
-  >("unvoted");
-
-  const onUpvote = useCallback(() => {
-    fetcher.submit(
-      { answerId: answer.id, voteType: "upvote", questionId: questionId },
-      { method: "post", action: "/api/answer/vote" },
-    );
-  }, [fetcher, answer.id]);
-
-  const onDownvote = useCallback(() => {
-    fetcher.submit(
-      { answerId: answer.id, voteType: "downvote", questionId: questionId },
-      { method: "post", action: "/api/answer/vote" },
-    );
-  }, [fetcher, answer.id]);
-
-  useEffect(() => {
-    if (!answer.vote) {
-      setVoteState("unvoted");
-      return;
-    }
-
-    if (answer.vote.vote_type === "upvote") {
-      setVoteState("upvoted");
-    } else if (answer.vote.vote_type === "downvote") {
-      setVoteState("downvoted");
-    }
-  }, [answer.vote]);
-
-  return (
-    <div className="flex gap-6 bg-slate-800 border border-slate-800 rounded-xl p-6">
-      <UpvoteDownvote
-        state={voteState}
-        onUpvoteClick={onUpvote}
-        display={answer.voteCount}
-        onDownvoteClick={onDownvote}
-      />
-
-      <div className="flex flex-col flex-1">
-        <p className="whitespace-pre-wrap leading-relaxed text-slate-200">
-          {answer.content}
-        </p>
-
-        <div className="flex gap-2 items-center justify-center rounded-lg self-end text-xs text-slate-400 bg-slate-900 p-3">
-          {answer.author.image && (
-            <img
-              src={answer.author.image}
-              alt={answer.author.name}
-              className="w-10 h-10 rounded-full"
-            />
-          )}
-          <div>
-            <div>
-              answered {new Date(answer.createdAt).toLocaleDateString()}
-            </div>
-            <div className="text-slate-200 font-medium">
-              {answer.author.name || "Anonymous"}
-            </div>
-          </div>
-        </div>
-
-        {sessionUserId === answer.createdByUserId && (
-          <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
-            <div className="flex gap-4">
-              <Link
-                to={`/question/${questionId}/answer/${answer.id}`}
-                className="text-sm text-blue-400 hover:text-blue-300"
-              >
-                View
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function AnswerForm() {
-  const [answerInput, setAnswerInput] = useState("");
-
-  // useEffect(() => {
-  //   setAnswerInput("");
-  // }, []);
-
-  return (
-    <div className="mt-10 mx-auto max-w-5xl bg-slate-800 border border-slate-800 rounded-xl p-6">
-      <h2 className="text-xl font-semibold mb-4">Your Answer</h2>
-
-      <Form method="post" className="flex flex-col items-start gap-4">
-        <input type="hidden" name="intent" value="create-answer" />
-        <textarea
-          name="content"
-          rows={6}
-          value={answerInput}
-          onChange={(e) => setAnswerInput(e.target.value)}
-          placeholder="Write your answer here..."
-          className="w-full rounded-lg bg-slate-900/70 px-4 py-3 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-
-        <button
-          type="submit"
-          className="rounded-lg px-6 py-2 font-semibold bg-blue-500 hover:bg-blue-600 transition"
-        >
-          Post Answer
-        </button>
-      </Form>
-    </div>
-  );
 }
 
 export default function GetPage({ loaderData }: Route.ComponentProps) {
@@ -263,7 +90,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen text-slate-100 py-10">
       <Link
-        to="/questions"
+        to="/question"
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
       >
         Questions
@@ -309,7 +136,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
                   asked {new Date(question.createdAt).toLocaleDateString()}
                 </div>
                 <div className="text-slate-200 font-medium">
-                  {question.author.name || "Anonymous"}
+                  {question.author.name}
                 </div>
               </div>
             </div>
@@ -327,16 +154,17 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
               </Link>
             </div>
 
-            <Form method="post">
-              <input type="hidden" name="intent" value="delete" />
-              <input type="hidden" name="id" value={question.id} />
-              <button
-                type="submit"
-                className="text-sm text-red-400 hover:text-red-300"
-              >
-                Delete
-              </button>
-            </Form>
+            <button
+              onClick={() =>
+                fetcher.submit(
+                  { id: question.id },
+                  { method: "post", action: "/api/question/delete" },
+                )
+              }
+              className="text-sm text-red-400 hover:text-red-300"
+            >
+              Delete
+            </button>
           </div>
         )}
       </div>
@@ -361,7 +189,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {session && <AnswerForm />}
+      {session && <AnswerForm questionId={question.id} />}
     </div>
   );
 }

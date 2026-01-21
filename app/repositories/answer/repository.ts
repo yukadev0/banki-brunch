@@ -1,9 +1,9 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { eq, and, sql } from "drizzle-orm";
 import { user } from "~/db/schema";
-import { answersSchema, answerVotesSchema } from "~/db/answer-schemas";
 import { QuestionsRepository } from "../question/repository";
 import type { AnswerInsertArgs } from "./types";
+import { answersSchema, answerVotesSchema } from "~/db/schemas/answer";
 
 export const AnswersRepository = {
   async getAll(db: DrizzleD1Database<any>) {

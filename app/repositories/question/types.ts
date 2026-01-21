@@ -1,4 +1,4 @@
-import type { questionsSchema } from "~/db/question-schemas";
+import type { questionsSchema } from "~/db/schemas/question";
 import type { QuestionsRepository } from "./repository";
 
 export type QuestionSelectArgs = typeof questionsSchema.$inferSelect;

@@ -35,42 +35,23 @@ export async function loader({ params, context, request }: Route.LoaderArgs) {
   return { session, answer };
 }
 
-export async function action({ request, context, params }: Route.ActionArgs) {
-  const formData = await request.formData();
-  const id = formData.get("id");
-
-  if (!id) {
-    throw new Response("Answer id is required", { status: 400 });
-  }
-
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session) {
-    return redirect("/login");
-  }
-
-  const answer = await AnswersRepository.getById(context.db, Number(id));
-  if (session.user.id !== answer.createdByUserId) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
-
-  await AnswersRepository.delete(context.db, Number(id));
-
-  return redirect(`/question/${params.questionId}`);
-}
-
-export default function GetPage({
-  loaderData,
-  params,
-}: Route.ComponentProps) {
+export default function GetPage({ loaderData, params }: Route.ComponentProps) {
   const { answer, session } = loaderData;
 
   const fetcher = useFetcher();
   const [voteState, setVoteState] = useState<
     "upvoted" | "downvoted" | "unvoted"
   >("unvoted");
+
+  useEffect(() => {
+    if (answer.vote?.vote_type === "upvote") {
+      setVoteState("upvoted");
+    } else if (answer.vote?.vote_type === "downvote") {
+      setVoteState("downvoted");
+    } else {
+      setVoteState("unvoted");
+    }
+  }, [answer.vote]);
 
   const onUpvote = useCallback(() => {
     fetcher.submit(
@@ -94,23 +75,20 @@ export default function GetPage({
     );
   }, [fetcher, answer.id]);
 
-  useEffect(() => {
-    if (answer.vote?.vote_type === "upvote") {
-      setVoteState("upvoted");
-    } else if (answer.vote?.vote_type === "downvote") {
-      setVoteState("downvoted");
-    } else {
-      setVoteState("unvoted");
-    }
-  }, [answer.vote]);
+  const deleteAnswer = useCallback(() => {
+    fetcher.submit(
+      { answerId: answer.id, questionId: params.questionId },
+      { method: "post", action: "/api/answer/delete" },
+    );
+  }, [fetcher, answer.id]);
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10">
       <Link
-        to={`/question/${answer.questionId}/answers`}
+        to={`/question/${answer.questionId}`}
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
       >
-        Back to answers
+        Back to Question
       </Link>
 
       <div className="w-full max-w-2xl bg-slate-800 rounded-2xl border border-slate-700 p-6 shadow-lg">
@@ -152,15 +130,14 @@ export default function GetPage({
                   Edit
                 </Link>
               </div>
-              <Form method="post" className="flex justify-end">
-                <input type="hidden" name="id" value={answer.id} />
+              <div className="flex justify-end">
                 <button
-                  type="submit"
+                  onClick={deleteAnswer}
                   className="text-sm text-red-400 hover:text-red-300 transition"
                 >
                   Delete Answer
                 </button>
-              </Form>
+              </div>
             </div>
           )}
         </div>

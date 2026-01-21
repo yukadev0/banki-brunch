@@ -1,6 +1,6 @@
 import { createAuth } from "~/lib/auth.server";
-import { Form, Link, redirect } from "react-router";
-import { useState } from "react";
+import { Link, redirect, useFetcher } from "react-router";
+import { useCallback, useState } from "react";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/edit";
@@ -29,40 +29,31 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return { question, allTags };
 }
 
-export async function action({ request, context, params }: Route.ActionArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session) return redirect("/login");
-
-  const questionId = Number(params.id);
-  if (!questionId) throw new Response("Invalid question id", { status: 400 });
-
-  const formData = await request.formData();
-  const title = formData.get("title");
-  const content = formData.get("content");
-  const selectedTags = formData.getAll("tags");
-
-  await QuestionsRepository.update(context.db, questionId, {
-    tags: selectedTags as string[],
-    title: title as string,
-    content: content as string,
-    createdByUserId: session.user.id,
-  });
-
-  return redirect(`/question/${questionId}`);
-}
-
 export default function EditPage({ loaderData }: Route.ComponentProps) {
   const { question, allTags } = loaderData;
+
+  const fetcher = useFetcher();
   const [tags, setTags] = useState<string[]>(question.tags ?? []);
+  const [titleInput, setTitleInput] = useState(question.title);
+  const [contentInput, setContentInput] = useState(question.content);
 
   function toggleTag(tag: string) {
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   }
+
+  const updateQuestion = useCallback(() => {
+    fetcher.submit(
+      {
+        tags: tags,
+        id: question.id,
+        title: titleInput,
+        content: contentInput,
+      },
+      { method: "post", action: `/api/question/update` },
+    );
+  }, [titleInput, contentInput, tags]);
 
   return (
     <div className="text-gray-100 flex flex-col items-center justify-center gap-8 pt-12">
@@ -78,16 +69,18 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
       </h1>
 
       <div className="w-full max-w-2xl bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-lg">
-        <Form method="post" className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           <input
             name="title"
-            defaultValue={question.title}
+            value={titleInput}
+            onChange={(e) => setTitleInput(e.target.value)}
             className="w-full hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
           />
 
           <textarea
             name="content"
-            defaultValue={question.content}
+            value={contentInput}
+            onChange={(e) => setContentInput(e.target.value)}
             rows={5}
             className="w-full hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
           />
@@ -122,12 +115,12 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
           </div>
 
           <button
-            type="submit"
+            onClick={updateQuestion}
             className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
           >
             Save
           </button>
-        </Form>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
-import { Link } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { createAuth } from "~/lib/auth.server";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { TagsSelectArgs } from "~/repositories/tag/types";
 import type { Route } from "./+types/getAll";
+import { useCallback } from "react";
 
 export function meta() {
   return [{ title: "Tags" }];
@@ -15,6 +16,30 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
   const tags = await TagsRepository.getAll(context.db);
   return { tags, session };
+}
+
+function TagItem({ tag }: { tag: TagsSelectArgs }) {
+  const fetcher = useFetcher();
+
+  const deleteTag = useCallback(() => {
+    fetcher.submit(
+      {
+        name: tag.name,
+      },
+      { method: "post", action: `/api/tag/delete` },
+    );
+  }, [tag.name]);
+
+  return (
+    <span>
+      <button
+        onClick={deleteTag}
+        className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
+      >
+        {tag.name}
+      </button>
+    </span>
+  );
 }
 
 export default function GetAllPage({ loaderData }: Route.ComponentProps) {
@@ -33,12 +58,7 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
 
       <div className="flex gap-2 flex-wrap text-sm">
         {tags.map((tag: TagsSelectArgs, index: number) => (
-          <span
-            key={index}
-            className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
-          >
-            {tag.name}
-          </span>
+          <TagItem key={index} tag={tag} />
         ))}
       </div>
 
