@@ -61,7 +61,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   return redirect(`/question/${params.questionId}`);
 }
 
-export default function AnswerPage({
+export default function GetPage({
   loaderData,
   params,
 }: Route.ComponentProps) {

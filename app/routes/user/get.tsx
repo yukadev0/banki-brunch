@@ -43,7 +43,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
   return { user, session };
 }
 
-export default function UserPage({ loaderData }: Route.ComponentProps) {
+export default function GetPage({ loaderData }: Route.ComponentProps) {
   const { user, session } = loaderData;
 
   useEffect(() => {

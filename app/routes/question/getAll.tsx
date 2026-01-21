@@ -26,7 +26,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   return { session, questions, tags };
 }
 
-export default function Questions({ loaderData }: Route.ComponentProps) {
+export default function GetAllPage({ loaderData }: Route.ComponentProps) {
   const { questions, session, tags } = loaderData;
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 

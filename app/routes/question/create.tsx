@@ -51,7 +51,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   return { allTags };
 }
 
-export default function CreateQuestion({
+export default function CreatePage({
   actionData,
   loaderData,
 }: Route.ComponentProps) {

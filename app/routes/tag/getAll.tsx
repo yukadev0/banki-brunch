@@ -17,7 +17,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   return { tags, session };
 }
 
-export default function TagsPage({ loaderData }: Route.ComponentProps) {
+export default function GetAllPage({ loaderData }: Route.ComponentProps) {
   const { tags, session } = loaderData;
 
   return (

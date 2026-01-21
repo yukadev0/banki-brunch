@@ -54,7 +54,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   return redirect(`/question/${questionId}`);
 }
 
-export default function EditQuestion({ loaderData }: Route.ComponentProps) {
+export default function EditPage({ loaderData }: Route.ComponentProps) {
   const { question, allTags } = loaderData;
   const [tags, setTags] = useState<string[]>(question.tags ?? []);
 

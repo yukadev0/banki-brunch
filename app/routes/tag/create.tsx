@@ -42,7 +42,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   }
 }
 
-export default function CreateTag({ actionData }: Route.ComponentProps) {
+export default function CreatePage({ actionData }: Route.ComponentProps) {
   const [tagNameInput, setTagNameInput] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 

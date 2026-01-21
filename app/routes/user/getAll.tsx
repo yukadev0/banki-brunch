@@ -21,7 +21,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   return { users };
 }
 
-export default function Users({ loaderData }: Route.ComponentProps) {
+export default function GetAllPage({ loaderData }: Route.ComponentProps) {
   const { users } = loaderData;
 
   return (

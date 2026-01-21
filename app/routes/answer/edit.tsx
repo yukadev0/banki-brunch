@@ -60,7 +60,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   return redirect(`/question/${params.questionId}`);
 }
 
-export default function EditAnswer({ loaderData }: Route.ComponentProps) {
+export default function EditPage({ loaderData }: Route.ComponentProps) {
   const { answer } = loaderData;
   const [content, setContent] = useState(answer.content);
 

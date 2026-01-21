@@ -221,7 +221,7 @@ export function AnswerForm() {
   );
 }
 
-export default function QuestionPage({ loaderData }: Route.ComponentProps) {
+export default function GetPage({ loaderData }: Route.ComponentProps) {
   const { question, answers, session } = loaderData;
 
   const fetcher = useFetcher();
