@@ -1,8 +1,8 @@
 import { Form, Link, redirect } from "react-router";
-import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/user.$id";
 import { useEffect } from "react";
 import { createAuth } from "~/lib/auth.server";
+import { UsersRepository } from "~/repositories/user/repository";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `User: ${params.id}` }];

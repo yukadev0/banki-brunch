@@ -1,52 +1,20 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { eq, and, sql } from "drizzle-orm";
-import { QuestionsRepository, questionsTable } from "./question.repository";
+import { eq, and } from "drizzle-orm";
 import { user } from "~/db/schema";
-
-export const answersTable = sqliteTable("answers", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-
-  questionId: integer("question_id")
-    .notNull()
-    .references(() => questionsTable.id, { onDelete: "cascade" }),
-
-  content: text("content").notNull(),
-
-  createdByUserId: text("created_by_user_id")
-    .references(() => user.id)
-    .notNull(),
-
-  isValidated: integer("is_validated", { mode: "boolean" })
-    .notNull()
-    .default(false),
-
-  validatedByUserId: integer("validated_by_user_id").references(() => user.id),
-
-  isHiddenByDefault: integer("is_hidden_by_default", {
-    mode: "boolean",
-  })
-    .notNull()
-    .default(true),
-
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .notNull(),
-});
-
-export type AnswerSelectArgs = typeof answersTable.$inferSelect;
-export type AnswerInsertArgs = typeof answersTable.$inferInsert;
+import { answersSchema } from "~/db/answer-schemas";
+import { QuestionsRepository } from "../question/repository";
+import type { AnswerInsertArgs } from "./types";
 
 export const AnswersRepository = {
   async getAll(db: DrizzleD1Database<any>) {
-    return db.select().from(answersTable);
+    return db.select().from(answersSchema);
   },
 
   async getById(db: DrizzleD1Database<any>, id: number) {
     const [answer] = await db
       .select()
-      .from(answersTable)
-      .where(eq(answersTable.id, id));
+      .from(answersSchema)
+      .where(eq(answersSchema.id, id));
 
     return answer ?? null;
   },
@@ -60,8 +28,8 @@ export const AnswersRepository = {
 
     const answers = await db
       .select()
-      .from(answersTable)
-      .where(eq(answersTable.questionId, questionId));
+      .from(answersSchema)
+      .where(eq(answersSchema.questionId, questionId));
 
     const answersWithAuthors = await Promise.all(
       answers.map(async (answer) => {
@@ -85,11 +53,11 @@ export const AnswersRepository = {
   async getCuratedByQuestionId(db: DrizzleD1Database<any>, questionId: number) {
     const [answer] = await db
       .select()
-      .from(answersTable)
+      .from(answersSchema)
       .where(
         and(
-          eq(answersTable.questionId, questionId),
-          eq(answersTable.isValidated, true),
+          eq(answersSchema.questionId, questionId),
+          eq(answersSchema.isValidated, true),
         ),
       );
 
@@ -101,7 +69,7 @@ export const AnswersRepository = {
       throw new Error("Missing required fields");
     }
 
-    await db.insert(answersTable).values(data);
+    await db.insert(answersSchema).values(data);
   },
 
   async validate(
@@ -110,12 +78,12 @@ export const AnswersRepository = {
     validatedByUserId: number,
   ) {
     await db
-      .update(answersTable)
+      .update(answersSchema)
       .set({
         isValidated: true,
         validatedByUserId,
       })
-      .where(eq(answersTable.id, answerId));
+      .where(eq(answersSchema.id, answerId));
   },
 
   // async upvote(db: DrizzleD1Database<any>, answerId: number) {
@@ -143,10 +111,10 @@ export const AnswersRepository = {
       throw new Error("Answer not found");
     }
 
-    await db.update(answersTable).set(data).where(eq(answersTable.id, id));
+    await db.update(answersSchema).set(data).where(eq(answersSchema.id, id));
   },
 
   async delete(db: DrizzleD1Database<any>, id: number) {
-    await db.delete(answersTable).where(eq(answersTable.id, id));
+    await db.delete(answersSchema).where(eq(answersSchema.id, id));
   },
 };

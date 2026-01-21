@@ -1,4 +1,4 @@
-import { AnswersRepository } from "~/repositories/answer.repository";
+import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/answers.json";
 
 export async function loader({ params, context }: Route.LoaderArgs) {

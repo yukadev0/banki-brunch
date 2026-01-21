@@ -1,9 +1,7 @@
 import { Link, redirect, type LoaderFunctionArgs } from "react-router";
-import {
-  UsersRepository,
-  type UserSelectArgs,
-} from "~/repositories/user.repository";
 import type { Route } from "./+types/users";
+import { UsersRepository } from "~/repositories/user/repository";
+import type { UserSelectArgs } from "~/repositories/user/types";
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Users" }];

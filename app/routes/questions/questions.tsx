@@ -1,12 +1,10 @@
 import { Form, Link, redirect, type LoaderFunctionArgs } from "react-router";
 import type { Route } from "./+types/questions";
-import {
-  QuestionsRepository,
-  type GetAllQuestionsArgs,
-} from "~/repositories/question.repository";
 import { createAuth } from "~/lib/auth.server";
-import { TagsRepository } from "~/repositories/tags.repository";
 import { useMemo, useState } from "react";
+import { QuestionsRepository } from "~/repositories/question/repository";
+import { TagsRepository } from "~/repositories/tag/repository";
+import type { GetAllQuestionArgs } from "~/repositories/question/types";
 
 export function meta({}: LoaderFunctionArgs) {
   return [{ title: "Questions" }];
@@ -33,7 +31,10 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const filteredQuestions = useMemo(() => {
-    if (selectedTags.length === 0) return questions;
+    if (selectedTags.length === 0) {
+      return questions;
+    }
+
     return questions.filter((q) =>
       selectedTags.every((t) => q.tags.includes(t)),
     );
@@ -63,7 +64,7 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
                     : [...prev, tag.name],
                 )
               }
-              className={`px-3 py-1 rounded-full text-sm border ${
+              className={`cursor-pointer px-3 py-1 rounded-full text-sm border ${
                 active
                   ? "bg-blue-500 border-blue-500"
                   : "bg-gray-800 border-gray-600"
@@ -80,7 +81,7 @@ export default function Questions({ loaderData }: Route.ComponentProps) {
           <p className="text-center text-gray-400">No questions found</p>
         ) : (
           <ul className="space-y-6">
-            {filteredQuestions.map((question: GetAllQuestionsArgs[0]) => (
+            {filteredQuestions.map((question: GetAllQuestionArgs) => (
               <li
                 key={question.id}
                 className="bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 transition"

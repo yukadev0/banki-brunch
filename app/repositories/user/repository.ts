@@ -1,9 +1,7 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { user } from "~/db/schema";
-
-export type UserSelectArgs = typeof user.$inferSelect;
-export type UserInsertArgs = typeof user.$inferInsert;
+import type { UserInsertArgs } from "./types";
 
 export const UsersRepository = {
   async getAll(db: DrizzleD1Database<any>) {
@@ -11,10 +9,7 @@ export const UsersRepository = {
   },
 
   async getById(db: DrizzleD1Database<any>, id: string) {
-    const [u] = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, id));
+    const [u] = await db.select().from(user).where(eq(user.id, id));
 
     return u ?? null;
   },

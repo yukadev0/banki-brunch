@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Form, Link, redirect } from "react-router";
-import { QuestionsRepository } from "~/repositories/question.repository";
 import type { Route } from "./+types/create.question";
 import { createAuth } from "~/lib/auth.server";
-import { tagsTable } from "~/repositories/tags.repository";
+import { QuestionsRepository } from "~/repositories/question/repository";
+import { tagsSchema } from "~/db/tag-schema";
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -47,7 +47,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     return redirect("/login");
   }
 
-  const allTags = await context.db.select().from(tagsTable);
+  const allTags = await context.db.select().from(tagsSchema);
   return { allTags };
 }
 

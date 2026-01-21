@@ -1,9 +1,9 @@
 import { Form, Link, redirect } from "react-router";
-import { AnswersRepository } from "~/repositories/answer.repository";
-import { UsersRepository } from "~/repositories/user.repository";
 import type { Route } from "./+types/answer.$id";
 import { createAuth } from "~/lib/auth.server";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
+import { AnswersRepository } from "~/repositories/answer/repository";
+import { UsersRepository } from "~/repositories/user/repository";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Answer: ${params.id}` }];

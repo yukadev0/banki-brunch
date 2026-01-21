@@ -1,9 +1,9 @@
 import type { Route } from "./+types/question.edit.$id";
 import { createAuth } from "~/lib/auth.server";
 import { Form, Link, redirect } from "react-router";
-import { QuestionsRepository } from "~/repositories/question.repository";
-import { TagsRepository } from "~/repositories/tags.repository";
 import { useState } from "react";
+import { QuestionsRepository } from "~/repositories/question/repository";
+import { TagsRepository } from "~/repositories/tag/repository";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Edit Question" }];

@@ -1,8 +1,8 @@
 import { createAuth } from "~/lib/auth.server";
 import { Form, Link, redirect } from "react-router";
-import { AnswersRepository } from "~/repositories/answer.repository";
 import { useState } from "react";
 import type { Route } from "./+types/answer.edit.$id";
+import { AnswersRepository } from "~/repositories/answer/repository";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Edit Answer" }];

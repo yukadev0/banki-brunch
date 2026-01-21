@@ -1,11 +1,11 @@
 import { Form, Link, redirect } from "react-router";
 import { useEffect, useState } from "react";
 import type { Route } from "./+types/question.$id";
-import { QuestionsRepository } from "~/repositories/question.repository";
-import { UsersRepository } from "~/repositories/user.repository";
-import { AnswersRepository } from "~/repositories/answer.repository";
 import { createAuth } from "~/lib/auth.server";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
+import { QuestionsRepository } from "~/repositories/question/repository";
+import { AnswersRepository } from "~/repositories/answer/repository";
+import { UsersRepository } from "~/repositories/user/repository";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Question: ${params.id}` }];
@@ -274,7 +274,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
         <div className="mt-10 mx-auto max-w-5xl bg-slate-800 border border-slate-800 rounded-xl p-6">
           <h2 className="text-xl font-semibold mb-4">Your Answer</h2>
 
-          <Form method="post">
+          <Form method="post" className="flex flex-col items-start gap-4">
             <input type="hidden" name="intent" value="create-answer" />
             <textarea
               name="content"
@@ -287,7 +287,7 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
 
             <button
               type="submit"
-              className="mt-4 rounded-lg px-6 py-2 font-semibold bg-blue-500 hover:bg-blue-600 transition"
+              className="rounded-lg px-6 py-2 font-semibold bg-blue-500 hover:bg-blue-600 transition"
             >
               Post Answer
             </button>
