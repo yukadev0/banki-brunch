@@ -1,5 +1,5 @@
-import { Form, Link, redirect } from "react-router";
-import { useEffect, useState } from "react";
+import { Form, Link, redirect, useFetcher } from "react-router";
+import { useCallback, useEffect, useState } from "react";
 import type { Route } from "./+types/question.$id";
 import { createAuth } from "~/lib/auth.server";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
@@ -105,6 +105,8 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   const { question, questionAuthor, answers, session, questionVote } =
     loaderData;
+
+  const fetcher = useFetcher();
   const [answerInput, setAnswerInput] = useState("");
 
   useEffect(() => {
@@ -114,6 +116,20 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     setAnswerInput("");
   }, [answers]);
+
+  const upvoteCallback = useCallback(() => {
+    fetcher.submit(
+      { questionId: question.id, voteType: "upvote" },
+      { method: "post", action: "/questions/api/vote" },
+    );
+  }, [fetcher, question.id]);
+
+  const downvoteCallback = useCallback(() => {
+    fetcher.submit(
+      { questionId: question.id, voteType: "downvote" },
+      { method: "post", action: "/questions/api/vote" },
+    );
+  }, [fetcher, question.id]);
 
   return (
     <div className="min-h-screen text-slate-100 py-10">
@@ -131,16 +147,8 @@ export default function QuestionPage({ loaderData }: Route.ComponentProps) {
           <UpvoteDownvote
             display={questionVote}
             state="unvoted"
-            onUpvoteClick={async () => {
-              await fetch(`/questions/api/vote`, {
-                method: "POST",
-                body: JSON.stringify({
-                  questionId: question.id,
-                  voteType: "up",
-                }),
-              });
-            }}
-            onDownvoteClick={() => console.log("downvote")}
+            onUpvoteClick={upvoteCallback}
+            onDownvoteClick={downvoteCallback}
           />
 
           <div className="flex-1 flex flex-col gap-4">

@@ -1,7 +1,7 @@
-import type { Route } from "./+types/questions.vote";
 import { redirect } from "react-router";
 import { createAuth } from "~/lib/auth.server";
 import { QuestionsRepository } from "~/repositories/question/repository";
+import type { Route } from "./+types/question.vote";
 
 export async function action({ context, request }: Route.LoaderArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
@@ -9,29 +9,26 @@ export async function action({ context, request }: Route.LoaderArgs) {
   });
 
   if (!session) {
-    return redirect("/login");
+    throw redirect("/login");
   }
 
-  const requestBody: { questionId: number; voteType: "up" | "down" } =
-    await request.json();
+  const formData = await request.formData();
+  const questionId = formData.get("questionId");
+  const voteType = formData.get("voteType");
 
   const question = await QuestionsRepository.getById(
     context.db,
-    requestBody.questionId,
+    Number(questionId),
   );
 
   if (!question) {
     throw new Response("Question not found", { status: 404 });
   }
 
-  if (requestBody.voteType === "up") {
-    await QuestionsRepository.upvote(
-      context.db,
-      requestBody.questionId,
-      session.user.id,
-    );
-  }
-  // else if (requestBody.voteType === "down") {
-  //   QuestionsRepository.downvote(context.db, requestBody.questionId);
-  // }
+  await QuestionsRepository.vote(
+    context.db,
+    Number(questionId),
+    session.user.id,
+    voteType as "upvote" | "downvote",
+  );
 }

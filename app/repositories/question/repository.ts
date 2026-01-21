@@ -137,30 +137,13 @@ export const QuestionsRepository = {
     return votes.length;
   },
 
-  async upvote(db: DrizzleD1Database<any>, questionId: number, userId: string) {
-    const [vote] = await db
-      .select()
-      .from(questionVotesSchema)
-      .where(
-        and(
-          eq(questionVotesSchema.questionId, questionId),
-          eq(questionVotesSchema.userId, userId),
-        ),
-      );
-
-    if (!vote) {
-      await db
-        .insert(questionVotesSchema)
-        .values({ questionId, userId, vote_type: "upvote" });
-    }
-  },
-
-  async downvote(
+  async vote(
     db: DrizzleD1Database<any>,
     questionId: number,
     userId: string,
+    voteType: "upvote" | "downvote",
   ) {
-    const [vote] = await db
+    const [existingVote] = await db
       .select()
       .from(questionVotesSchema)
       .where(
@@ -170,10 +153,34 @@ export const QuestionsRepository = {
         ),
       );
 
-    if (!vote) {
+    if (!existingVote) {
+      await db.insert(questionVotesSchema).values({
+        questionId,
+        userId,
+        vote_type: voteType,
+      });
+      return;
+    }
+
+    if (existingVote.vote_type === voteType) {
       await db
-        .insert(questionVotesSchema)
-        .values({ questionId, userId, vote_type: "downvote" });
+        .delete(questionVotesSchema)
+        .where(
+          and(
+            eq(questionVotesSchema.questionId, questionId),
+            eq(questionVotesSchema.userId, userId),
+          ),
+        );
+    } else {
+      await db
+        .update(questionVotesSchema)
+        .set({ vote_type: voteType })
+        .where(
+          and(
+            eq(questionVotesSchema.questionId, questionId),
+            eq(questionVotesSchema.userId, userId),
+          ),
+        );
     }
   },
 

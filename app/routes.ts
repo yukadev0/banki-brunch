@@ -33,8 +33,6 @@ export default [
       route("answers.json", "routes/answers/answers.json.tsx"),
     ]),
 
-    ...prefix("api", [
-      route("vote", "routes/questions/api/questions.vote.tsx"),
-    ]),
+    ...prefix("api", [route("vote", "routes/questions/api/question.vote.tsx")]),
   ]),
 ] satisfies RouteConfig;
