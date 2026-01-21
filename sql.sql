@@ -1,15 +1,20 @@
-DROP TABLE IF EXISTS questions;
+DROP TABLE IF EXISTS answer_votes;
 
-CREATE TABLE questions (
-  id INTEGER PRIMARY KEY,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  interview_count INTEGER NOT NULL DEFAULT 0,
-  created_by_user_id TEXT NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') * 1000 AS INTEGER)),
+CREATE TABLE answer_votes (
+  answer_id INTEGER NOT NULL,
+  question_id INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
+  vote_type TEXT NOT NULL CHECK(vote_type IN ('upvote', 'downvote')),
 
-  FOREIGN KEY (created_by_user_id)
+  FOREIGN KEY (user_id)
     REFERENCES user(id)
+    ON DELETE CASCADE
+
+  FOREIGN KEY (answer_id)
+    REFERENCES answers(id)
+    ON DELETE CASCADE
+
+  FOREIGN KEY (question_id)
+    REFERENCES questions(id)
     ON DELETE CASCADE
 );

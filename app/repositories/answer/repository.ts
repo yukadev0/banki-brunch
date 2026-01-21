@@ -1,7 +1,7 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { user } from "~/db/schema";
-import { answersSchema } from "~/db/answer-schemas";
+import { answersSchema, answerVotesSchema } from "~/db/answer-schemas";
 import { QuestionsRepository } from "../question/repository";
 import type { AnswerInsertArgs } from "./types";
 
@@ -13,13 +13,19 @@ export const AnswersRepository = {
   async getById(db: DrizzleD1Database<any>, id: number) {
     const [answer] = await db
       .select({
-        answer: answersSchema,
         author: user,
+        answer: answersSchema,
+        vote: answerVotesSchema,
+        voteCount: sql<number>`SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
       })
       .from(answersSchema)
       .where(eq(answersSchema.id, id))
       .limit(1)
-      .innerJoin(user, eq(user.id, answersSchema.createdByUserId));
+      .innerJoin(user, eq(user.id, answersSchema.createdByUserId))
+      .leftJoin(
+        answerVotesSchema,
+        eq(answerVotesSchema.answerId, answersSchema.id),
+      );
 
     if (!answer) {
       throw new Error("Question not found");
@@ -27,7 +33,9 @@ export const AnswersRepository = {
 
     return {
       ...answer.answer,
+      vote: answer.vote,
       author: answer.author,
+      voteCount: answer.voteCount,
     };
   },
 
@@ -40,32 +48,33 @@ export const AnswersRepository = {
 
     const answers = await db
       .select({
-        answer: answersSchema,
         author: user,
+        answer: answersSchema,
+        vote: answerVotesSchema,
+        voteCount: sql<number>`SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
       })
       .from(answersSchema)
       .where(eq(answersSchema.questionId, questionId))
-      .limit(1)
-      .innerJoin(user, eq(user.id, answersSchema.createdByUserId));
+      .innerJoin(user, eq(user.id, answersSchema.createdByUserId))
+      .leftJoin(
+        answerVotesSchema,
+        eq(answerVotesSchema.answerId, answersSchema.id),
+      )
+      .groupBy(answersSchema.id, user.id);
 
     return answers.map((answer) => ({
       ...answer.answer,
+      vote: answer.vote,
       author: answer.author,
+      voteCount: answer.voteCount,
     }));
   },
 
-  async getCuratedByQuestionId(db: DrizzleD1Database<any>, questionId: number) {
-    const [answer] = await db
+  async getVotesByAnswerId(db: DrizzleD1Database<any>, answerId: number) {
+    return await db
       .select()
-      .from(answersSchema)
-      .where(
-        and(
-          eq(answersSchema.questionId, questionId),
-          eq(answersSchema.isValidated, true),
-        ),
-      );
-
-    return answer ?? null;
+      .from(answerVotesSchema)
+      .where(eq(answerVotesSchema.answerId, answerId));
   },
 
   async create(db: DrizzleD1Database<any>, data: AnswerInsertArgs) {
@@ -88,5 +97,57 @@ export const AnswersRepository = {
 
   async delete(db: DrizzleD1Database<any>, id: number) {
     await db.delete(answersSchema).where(eq(answersSchema.id, id));
+  },
+
+  async vote(
+    db: DrizzleD1Database<any>,
+    userId: string,
+    answerId: number,
+    questionId: number,
+    voteType: "upvote" | "downvote",
+  ) {
+    const [existingVote] = await db
+      .select()
+      .from(answerVotesSchema)
+      .where(
+        and(
+          eq(answerVotesSchema.userId, userId),
+          eq(answerVotesSchema.answerId, answerId),
+          eq(answerVotesSchema.questionId, questionId),
+        ),
+      );
+
+    if (!existingVote) {
+      await db.insert(answerVotesSchema).values({
+        userId,
+        answerId,
+        questionId,
+        vote_type: voteType,
+      });
+      return;
+    }
+
+    if (existingVote.vote_type === voteType) {
+      await db
+        .delete(answerVotesSchema)
+        .where(
+          and(
+            eq(answerVotesSchema.userId, userId),
+            eq(answerVotesSchema.answerId, answerId),
+            eq(answerVotesSchema.questionId, questionId),
+          ),
+        );
+    } else {
+      await db
+        .update(answerVotesSchema)
+        .set({ vote_type: voteType })
+        .where(
+          and(
+            eq(answerVotesSchema.userId, userId),
+            eq(answerVotesSchema.answerId, answerId),
+            eq(answerVotesSchema.questionId, questionId),
+          ),
+        );
+    }
   },
 };

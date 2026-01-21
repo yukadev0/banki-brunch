@@ -32,3 +32,21 @@ export const answersSchema = sqliteTable("answers", {
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
 });
+
+export const answerVotesSchema = sqliteTable("answer_votes", {
+  answerId: integer("answer_id")
+    .notNull()
+    .references(() => answersSchema.id, { onDelete: "cascade" }),
+
+  questionId: integer("question_id")
+    .notNull()
+    .references(() => questionsSchema.id, { onDelete: "cascade" }),
+
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  vote_type: text("vote_type", {
+    enum: ["upvote", "downvote"],
+  }).notNull(),
+});

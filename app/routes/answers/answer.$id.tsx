@@ -1,9 +1,9 @@
-import { Form, Link, redirect } from "react-router";
+import { Form, Link, redirect, useFetcher } from "react-router";
 import type { Route } from "./+types/answer.$id";
 import { createAuth } from "~/lib/auth.server";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { AnswersRepository } from "~/repositories/answer/repository";
-import { UsersRepository } from "~/repositories/user/repository";
+import { useCallback, useEffect, useState } from "react";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Answer: ${params.id}` }];
@@ -32,12 +32,7 @@ export async function loader({ params, context, request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const user = await UsersRepository.getById(
-    context.db,
-    answer.createdByUserId,
-  );
-
-  return { session, answer, user };
+  return { session, answer };
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
@@ -70,7 +65,44 @@ export default function AnswerPage({
   loaderData,
   params,
 }: Route.ComponentProps) {
-  const { answer, user, session } = loaderData;
+  const { answer, session } = loaderData;
+
+  const fetcher = useFetcher();
+  const [voteState, setVoteState] = useState<
+    "upvoted" | "downvoted" | "unvoted"
+  >("unvoted");
+
+  const onUpvote = useCallback(() => {
+    fetcher.submit(
+      {
+        answerId: answer.id,
+        voteType: "upvote",
+        questionId: params.questionId,
+      },
+      { method: "post", action: "/answers/api/vote" },
+    );
+  }, [fetcher, answer.id]);
+
+  const onDownvote = useCallback(() => {
+    fetcher.submit(
+      {
+        answerId: answer.id,
+        voteType: "downvote",
+        questionId: params.questionId,
+      },
+      { method: "post", action: "/answers/api/vote" },
+    );
+  }, [fetcher, answer.id]);
+
+  useEffect(() => {
+    if (answer.vote?.vote_type === "upvote") {
+      setVoteState("upvoted");
+    } else if (answer.vote?.vote_type === "downvote") {
+      setVoteState("downvoted");
+    } else {
+      setVoteState("unvoted");
+    }
+  }, [answer.vote]);
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10">
@@ -99,15 +131,15 @@ export default function AnswerPage({
           <span>
             Created at: {new Date(answer.createdAt).toLocaleDateString()}
           </span>
-          <span>Author: {user ? user.name : "Anonymous"}</span>
+          <span>Author: {answer.author.name}</span>
         </div>
 
         <div className="mt-6 flex justify-between items-end">
           <UpvoteDownvote
-            display={0}
-            state="unvoted"
-            onUpvoteClick={() => console.log("upvote")}
-            onDownvoteClick={() => console.log("downvote")}
+            state={voteState}
+            onUpvoteClick={onUpvote}
+            display={answer.voteCount}
+            onDownvoteClick={onDownvote}
           />
 
           {session?.user.id === answer.createdByUserId && (
