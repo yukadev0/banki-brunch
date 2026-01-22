@@ -4,7 +4,7 @@ import { questionsSchema } from "./question";
 import { user } from "../schema";
 
 export const answersSchema = sqliteTable("answers", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+  id: integer("id").primaryKey(),
 
   questionId: integer("question_id")
     .notNull()

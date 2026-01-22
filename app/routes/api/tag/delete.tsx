@@ -1,9 +1,9 @@
 import { redirect } from "react-router";
 import { createAuth } from "~/lib/auth.server";
-import type { Route } from "./+types/create";
 import { TagsRepository } from "~/repositories/tag/repository";
+import type { Route } from "./+types/delete";
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ request, context, params }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
   });
@@ -12,12 +12,5 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw redirect("/login");
   }
 
-  const formData = await request.formData();
-  const tagName = formData.get("name");
-
-  if (!tagName) {
-    throw new Response("Tag name is required", { status: 400 });
-  }
-
-  await TagsRepository.delete(context.db, tagName as string);
+  await TagsRepository.delete(context.db, params.name);
 }

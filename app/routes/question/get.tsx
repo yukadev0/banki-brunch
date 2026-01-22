@@ -1,9 +1,9 @@
-import { Form, Link, redirect, useFetcher } from "react-router";
 import { useCallback, useEffect, useState } from "react";
-import { createAuth } from "~/lib/auth.server";
+import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
-import { QuestionsRepository } from "~/repositories/question/repository";
+import { createAuth } from "~/lib/auth.server";
 import { AnswersRepository } from "~/repositories/answer/repository";
+import { QuestionsRepository } from "~/repositories/question/repository";
 import type { Route } from "./+types/get";
 import { AnswerForm } from "./components/AnswerForm";
 import { AnswerItem } from "./components/AnswerItem";
@@ -75,16 +75,23 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
 
   const onUpvote = useCallback(() => {
     fetcher.submit(
-      { questionId: question.id, voteType: "upvote" },
-      { method: "post", action: "/api/question/vote" },
+      { voteType: "upvote" },
+      { method: "post", action: `/api/question/${question.id}/vote` },
     );
   }, [fetcher, question.id]);
 
   const onDownvote = useCallback(() => {
     fetcher.submit(
-      { questionId: question.id, voteType: "downvote" },
-      { method: "post", action: "/api/question/vote" },
+      { voteType: "downvote" },
+      { method: "post", action: `/api/question/${question.id}/vote` },
     );
+  }, [fetcher, question.id]);
+
+  const deleteQuestion = useCallback(() => {
+    fetcher.submit(null, {
+      method: "post",
+      action: `/api/question/${question.id}/delete`,
+    });
   }, [fetcher, question.id]);
 
   return (
@@ -155,12 +162,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
             </div>
 
             <button
-              onClick={() =>
-                fetcher.submit(
-                  { id: question.id },
-                  { method: "post", action: "/api/question/delete" },
-                )
-              }
+              onClick={deleteQuestion}
               className="text-sm text-red-400 hover:text-red-300"
             >
               Delete

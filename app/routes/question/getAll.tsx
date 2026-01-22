@@ -1,9 +1,9 @@
+import { useMemo, useState } from "react";
 import { Form, Link, redirect, type LoaderFunctionArgs } from "react-router";
 import { createAuth } from "~/lib/auth.server";
-import { useMemo, useState } from "react";
 import { QuestionsRepository } from "~/repositories/question/repository";
-import { TagsRepository } from "~/repositories/tag/repository";
 import type { GetAllQuestionArgs } from "~/repositories/question/types";
+import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/getAll";
 
 export function meta({}: LoaderFunctionArgs) {
@@ -12,7 +12,10 @@ export function meta({}: LoaderFunctionArgs) {
 
 export async function action({ context }: Route.ActionArgs) {
   const question = await QuestionsRepository.getRandom(context.db);
-  return redirect(`/question/${question.id}`);
+
+  if (question) {
+    return redirect(`/question/${question.id}`);
+  }
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {

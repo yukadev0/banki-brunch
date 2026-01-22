@@ -18,15 +18,15 @@ export function AnswerItem({
 
   const onUpvote = useCallback(() => {
     fetcher.submit(
-      { answerId: answer.id, voteType: "upvote", questionId: questionId },
-      { method: "post", action: "/api/answer/vote" },
+      { voteType: "upvote", questionId: questionId },
+      { method: "post", action: `/api/answer/${answer.id}/vote` },
     );
   }, [fetcher, answer.id]);
 
   const onDownvote = useCallback(() => {
     fetcher.submit(
-      { answerId: answer.id, voteType: "downvote", questionId: questionId },
-      { method: "post", action: "/api/answer/vote" },
+      { voteType: "downvote", questionId: questionId },
+      { method: "post", action: `/api/answer/${answer.id}/vote` },
     );
   }, [fetcher, answer.id]);
 

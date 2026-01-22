@@ -13,22 +13,30 @@ export default [
     route("auth/*", "./routes/auth.tsx"),
 
     ...prefix("question", [
-      route("vote", "routes/api/question/vote.tsx"),
       route("create", "routes/api/question/create.tsx"),
-      route("update", "routes/api/question/update.tsx"),
-      route("delete", "routes/api/question/delete.tsx"),
+
+      ...prefix(":id", [
+        route("update", "routes/api/question/update.tsx"),
+        route("delete", "routes/api/question/delete.tsx"),
+
+        route("vote", "routes/api/question/vote.tsx"),
+      ]),
     ]),
 
     ...prefix("answer", [
-      route("vote", "routes/api/answer/vote.tsx"),
       route("create", "routes/api/answer/create.tsx"),
-      route("update", "routes/api/answer/update.tsx"),
-      route("delete", "routes/api/answer/delete.tsx"),
+
+      ...prefix(":id", [
+        route("update", "routes/api/answer/update.tsx"),
+        route("delete", "routes/api/answer/delete.tsx"),
+
+        route("vote", "routes/api/answer/vote.tsx"),
+      ]),
     ]),
 
     ...prefix("tag", [
       route("create", "routes/api/tag/create.tsx"),
-      route("delete", "routes/api/tag/delete.tsx"),
+      route(":name/delete/", "routes/api/tag/delete.tsx"),
     ]),
   ]),
 

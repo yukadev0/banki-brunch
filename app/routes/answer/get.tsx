@@ -1,8 +1,8 @@
-import { Form, Link, redirect, useFetcher } from "react-router";
-import { createAuth } from "~/lib/auth.server";
-import UpvoteDownvote from "~/components/UpvoteDownvote";
-import { AnswersRepository } from "~/repositories/answer/repository";
 import { useCallback, useEffect, useState } from "react";
+import { Link, redirect, useFetcher } from "react-router";
+import UpvoteDownvote from "~/components/UpvoteDownvote";
+import { createAuth } from "~/lib/auth.server";
+import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/get";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -39,47 +39,69 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
   const { answer, session } = loaderData;
 
   const fetcher = useFetcher();
+
+  const [voteCount, setVoteCount] = useState(answer.voteCount);
   const [voteState, setVoteState] = useState<
     "upvoted" | "downvoted" | "unvoted"
   >("unvoted");
 
   useEffect(() => {
-    if (answer.vote?.vote_type === "upvote") {
-      setVoteState("upvoted");
-    } else if (answer.vote?.vote_type === "downvote") {
-      setVoteState("downvoted");
-    } else {
-      setVoteState("unvoted");
+    if (fetcher.state !== "idle") {
+      return;
     }
-  }, [answer.vote]);
+
+    setVoteCount(answer.voteCount);
+    if (!answer.vote) {
+      setVoteState("unvoted");
+      return;
+    }
+
+    if (answer.vote.vote_type === "upvote") {
+      setVoteState("upvoted");
+    } else if (answer.vote.vote_type === "downvote") {
+      setVoteState("downvoted");
+    }
+  }, [fetcher.state, answer.vote, answer.voteCount]);
 
   const onUpvote = useCallback(() => {
+    setVoteState((prev) => (prev === "upvoted" ? "unvoted" : "upvoted"));
+    setVoteCount((prev) => {
+      if (voteState === "downvoted") return prev + 2;
+      if (voteState === "upvoted") return prev - 1;
+      return prev + 1;
+    });
+
     fetcher.submit(
       {
-        answerId: answer.id,
         voteType: "upvote",
         questionId: params.questionId,
       },
-      { method: "post", action: "/api/answer/vote" },
+      { method: "post", action: `/api/answer/${answer.id}/vote` },
     );
-  }, [fetcher, answer.id]);
+  }, [fetcher, answer.id, voteState]);
 
   const onDownvote = useCallback(() => {
+    setVoteState((prev) => (prev === "downvoted" ? "unvoted" : "downvoted"));
+    setVoteCount((prev) => {
+      if (voteState === "upvoted") return prev - 2;
+      if (voteState === "downvoted") return prev + 1;
+      return prev - 1;
+    });
+
     fetcher.submit(
       {
-        answerId: answer.id,
         voteType: "downvote",
         questionId: params.questionId,
       },
-      { method: "post", action: "/api/answer/vote" },
+      { method: "post", action: `/api/answer/${answer.id}/vote` },
     );
-  }, [fetcher, answer.id]);
+  }, [fetcher, answer.id, voteState]);
 
   const deleteAnswer = useCallback(() => {
-    fetcher.submit(
-      { answerId: answer.id, questionId: params.questionId },
-      { method: "post", action: "/api/answer/delete" },
-    );
+    fetcher.submit(null, {
+      method: "post",
+      action: `/api/answer/${answer.id}/delete`,
+    });
   }, [fetcher, answer.id]);
 
   return (
@@ -115,29 +137,25 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
         <div className="mt-6 flex justify-between items-end">
           <UpvoteDownvote
             state={voteState}
+            display={voteCount}
             onUpvoteClick={onUpvote}
-            display={answer.voteCount}
             onDownvoteClick={onDownvote}
           />
 
           {session?.user.id === answer.createdByUserId && (
-            <div className="flex gap-2">
-              <div className="flex gap-4">
-                <Link
-                  to={`/question/${params.questionId}/answer/${answer.id}/edit`}
-                  className="text-sm text-blue-400 hover:text-blue-300"
-                >
-                  Edit
-                </Link>
-              </div>
-              <div className="flex justify-end">
-                <button
-                  onClick={deleteAnswer}
-                  className="text-sm text-red-400 hover:text-red-300 transition"
-                >
-                  Delete Answer
-                </button>
-              </div>
+            <div className="flex gap-4">
+              <Link
+                to={`/question/${params.questionId}/answer/${answer.id}/edit`}
+                className="text-sm text-blue-400 hover:text-blue-300"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={deleteAnswer}
+                className="text-sm text-red-400 hover:text-red-300 transition"
+              >
+                Delete Answer
+              </button>
             </div>
           )}
         </div>

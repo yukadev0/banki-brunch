@@ -1,9 +1,9 @@
 import { redirect } from "react-router";
-import type { Route } from "./+types/update";
 import { createAuth } from "~/lib/auth.server";
 import { AnswersRepository } from "~/repositories/answer/repository";
+import type { Route } from "./+types/update";
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ params, request, context }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
   });
@@ -13,10 +13,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  const answerId = formData.get("answerId");
+  const answerId = params.id;
 
   const answer = await AnswersRepository.getById(context.db, Number(answerId));
-  
+
   if (!answer) {
     throw new Response("Answer not found", { status: 404 });
   }

@@ -1,9 +1,9 @@
 import { redirect } from "react-router";
-import type { Route } from "./+types/delete";
 import { createAuth } from "~/lib/auth.server";
 import { AnswersRepository } from "~/repositories/answer/repository";
+import type { Route } from "./+types/delete";
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ params, request, context }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
   });
@@ -12,19 +12,22 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw redirect("/login");
   }
 
-  const formData = await request.formData();
-  const answerId = formData.get("answerId");
-
+  const answerId = Number(params.id);
   if (!answerId) {
     throw new Response("Answer id is required", { status: 400 });
   }
 
-  const answer = await AnswersRepository.getById(context.db, Number(answerId));
+  const answer = await AnswersRepository.getById(context.db, answerId);
+
+  if (!answer) {
+    throw new Response("Answer not found", { status: 404 });
+  }
+
   if (session.user.id !== answer.createdByUserId) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  await AnswersRepository.delete(context.db, Number(answerId));
+  await AnswersRepository.delete(context.db, answerId);
 
   throw redirect(`/question/${answer.questionId}`);
 }

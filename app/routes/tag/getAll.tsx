@@ -1,9 +1,9 @@
+import { useCallback } from "react";
 import { Link, useFetcher } from "react-router";
 import { createAuth } from "~/lib/auth.server";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { TagsSelectArgs } from "~/repositories/tag/types";
 import type { Route } from "./+types/getAll";
-import { useCallback } from "react";
 
 export function meta() {
   return [{ title: "Tags" }];
@@ -22,12 +22,10 @@ function TagItem({ tag }: { tag: TagsSelectArgs }) {
   const fetcher = useFetcher();
 
   const deleteTag = useCallback(() => {
-    fetcher.submit(
-      {
-        name: tag.name,
-      },
-      { method: "post", action: `/api/tag/delete` },
-    );
+    fetcher.submit(null, {
+      method: "post",
+      action: `/api/tag/${tag.name}/delete`,
+    });
   }, [tag.name]);
 
   return (

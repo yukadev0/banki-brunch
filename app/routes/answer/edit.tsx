@@ -1,6 +1,6 @@
-import { createAuth } from "~/lib/auth.server";
-import { Form, Link, redirect, useFetcher } from "react-router";
 import { useCallback, useState } from "react";
+import { Link, redirect, useFetcher } from "react-router";
+import { createAuth } from "~/lib/auth.server";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/edit";
 
@@ -42,8 +42,8 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
 
   const updateAnswer = useCallback(() => {
     fetcher.submit(
-      { content: content, questionId: answer.questionId, answerId: answer.id },
-      { method: "post", action: `/api/answer/update` },
+      { content: content, questionId: answer.questionId },
+      { method: "post", action: `/api/answer/${answer.id}/update` },
     );
   }, [content]);
 
@@ -60,25 +60,21 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
         Edit Answer
       </h1>
 
-      <div className="w-full max-w-2xl bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-lg">
-        <div className="flex flex-col gap-6">
-          <textarea
-            name="content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={5}
-            className="w-full hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-          />
+      <div className="flex flex-col gap-6 w-full max-w-2xl bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-lg">
+        <textarea
+          name="content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={5}
+          className="w-full hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        />
 
-          <input type="hidden" name="questionId" value={answer.questionId} />
-
-          <button
-            onClick={updateAnswer}
-            className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
-          >
-            Save
-          </button>
-        </div>
+        <button
+          onClick={updateAnswer}
+          className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
+        >
+          Save
+        </button>
       </div>
     </div>
   );

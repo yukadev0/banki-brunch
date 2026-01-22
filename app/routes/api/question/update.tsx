@@ -1,9 +1,9 @@
 import { redirect } from "react-router";
-import type { Route } from "./+types/update";
 import { createAuth } from "~/lib/auth.server";
 import { QuestionsRepository } from "~/repositories/question/repository";
+import type { Route } from "./+types/update";
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ params, request, context }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
   });
@@ -13,7 +13,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  const questionId = Number(formData.get("id"));
+  const questionId = Number(params.id);
 
   const question = await QuestionsRepository.getById(context.db, questionId);
 

@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, redirect, useFetcher } from "react-router";
+import { tagsSchema } from "~/db/schemas/tag";
 import { createAuth } from "~/lib/auth.server";
 import type { Route } from "./+types/create";
-import { tagsSchema } from "~/db/schemas/tag";
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -117,10 +117,6 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
               </button>
             ))}
           </div>
-
-          {selectedTags.map((t) => (
-            <input key={t} type="hidden" name="tags" value={t} />
-          ))}
 
           <button
             onClick={createQuestion}

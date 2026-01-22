@@ -1,6 +1,6 @@
-import { createAuth } from "~/lib/auth.server";
-import { Link, redirect, useFetcher } from "react-router";
 import { useCallback, useState } from "react";
+import { Link, redirect, useFetcher } from "react-router";
+import { createAuth } from "~/lib/auth.server";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/edit";
@@ -47,11 +47,10 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
     fetcher.submit(
       {
         tags: tags,
-        id: question.id,
         title: titleInput,
         content: contentInput,
       },
-      { method: "post", action: `/api/question/update` },
+      { method: "post", action: `/api/question/${question.id}/update` },
     );
   }, [titleInput, contentInput, tags]);
 

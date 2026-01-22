@@ -3,7 +3,7 @@ import { createAuth } from "~/lib/auth.server";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/vote";
 
-export async function action({ context, request }: Route.ActionArgs) {
+export async function action({ context, request, params }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
   });
@@ -13,7 +13,7 @@ export async function action({ context, request }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
-  const answerId = formData.get("answerId");
+  const answerId = params.id;
   const answer = await AnswersRepository.getById(context.db, Number(answerId));
 
   if (!answer) {
@@ -23,11 +23,15 @@ export async function action({ context, request }: Route.ActionArgs) {
   const voteType = formData.get("voteType");
   const questionId = formData.get("questionId");
 
-  await AnswersRepository.vote(
-    context.db,
-    session.user.id,
-    Number(answerId),
-    Number(questionId),
-    voteType as "upvote" | "downvote",
-  );
+  try {
+    await AnswersRepository.vote(
+      context.db,
+      session.user.id,
+      Number(answerId),
+      Number(questionId),
+      voteType as "upvote" | "downvote",
+    );
+  } catch (error) {
+    return { error: "Something went wrong" };
+  }
 }
