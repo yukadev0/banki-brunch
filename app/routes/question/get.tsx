@@ -17,24 +17,23 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     headers: request.headers,
   });
 
-  const question = await QuestionsRepository.getById(
-    context.db,
-    Number(params.id),
-  );
+  const questionId = Number(params.id);
+  const question = await QuestionsRepository.getById(context.db, questionId);
+  const userId = session?.user?.id || "0";
 
   const answers = (
-    await AnswersRepository.getByQuestionId(context.db, Number(params.id))
+    await AnswersRepository.getAllByQuestionId(context.db, questionId, userId)
   ).sort((a, b) => b.voteCount - a.voteCount);
 
   const questionVoteCount = await QuestionsRepository.getVoteCount(
     context.db,
-    Number(params.id),
+    questionId,
   );
 
-  const questionVote = await QuestionsRepository.getVote(
+  const questionVote = await QuestionsRepository.getUserVote(
     context.db,
-    question.id,
-    session?.user?.id || "0",
+    questionId,
+    userId,
   );
 
   return {

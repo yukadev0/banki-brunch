@@ -1,13 +1,13 @@
+import { and, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { eq, sql, and } from "drizzle-orm";
 import { user } from "~/db/schema";
-import type { QuestionInsertArgs } from "./types";
 import {
   questionsSchema,
   questionTagsSchema,
   questionVotesSchema,
 } from "~/db/schemas/question";
 import { tagsSchema } from "~/db/schemas/tag";
+import type { QuestionInsertArgs, QuestionVotesSelectArgs } from "./types";
 
 export const QuestionsRepository = {
   async getAll(db: DrizzleD1Database<any>) {
@@ -68,12 +68,12 @@ export const QuestionsRepository = {
     return question;
   },
 
-  async getVote(
+  async getUserVote(
     db: DrizzleD1Database<any>,
     questionId: number,
     userId: string,
-  ) {
-    const votes = await db
+  ): Promise<QuestionVotesSelectArgs | undefined> {
+    const [vote] = await db
       .select()
       .from(questionVotesSchema)
       .where(
@@ -84,7 +84,7 @@ export const QuestionsRepository = {
       )
       .limit(1);
 
-    return votes.length > 0 ? votes[0] : null;
+    return vote;
   },
 
   async getVoteCount(db: DrizzleD1Database<any>, questionId: number) {

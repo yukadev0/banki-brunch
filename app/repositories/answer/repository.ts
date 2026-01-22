@@ -6,8 +6,43 @@ import { QuestionsRepository } from "../question/repository";
 import type { AnswerInsertArgs } from "./types";
 
 export const AnswersRepository = {
-  async getAll(db: DrizzleD1Database<any>) {
-    return db.select().from(answersSchema);
+  async getAllByQuestionId(
+    db: DrizzleD1Database<any>,
+    questionId: number,
+    userId: string,
+  ) {
+    const question = await QuestionsRepository.getById(db, questionId);
+
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    const answers = await db
+      .select({
+        author: user,
+        answer: answersSchema,
+        vote: answerVotesSchema,
+        voteCount: sql<number>`SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
+      })
+      .from(answersSchema)
+      .where(eq(answersSchema.questionId, questionId))
+      .innerJoin(user, eq(user.id, answersSchema.createdByUserId))
+      .leftJoin(
+        answerVotesSchema,
+        and(
+          eq(answerVotesSchema.userId, userId),
+          eq(answerVotesSchema.questionId, questionId),
+          eq(answerVotesSchema.answerId, answersSchema.id),
+        ),
+      )
+      .groupBy(answersSchema.id, user.id);
+
+    return answers.map((answer) => ({
+      ...answer.answer,
+      vote: answer.vote,
+      author: answer.author,
+      voteCount: answer.voteCount,
+    }));
   },
 
   async getById(db: DrizzleD1Database<any>, id: number) {
@@ -37,44 +72,6 @@ export const AnswersRepository = {
       author: answer.author,
       voteCount: answer.voteCount,
     };
-  },
-
-  async getByQuestionId(db: DrizzleD1Database<any>, questionId: number) {
-    const question = await QuestionsRepository.getById(db, questionId);
-
-    if (!question) {
-      throw new Error("Question not found");
-    }
-
-    const answers = await db
-      .select({
-        author: user,
-        answer: answersSchema,
-        vote: answerVotesSchema,
-        voteCount: sql<number>`SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
-      })
-      .from(answersSchema)
-      .where(eq(answersSchema.questionId, questionId))
-      .innerJoin(user, eq(user.id, answersSchema.createdByUserId))
-      .leftJoin(
-        answerVotesSchema,
-        eq(answerVotesSchema.answerId, answersSchema.id),
-      )
-      .groupBy(answersSchema.id, user.id);
-
-    return answers.map((answer) => ({
-      ...answer.answer,
-      vote: answer.vote,
-      author: answer.author,
-      voteCount: answer.voteCount,
-    }));
-  },
-
-  async getVotesByAnswerId(db: DrizzleD1Database<any>, answerId: number) {
-    return await db
-      .select()
-      .from(answerVotesSchema)
-      .where(eq(answerVotesSchema.answerId, answerId));
   },
 
   async create(db: DrizzleD1Database<any>, data: AnswerInsertArgs) {
