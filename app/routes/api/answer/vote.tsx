@@ -13,13 +13,8 @@ export async function action({ context, request, params }: Route.ActionArgs) {
   }
 
   const formData = await request.formData();
+
   const answerId = params.id;
-  const answer = await AnswersRepository.getById(context.db, Number(answerId));
-
-  if (!answer) {
-    throw new Response("Answer not found", { status: 404 });
-  }
-
   const voteType = formData.get("voteType");
   const questionId = formData.get("questionId");
 

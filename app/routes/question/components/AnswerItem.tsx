@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 
@@ -12,9 +12,46 @@ export function AnswerItem({
   questionId: number;
 }) {
   const fetcher = useFetcher();
-  const [voteState, setVoteState] = useState<
-    "upvoted" | "downvoted" | "unvoted"
-  >("unvoted");
+
+  const { voteState, voteDisplay } = useMemo(() => {
+    let state: "upvote" | "downvote" | "unvote" = "unvote";
+    let display = answer.voteCount;
+
+    if (fetcher.formData) {
+      const voteType = fetcher.formData.get("voteType");
+      if (voteType === "upvote") {
+        state = "upvote";
+        if (answer.vote) {
+          if (answer.vote.vote_type === "downvote") {
+            display = answer.voteCount + 2;
+          } else if (answer.vote.vote_type === "upvote") {
+            display = answer.voteCount - 1;
+            state = "unvote";
+          }
+        } else {
+          display = answer.voteCount + 1;
+        }
+      } else if (voteType === "downvote") {
+        state = "downvote";
+        if (answer.vote) {
+          if (answer.vote.vote_type === "upvote") {
+            display = answer.voteCount - 2;
+          } else if (answer.vote.vote_type === "downvote") {
+            display = answer.voteCount + 1;
+            state = "unvote";
+          }
+        } else {
+          display = answer.voteCount - 1;
+        }
+      }
+    } else {
+      if (answer.vote) {
+        state = answer.vote.vote_type;
+      }
+    }
+
+    return { voteState: state, voteDisplay: display };
+  }, [fetcher.formData, answer.vote, answer.voteCount]);
 
   const onUpvote = useCallback(() => {
     fetcher.submit(
@@ -30,25 +67,12 @@ export function AnswerItem({
     );
   }, [fetcher, answer.id]);
 
-  useEffect(() => {
-    if (!answer.vote) {
-      setVoteState("unvoted");
-      return;
-    }
-
-    if (answer.vote.vote_type === "upvote") {
-      setVoteState("upvoted");
-    } else if (answer.vote.vote_type === "downvote") {
-      setVoteState("downvoted");
-    }
-  }, [answer.vote]);
-
   return (
     <div className="flex gap-6 bg-slate-800 border border-slate-800 rounded-xl p-6">
       <UpvoteDownvote
         state={voteState}
+        display={voteDisplay}
         onUpvoteClick={onUpvote}
-        display={answer.voteCount}
         onDownvoteClick={onDownvote}
       />
 

@@ -16,16 +16,14 @@ export async function action({ params, context, request }: Route.ActionArgs) {
   const questionId = Number(params.id);
   const voteType = formData.get("voteType");
 
-  const question = await QuestionsRepository.getById(context.db, questionId);
-
-  if (!question) {
-    throw new Response("Question not found", { status: 404 });
+  try {
+    await QuestionsRepository.vote(
+      context.db,
+      questionId,
+      session.user.id,
+      voteType as "upvote" | "downvote",
+    );
+  } catch (error) {
+    return { error: "Something went wrong" };
   }
-
-  await QuestionsRepository.vote(
-    context.db,
-    questionId,
-    session.user.id,
-    voteType as "upvote" | "downvote",
-  );
 }

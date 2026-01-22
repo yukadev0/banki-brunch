@@ -4,7 +4,7 @@ interface UpvoteDownvoteProps {
   display: number;
   onUpvoteClick: () => void;
   onDownvoteClick: () => void;
-  state: "unvoted" | "upvoted" | "downvoted";
+  state: "unvote" | "upvote" | "downvote";
 }
 
 export default function UpvoteDownvote({
@@ -13,8 +13,8 @@ export default function UpvoteDownvote({
   onUpvoteClick,
   onDownvoteClick,
 }: UpvoteDownvoteProps) {
-  const upvoted = state === "upvoted";
-  const downvoted = state === "downvoted";
+  const upvoted = state === "upvote";
+  const downvoted = state === "downvote";
 
   return (
     <div className="flex flex-col items-center gap-2 select-none w-6">

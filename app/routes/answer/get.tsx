@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { Link, redirect, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { createAuth } from "~/lib/auth.server";
@@ -40,37 +40,47 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
 
   const fetcher = useFetcher();
 
-  const [voteCount, setVoteCount] = useState(answer.voteCount);
-  const [voteState, setVoteState] = useState<
-    "upvoted" | "downvoted" | "unvoted"
-  >("unvoted");
+  const { voteState, voteDisplay } = useMemo(() => {
+    let state: "upvote" | "downvote" | "unvote" = "unvote";
+    let display = answer.voteCount;
 
-  useEffect(() => {
-    if (fetcher.state !== "idle") {
-      return;
+    if (fetcher.formData) {
+      const voteType = fetcher.formData.get("voteType");
+      if (voteType === "upvote") {
+        state = "upvote";
+        if (answer.vote) {
+          if (answer.vote.vote_type === "downvote") {
+            display = answer.voteCount + 2;
+          } else if (answer.vote.vote_type === "upvote") {
+            display = answer.voteCount - 1;
+            state = "unvote";
+          }
+        } else {
+          display = answer.voteCount + 1;
+        }
+      } else if (voteType === "downvote") {
+        state = "downvote";
+        if (answer.vote) {
+          if (answer.vote.vote_type === "upvote") {
+            display = answer.voteCount - 2;
+          } else if (answer.vote.vote_type === "downvote") {
+            display = answer.voteCount + 1;
+            state = "unvote";
+          }
+        } else {
+          display = answer.voteCount - 1;
+        }
+      }
+    } else {
+      if (answer.vote) {
+        state = answer.vote.vote_type;
+      }
     }
 
-    setVoteCount(answer.voteCount);
-    if (!answer.vote) {
-      setVoteState("unvoted");
-      return;
-    }
-
-    if (answer.vote.vote_type === "upvote") {
-      setVoteState("upvoted");
-    } else if (answer.vote.vote_type === "downvote") {
-      setVoteState("downvoted");
-    }
-  }, [fetcher.state, answer.vote, answer.voteCount]);
+    return { voteState: state, voteDisplay: display };
+  }, [fetcher.formData, answer.vote, answer.voteCount]);
 
   const onUpvote = useCallback(() => {
-    setVoteState((prev) => (prev === "upvoted" ? "unvoted" : "upvoted"));
-    setVoteCount((prev) => {
-      if (voteState === "downvoted") return prev + 2;
-      if (voteState === "upvoted") return prev - 1;
-      return prev + 1;
-    });
-
     fetcher.submit(
       {
         voteType: "upvote",
@@ -81,13 +91,6 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
   }, [fetcher, answer.id, voteState]);
 
   const onDownvote = useCallback(() => {
-    setVoteState((prev) => (prev === "downvoted" ? "unvoted" : "downvoted"));
-    setVoteCount((prev) => {
-      if (voteState === "upvoted") return prev - 2;
-      if (voteState === "downvoted") return prev + 1;
-      return prev - 1;
-    });
-
     fetcher.submit(
       {
         voteType: "downvote",
@@ -137,7 +140,7 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
         <div className="mt-6 flex justify-between items-end">
           <UpvoteDownvote
             state={voteState}
-            display={voteCount}
+            display={voteDisplay}
             onUpvoteClick={onUpvote}
             onDownvoteClick={onDownvote}
           />
