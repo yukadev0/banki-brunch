@@ -6,8 +6,8 @@ export async function createAnswer(
   fetcher: FetcherWithComponents<any>,
 ) {
   fetcher.submit(
-    { content: content },
-    { method: "post", action: `/api/answer/${questionId}/create` },
+    { content: content, questionId: questionId },
+    { method: "post", action: `/api/answer/create` },
   );
 }
 

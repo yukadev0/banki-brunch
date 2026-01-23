@@ -2,17 +2,16 @@ import { requireSession } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/create";
 
-export async function action({ context, request, params }: Route.ActionArgs) {
+export async function action({ context, request }: Route.ActionArgs) {
   const session = await requireSession(context, request);
 
   const formData = await request.formData();
   const content = formData.get("content") as string;
+  const questionId = Number(formData.get("questionId"));
 
-  if (!content) {
+  if (!content || !questionId) {
     return { error: "Missing required fields" };
   }
-
-  const questionId = Number(params.questionId);
 
   try {
     await AnswersRepository.create(context.db, {

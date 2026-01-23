@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { user } from "../schema";
+import { user } from "../schemas/auth";
 import { questionsSchema } from "./question";
 
 export const answersSchema = sqliteTable("answers", {
@@ -40,7 +40,7 @@ export const answerVotesSchema = sqliteTable("answer_votes", {
 
   questionId: integer("question_id")
     .notNull()
-    .references(() => questionsSchema.id, { onDelete: "cascade" }), //TODO: delete it
+    .references(() => questionsSchema.id, { onDelete: "cascade" }),
 
   userId: text("user_id")
     .notNull()

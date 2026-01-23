@@ -27,7 +27,7 @@ export default [
     ]),
 
     ...prefix("answer", [
-      route(":questionId/create", "routes/api/answer/create.tsx"),
+      route("create", "routes/api/answer/create.tsx"),
 
       ...prefix(":id", [
         route("update", "routes/api/answer/update.tsx"),

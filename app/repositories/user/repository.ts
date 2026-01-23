@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { user } from "~/db/schema";
+import { user } from "~/db/schemas/auth";
 
 export const UsersRepository = {
   async getAll(db: DrizzleD1Database<any>) {
@@ -11,6 +11,7 @@ export const UsersRepository = {
         image: user.image,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        role: user.role,
       })
       .from(user);
   },

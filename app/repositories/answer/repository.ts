@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { user } from "~/db/schema";
 import { answersSchema, answerVotesSchema } from "~/db/schemas/answer";
+import { user } from "~/db/schemas/auth";
 import { QuestionsRepository } from "../question/repository";
 import type { AnswerInsertArgs } from "./types";
 
@@ -62,10 +62,6 @@ export const AnswersRepository = {
         eq(answerVotesSchema.answerId, answersSchema.id),
       );
 
-    if (!answer) {
-      throw new Error("Answer not found");
-    }
-
     return {
       ...answer.answer,
       vote: answer.vote,
@@ -75,20 +71,10 @@ export const AnswersRepository = {
   },
 
   async create(db: DrizzleD1Database<any>, data: AnswerInsertArgs) {
-    if (!data.content || !data.questionId) {
-      throw new Error("Missing required fields");
-    }
-
     await db.insert(answersSchema).values(data);
   },
 
   async update(db: DrizzleD1Database<any>, id: number, data: AnswerInsertArgs) {
-    const answer = await this.getById(db, id); // TODO: ask rask if i should do this or not
-
-    if (!answer) {
-      throw new Error("Answer not found");
-    }
-
     await db.update(answersSchema).set(data).where(eq(answersSchema.id, id));
   },
 

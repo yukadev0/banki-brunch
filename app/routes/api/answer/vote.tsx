@@ -7,13 +7,17 @@ export async function action({ context, request, params }: Route.ActionArgs) {
 
   const formData = await request.formData();
   const voteType = formData.get("voteType");
-
-  if (!voteType || (voteType !== "upvote" && voteType !== "downvote")) {
-    return { error: "Missing required fields" };
-  }
-
   const answerId = Number(params.id);
   const questionId = Number(formData.get("questionId"));
+
+  if (
+    !voteType ||
+    (voteType !== "upvote" && voteType !== "downvote") ||
+    !answerId ||
+    !questionId
+  ) {
+    return { error: "Missing required fields" };
+  }
 
   try {
     await AnswersRepository.vote(
@@ -21,7 +25,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
       session.user.id,
       answerId,
       questionId,
-      voteType,
+      voteType as "upvote" | "downvote",
     );
 
     return { success: "Answer voted successfully" };

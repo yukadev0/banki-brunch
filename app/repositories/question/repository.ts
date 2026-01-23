@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { user } from "~/db/schema";
+import { user } from "~/db/schemas/auth";
 import {
   questionsSchema,
   questionTagsSchema,

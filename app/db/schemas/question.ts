@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { user } from "../schema";
+import { user } from "../schemas/auth";
 
 export const questionsSchema = sqliteTable("questions", {
   id: integer("id").primaryKey(),

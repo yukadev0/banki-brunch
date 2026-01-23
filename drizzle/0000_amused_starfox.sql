@@ -1,3 +1,27 @@
+CREATE TABLE `answer_votes` (
+	`answer_id` integer NOT NULL,
+	`question_id` integer NOT NULL,
+	`user_id` text NOT NULL,
+	`vote_type` text NOT NULL,
+	FOREIGN KEY (`answer_id`) REFERENCES `answers`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `answers` (
+	`id` integer PRIMARY KEY NOT NULL,
+	`question_id` integer NOT NULL,
+	`content` text NOT NULL,
+	`created_by_user_id` text NOT NULL,
+	`is_validated` integer DEFAULT false NOT NULL,
+	`validated_by_user_id` integer,
+	`is_hidden_by_default` integer DEFAULT true NOT NULL,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`created_by_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`validated_by_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `account` (
 	`id` text PRIMARY KEY NOT NULL,
 	`account_id` text NOT NULL,
@@ -25,6 +49,7 @@ CREATE TABLE `session` (
 	`ip_address` text,
 	`user_agent` text,
 	`user_id` text NOT NULL,
+	`impersonated_by` text,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
@@ -37,7 +62,11 @@ CREATE TABLE `user` (
 	`email_verified` integer DEFAULT false NOT NULL,
 	`image` text,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL
+	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`role` text,
+	`banned` integer DEFAULT false,
+	`ban_reason` text,
+	`ban_expires` integer
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
@@ -51,31 +80,6 @@ CREATE TABLE `verification` (
 );
 --> statement-breakpoint
 CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);--> statement-breakpoint
-CREATE TABLE `answer_votes` (
-	`answer_id` integer NOT NULL,
-	`question_id` integer NOT NULL,
-	`user_id` text NOT NULL,
-	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	`vote_type` text NOT NULL,
-	FOREIGN KEY (`answer_id`) REFERENCES `answers`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE TABLE `answers` (
-	`id` integer PRIMARY KEY NOT NULL,
-	`question_id` integer NOT NULL,
-	`content` text NOT NULL,
-	`created_by_user_id` text NOT NULL,
-	`is_validated` integer DEFAULT false NOT NULL,
-	`validated_by_user_id` integer,
-	`is_hidden_by_default` integer DEFAULT true NOT NULL,
-	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`created_by_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`validated_by_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
-);
---> statement-breakpoint
 CREATE TABLE `question_tags` (
 	`question_id` integer NOT NULL,
 	`tags` text DEFAULT '[]' NOT NULL,
@@ -85,7 +89,6 @@ CREATE TABLE `question_tags` (
 CREATE TABLE `question_votes` (
 	`question_id` integer NOT NULL,
 	`user_id` text NOT NULL,
-	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`vote_type` text NOT NULL,
 	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
@@ -103,8 +106,5 @@ CREATE TABLE `questions` (
 );
 --> statement-breakpoint
 CREATE TABLE `tags` (
-	`id` integer PRIMARY KEY NOT NULL,
 	`name` text NOT NULL
 );
---> statement-breakpoint
-CREATE UNIQUE INDEX `tags_name_unique` ON `tags` (`name`);
