@@ -1,7 +1,7 @@
-import { createAuth } from "~/lib/auth.server";
-import type { Route } from "./+types/create";
 import { redirect } from "react-router";
+import { createAuth } from "~/lib/auth.server";
 import { QuestionsRepository } from "~/repositories/question/repository";
+import type { Route } from "./+types/create";
 
 export async function action({ request, context }: Route.ActionArgs) {
   const session = await createAuth(context.cloudflare.env).api.getSession({

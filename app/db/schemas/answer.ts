@@ -1,7 +1,7 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { questionsSchema } from "./question";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { user } from "../schema";
+import { questionsSchema } from "./question";
 
 export const answersSchema = sqliteTable("answers", {
   id: integer("id").primaryKey(),
@@ -40,7 +40,7 @@ export const answerVotesSchema = sqliteTable("answer_votes", {
 
   questionId: integer("question_id")
     .notNull()
-    .references(() => questionsSchema.id, { onDelete: "cascade" }),
+    .references(() => questionsSchema.id, { onDelete: "cascade" }), //TODO: delete it
 
   userId: text("user_id")
     .notNull()

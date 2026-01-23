@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Form, Link, redirect, type LoaderFunctionArgs } from "react-router";
 import { createAuth } from "~/lib/auth.server";
 import { QuestionsRepository } from "~/repositories/question/repository";
-import type { GetAllQuestionArgs } from "~/repositories/question/types";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/getAll";
 
@@ -84,7 +83,7 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
           <p className="text-center text-gray-400">No questions found</p>
         ) : (
           <ul className="space-y-6">
-            {filteredQuestions.map((question: GetAllQuestionArgs) => (
+            {filteredQuestions.map((question) => (
               <li
                 key={question.id}
                 className="bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 transition"

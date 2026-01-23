@@ -1,6 +1,5 @@
 import { Link, type LoaderFunctionArgs } from "react-router";
 import { UsersRepository } from "~/repositories/user/repository";
-import type { UserSelectArgs } from "~/repositories/user/types";
 import type { Route } from "./+types/getAll";
 
 export function meta({}: LoaderFunctionArgs) {
@@ -31,7 +30,7 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
           <p className="text-center text-gray-400">No users found</p>
         ) : (
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {users.map((user: UserSelectArgs) => (
+            {users.map((user) => (
               <li
                 key={user.id}
                 className="bg-gray-800 hover:bg-gray-700 transition cursor-pointer rounded-lg border border-gray-700 shadow-lg"

@@ -83,7 +83,7 @@ export const AnswersRepository = {
   },
 
   async update(db: DrizzleD1Database<any>, id: number, data: AnswerInsertArgs) {
-    const answer = await this.getById(db, id);
+    const answer = await this.getById(db, id); // TODO: ask rask if i should do this or not
 
     if (!answer) {
       throw new Error("Answer not found");
