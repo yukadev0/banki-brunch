@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Form, Link, redirect, type LoaderFunctionArgs } from "react-router";
-import { createAuth } from "~/lib/auth.server";
+import { getSession } from "~/lib/auth.helper";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/getAll";
@@ -18,9 +18,7 @@ export async function action({ context }: Route.ActionArgs) {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const session = await getSession(context, request);
 
   const questions = await QuestionsRepository.getAll(context.db);
   const tags = await TagsRepository.getAll(context.db);

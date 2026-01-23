@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, redirect, useFetcher } from "react-router";
-import { createAuth } from "~/lib/auth.server";
+import { Link, useFetcher } from "react-router";
+import { requireSession } from "~/lib/auth.helper";
 import type { Route } from "./+types/create";
 
 export function meta() {
@@ -8,13 +8,7 @@ export function meta() {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session) {
-    return redirect("/login");
-  }
+  await requireSession(context, request);
 }
 
 export default function CreatePage() {

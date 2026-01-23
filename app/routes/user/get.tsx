@@ -1,6 +1,6 @@
-import { Link } from "react-router";
 import { useEffect } from "react";
-import { createAuth } from "~/lib/auth.server";
+import { Link } from "react-router";
+import { getSession } from "~/lib/auth.helper";
 import { UsersRepository } from "~/repositories/user/repository";
 import type { Route } from "./+types/get";
 
@@ -9,10 +9,7 @@ export function meta({ params }: Route.MetaArgs) {
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
+  const session = await getSession(context, request);
   const user = await UsersRepository.getById(context.db, params.id);
 
   if (!user) {

@@ -1,35 +1,17 @@
 import { useCallback, useState } from "react";
-import { Link, redirect, useFetcher } from "react-router";
-import { createAuth } from "~/lib/auth.server";
+import { Link, useFetcher } from "react-router";
+import { requireOwnership } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/edit";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [{ title: "Edit Answer" }];
 }
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const answer = await AnswersRepository.getById(context.db, Number(params.id));
 
-  if (!session) {
-    return redirect("/login");
-  }
-
-  const answerId = Number(params.id);
-  if (!answerId) {
-    throw new Response("Invalid answer id", { status: 400 });
-  }
-
-  const answer = await AnswersRepository.getById(context.db, answerId);
-  if (!answer) {
-    throw new Response("Answer not found", { status: 404 });
-  }
-
-  if (answer.createdByUserId !== session.user.id) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
+  await requireOwnership(context, request, answer.createdByUserId);
 
   return { answer };
 }

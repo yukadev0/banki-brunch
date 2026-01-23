@@ -1,28 +1,21 @@
 import { useCallback, useState } from "react";
-import { Link, redirect, useFetcher } from "react-router";
-import { createAuth } from "~/lib/auth.server";
+import { Link, useFetcher } from "react-router";
+import { requireOwnership } from "~/lib/auth.helper";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/edit";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [{ title: "Edit Question" }];
 }
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const question = await QuestionsRepository.getById(
+    context.db,
+    Number(params.id),
+  );
 
-  if (!session) return redirect("/login");
-
-  const questionId = Number(params.id);
-  if (!questionId) throw new Response("Invalid question id", { status: 400 });
-
-  const question = await QuestionsRepository.getById(context.db, questionId);
-  if (!question) throw new Response("Question not found", { status: 404 });
-  if (question.createdByUserId !== session.user.id)
-    throw new Response("Unauthorized", { status: 401 });
+  await requireOwnership(context, request, question.createdByUserId);
 
   const allTags = await TagsRepository.getAll(context.db);
 

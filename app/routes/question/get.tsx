@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
-import { createAuth } from "~/lib/auth.server";
+import { getSession } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import type { Route } from "./+types/get";
@@ -13,9 +13,7 @@ export function meta({ params }: Route.MetaArgs) {
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const session = await getSession(context, request);
 
   const questionId = Number(params.id);
   const question = await QuestionsRepository.getById(context.db, questionId);

@@ -1,9 +1,9 @@
 import { Link } from "react-router";
-import type { Route } from "./+types/home";
 import { authClient } from "~/lib/auth.client";
 import { createAuth } from "~/lib/auth.server";
+import type { Route } from "./+types/home";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: "New Banki Brunch App" },
     { name: "description", content: "Welcome to Banki Brunch!" },

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Link, useFetcher } from "react-router";
-import { createAuth } from "~/lib/auth.server";
+import { getSession } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { TagsSelectArgs } from "~/repositories/tag/types";
 import type { Route } from "./+types/getAll";
@@ -10,9 +10,7 @@ export function meta() {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const session = await getSession(context, request);
 
   const tags = await TagsRepository.getAll(context.db);
   return { tags, session };

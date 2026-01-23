@@ -1,12 +1,14 @@
-import { authClient } from "~/lib/auth.client";
-import type { Route } from "./+types/login";
-import { createAuth } from "~/lib/auth.server";
 import { redirect } from "react-router";
+import { authClient } from "~/lib/auth.client";
+import { getSession } from "~/lib/auth.helper";
+import type { Route } from "./+types/login";
+
+export function meta() {
+  return [{ title: "Login" }];
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const session = await getSession(context, request);
 
   if (session) {
     return redirect("/");

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
-import { Link, redirect, useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
-import { createAuth } from "~/lib/auth.server";
+import { requireOwnership } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/get";
 
@@ -10,27 +10,13 @@ export function meta({ params }: Route.MetaArgs) {
 }
 
 export async function loader({ params, context, request }: Route.LoaderArgs) {
-  const id = Number(params.id);
-  if (!id) {
-    throw new Response("Invalid answer id", { status: 400 });
-  }
+  const answer = await AnswersRepository.getById(context.db, Number(params.id));
 
-  const answer = await AnswersRepository.getById(context.db, id);
-  if (!answer) {
-    throw new Response("Answer not found", { status: 404 });
-  }
-
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session) {
-    return redirect("/login");
-  }
-
-  if (session.user.id !== answer.createdByUserId) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
+  const session = await requireOwnership(
+    context,
+    request,
+    answer.createdByUserId,
+  );
 
   return { session, answer };
 }

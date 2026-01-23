@@ -63,7 +63,7 @@ export const AnswersRepository = {
       );
 
     if (!answer) {
-      throw new Error("Question not found");
+      throw new Error("Answer not found");
     }
 
     return {
