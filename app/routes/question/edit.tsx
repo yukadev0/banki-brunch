@@ -3,6 +3,7 @@ import { Link, useFetcher } from "react-router";
 import { requireOwnership } from "~/lib/auth.helper";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { TagsRepository } from "~/repositories/tag/repository";
+import { updateQuestion } from "../api/question/helpers";
 import type { Route } from "./+types/edit";
 
 export function meta() {
@@ -36,15 +37,8 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
     );
   }
 
-  const updateQuestion = useCallback(() => {
-    fetcher.submit(
-      {
-        tags: tags,
-        title: titleInput,
-        content: contentInput,
-      },
-      { method: "post", action: `/api/question/${question.id}/update` },
-    );
+  const updateQuestionCallback = useCallback(() => {
+    updateQuestion(question.id, titleInput, contentInput, tags, fetcher);
   }, [titleInput, contentInput, tags]);
 
   return (
@@ -107,7 +101,7 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
           </div>
 
           <button
-            onClick={updateQuestion}
+            onClick={updateQuestionCallback}
             className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
           >
             Save

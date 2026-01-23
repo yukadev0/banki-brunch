@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFetcher } from "react-router";
+import { createAnswer } from "~/routes/api/answer/helpers";
 
 export function AnswerForm({ questionId }: { questionId: number }) {
   const fetcher = useFetcher();
+
   const [answerInput, setAnswerInput] = useState("");
 
   useEffect(() => {
-    setAnswerInput("");
+    if (fetcher.state === "idle") {
+      setAnswerInput("");
+    }
   }, [fetcher.state]);
 
-  const createAnswer = useCallback(() => {
-    fetcher.submit(
-      { content: answerInput, questionId: questionId },
-      { method: "post", action: "/api/answer/create" },
-    );
+  const createAnswerCallback = useCallback(() => {
+    createAnswer(answerInput, questionId, fetcher);
   }, [answerInput]);
 
   return (
@@ -31,7 +32,7 @@ export function AnswerForm({ questionId }: { questionId: number }) {
 
       <button
         type="submit"
-        onClick={createAnswer}
+        onClick={createAnswerCallback}
         className="rounded-lg px-6 py-2 font-semibold bg-blue-500 hover:bg-blue-600 transition"
       >
         Post Answer

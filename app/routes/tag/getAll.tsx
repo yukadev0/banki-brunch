@@ -3,6 +3,7 @@ import { Link, useFetcher } from "react-router";
 import { getSession } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { TagsSelectArgs } from "~/repositories/tag/types";
+import { deleteTag } from "../api/tag/helpers";
 import type { Route } from "./+types/getAll";
 
 export function meta() {
@@ -19,17 +20,14 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 function TagItem({ tag }: { tag: TagsSelectArgs }) {
   const fetcher = useFetcher();
 
-  const deleteTag = useCallback(() => {
-    fetcher.submit(null, {
-      method: "post",
-      action: `/api/tag/${tag.name}/delete`,
-    });
+  const deleteTagCallback = useCallback(() => {
+    deleteTag(tag.name, fetcher);
   }, [tag.name]);
 
   return (
     <span>
       <button
-        onClick={deleteTag}
+        onClick={deleteTagCallback}
         className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
       >
         {tag.name}

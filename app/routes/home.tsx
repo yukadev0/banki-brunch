@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { authClient } from "~/lib/auth.client";
-import { createAuth } from "~/lib/auth.server";
+import { getSession } from "~/lib/auth.helper";
 import type { Route } from "./+types/home";
 
 export function meta() {
@@ -11,9 +11,7 @@ export function meta() {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const session = await getSession(context, request);
 
   return { session };
 }
@@ -25,8 +23,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12">
       {session && (
         <button
-          onClick={() => {
-            authClient.signOut();
+          onClick={async () => {
+            await authClient.signOut();
             window.location.reload();
           }}
           className="absolute top-4 right-4 text-sm text-red-400 hover:text-red-300 transition"

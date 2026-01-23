@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { requireOwnership } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
+import { updateAnswer } from "../api/answer/helpers";
 import type { Route } from "./+types/edit";
 
 export function meta() {
@@ -22,12 +23,9 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
   const fetcher = useFetcher();
   const [content, setContent] = useState(answer.content);
 
-  const updateAnswer = useCallback(() => {
-    fetcher.submit(
-      { content: content, questionId: answer.questionId },
-      { method: "post", action: `/api/answer/${answer.id}/update` },
-    );
-  }, [content]);
+  const updateAnswerCallback = useCallback(() => {
+    updateAnswer(content, answer.id, answer.questionId, fetcher);
+  }, [content, answer.id, answer.questionId]);
 
   return (
     <div className="text-gray-100 flex flex-col items-center justify-center gap-8 py-12">
@@ -52,7 +50,7 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
         />
 
         <button
-          onClick={updateAnswer}
+          onClick={updateAnswerCallback}
           className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
         >
           Save

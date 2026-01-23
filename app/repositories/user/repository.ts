@@ -20,4 +20,8 @@ export const UsersRepository = {
 
     return u ?? null;
   },
+
+  async delete(db: DrizzleD1Database<any>, id: string) {
+    await db.delete(user).where(eq(user.id, id));
+  },
 };

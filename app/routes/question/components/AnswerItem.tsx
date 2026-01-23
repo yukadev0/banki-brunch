@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
+import { voteAnswer } from "~/routes/api/answer/helpers";
 
 export function AnswerItem({
   answer,
@@ -54,17 +55,11 @@ export function AnswerItem({
   }, [fetcher.formData, answer.vote, answer.voteCount]);
 
   const onUpvote = useCallback(() => {
-    fetcher.submit(
-      { voteType: "upvote", questionId: questionId },
-      { method: "post", action: `/api/answer/${answer.id}/vote` },
-    );
+    voteAnswer(answer.id, questionId, "upvote", fetcher);
   }, [fetcher, answer.id]);
 
   const onDownvote = useCallback(() => {
-    fetcher.submit(
-      { voteType: "downvote", questionId: questionId },
-      { method: "post", action: `/api/answer/${answer.id}/vote` },
-    );
+    voteAnswer(answer.id, questionId, "downvote", fetcher);
   }, [fetcher, answer.id]);
 
   return (

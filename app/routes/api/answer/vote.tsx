@@ -6,19 +6,25 @@ export async function action({ context, request, params }: Route.ActionArgs) {
   const session = await requireSession(context, request);
 
   const formData = await request.formData();
-
-  const answerId = params.id;
   const voteType = formData.get("voteType");
-  const questionId = formData.get("questionId");
+
+  if (!voteType || (voteType !== "upvote" && voteType !== "downvote")) {
+    return { error: "Missing required fields" };
+  }
+
+  const answerId = Number(params.id);
+  const questionId = Number(formData.get("questionId"));
 
   try {
     await AnswersRepository.vote(
       context.db,
       session.user.id,
-      Number(answerId),
-      Number(questionId),
-      voteType as "upvote" | "downvote",
+      answerId,
+      questionId,
+      voteType,
     );
+
+    return { success: "Answer voted successfully" };
   } catch (error) {
     return { error: "Something went wrong" };
   }

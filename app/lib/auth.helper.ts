@@ -2,7 +2,7 @@ import { redirect, type AppLoadContext } from "react-router";
 import { createAuth } from "./auth.server";
 
 export async function getSession(context: AppLoadContext, request: Request) {
-  return createAuth(context.cloudflare.env).api.getSession({
+  return await createAuth(context.cloudflare.env).api.getSession({
     headers: request.headers,
   });
 }
@@ -11,9 +11,7 @@ export async function requireSession(
   context: AppLoadContext,
   request: Request,
 ) {
-  const session = await createAuth(context.cloudflare.env).api.getSession({
-    headers: request.headers,
-  });
+  const session = await getSession(context, request);
 
   if (!session) {
     throw redirect("/login");

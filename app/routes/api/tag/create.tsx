@@ -9,10 +9,16 @@ export async function action({ request, context }: Route.ActionArgs) {
   const tagName = formData.get("name");
 
   if (!tagName) {
-    throw new Response("Tag name is required", { status: 400 });
+    return { error: "Tag name is required" };
   }
 
-  await TagsRepository.create(context.db, {
-    name: tagName.toString(),
-  });
+  try {
+    await TagsRepository.create(context.db, {
+      name: tagName.toString(),
+    });
+
+    return { success: "Tag created successfully" };
+  } catch (error) {
+    return { error: "Something went wrong" };
+  }
 }

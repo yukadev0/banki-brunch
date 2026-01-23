@@ -3,6 +3,7 @@ import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { requireOwnership } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
+import { deleteAnswer, voteAnswer } from "../api/answer/helpers";
 import type { Route } from "./+types/get";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -67,31 +68,16 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
   }, [fetcher.formData, answer.vote, answer.voteCount]);
 
   const onUpvote = useCallback(() => {
-    fetcher.submit(
-      {
-        voteType: "upvote",
-        questionId: params.questionId,
-      },
-      { method: "post", action: `/api/answer/${answer.id}/vote` },
-    );
-  }, [fetcher, answer.id, voteState]);
+    voteAnswer(answer.id, Number(params.questionId), "upvote", fetcher);
+  }, [answer.id, voteState]);
 
   const onDownvote = useCallback(() => {
-    fetcher.submit(
-      {
-        voteType: "downvote",
-        questionId: params.questionId,
-      },
-      { method: "post", action: `/api/answer/${answer.id}/vote` },
-    );
-  }, [fetcher, answer.id, voteState]);
+    voteAnswer(answer.id, Number(params.questionId), "downvote", fetcher);
+  }, [answer.id, voteState]);
 
-  const deleteAnswer = useCallback(() => {
-    fetcher.submit(null, {
-      method: "post",
-      action: `/api/answer/${answer.id}/delete`,
-    });
-  }, [fetcher, answer.id]);
+  const deleteAnswerCallback = useCallback(() => {
+    deleteAnswer(answer.id, fetcher);
+  }, [answer.id]);
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10">
@@ -140,8 +126,8 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
                 Edit
               </Link>
               <button
-                onClick={deleteAnswer}
-                className="text-sm text-red-400 hover:text-red-300 transition"
+                onClick={deleteAnswerCallback}
+                className="cursor-pointer text-sm text-red-400 hover:text-red-300 transition"
               >
                 Delete Answer
               </button>

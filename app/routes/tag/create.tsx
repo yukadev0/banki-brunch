@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { requireSession } from "~/lib/auth.helper";
+import { createTag } from "../api/tag/helpers";
 import type { Route } from "./+types/create";
 
 export function meta() {
@@ -16,16 +17,13 @@ export default function CreatePage() {
   const [tagNameInput, setTagNameInput] = useState("");
 
   useEffect(() => {
-    setTagNameInput("");
+    if (fetcher.state === "idle") {
+      setTagNameInput("");
+    }
   }, [fetcher.state]);
 
-  const createTag = useCallback(() => {
-    fetcher.submit(
-      {
-        name: tagNameInput,
-      },
-      { method: "post", action: "/api/tag/create" },
-    );
+  const createTagCallback = useCallback(() => {
+    createTag(tagNameInput, fetcher);
   }, [tagNameInput]);
 
   return (
@@ -57,7 +55,7 @@ export default function CreatePage() {
           </div>
 
           <button
-            onClick={createTag}
+            onClick={createTagCallback}
             className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
           >
             Create Tag

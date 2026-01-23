@@ -7,18 +7,24 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const formData = await request.formData();
 
-  const title = formData.get("title");
-  const content = formData.get("content");
-  const selectedTags = JSON.parse(formData.get("tags") as string);
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+  const tags = JSON.parse(formData.get("tags") as string);
 
-  if (!title || !content) {
-    throw new Response("Title and content are required", { status: 400 });
+  if (!title || !content || !tags) {
+    return { error: "Missing required fields" };
   }
 
-  await QuestionsRepository.create(context.db, {
-    tags: selectedTags,
-    title: title as string,
-    content: content as string,
-    createdByUserId: session.user.id,
-  });
+  try {
+    await QuestionsRepository.create(context.db, {
+      tags: tags,
+      title: title,
+      content: content,
+      createdByUserId: session.user.id,
+    });
+
+    return { success: "Question created successfully" };
+  } catch (error) {
+    return { error: "Something went wrong" };
+  }
 }

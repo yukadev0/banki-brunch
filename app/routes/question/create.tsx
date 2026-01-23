@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { tagsSchema } from "~/db/schemas/tag";
 import { requireSession } from "~/lib/auth.helper";
+import { createQuestion } from "../api/question/helpers";
 import type { Route } from "./+types/create";
 
 export function meta() {
@@ -31,21 +32,14 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
     );
   };
 
-  const createQuestion = useCallback(
-    () =>
-      fetcher.submit(
-        {
-          title: titleInput,
-          content: contentInput,
-          tags: JSON.stringify(selectedTags),
-        },
-        { method: "post", action: "/api/question/create" },
-      ),
-    [titleInput, contentInput, selectedTags],
-  );
+  const createQuestionCallback = useCallback(() => {
+    createQuestion(titleInput, contentInput, selectedTags, fetcher);
+  }, [titleInput, contentInput, selectedTags]);
 
   useEffect(() => {
-    if (fetcher.state !== "loading") return;
+    if (fetcher.state !== "idle") {
+      return;
+    }
 
     setTitleInput("");
     setContentInput("");
@@ -113,7 +107,7 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
           </div>
 
           <button
-            onClick={createQuestion}
+            onClick={createQuestionCallback}
             className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
           >
             Create Question

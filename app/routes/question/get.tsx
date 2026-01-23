@@ -4,6 +4,7 @@ import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { getSession } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import { QuestionsRepository } from "~/repositories/question/repository";
+import { deleteQuestion, voteQuestion } from "../api/question/helpers";
 import type { Route } from "./+types/get";
 import { AnswerForm } from "./components/AnswerForm";
 import { AnswerItem } from "./components/AnswerItem";
@@ -95,25 +96,16 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
   }, [question]);
 
   const onUpvote = useCallback(() => {
-    fetcher.submit(
-      { voteType: "upvote" },
-      { method: "post", action: `/api/question/${question.id}/vote` },
-    );
-  }, [fetcher, question.id]);
+    voteQuestion(question.id, "upvote", fetcher);
+  }, [question.id]);
 
   const onDownvote = useCallback(() => {
-    fetcher.submit(
-      { voteType: "downvote" },
-      { method: "post", action: `/api/question/${question.id}/vote` },
-    );
-  }, [fetcher, question.id]);
+    voteQuestion(question.id, "downvote", fetcher);
+  }, [question.id]);
 
-  const deleteQuestion = useCallback(() => {
-    fetcher.submit(null, {
-      method: "post",
-      action: `/api/question/${question.id}/delete`,
-    });
-  }, [fetcher, question.id]);
+  const deleteQuestionCallback = useCallback(() => {
+    deleteQuestion(question.id, fetcher);
+  }, [question.id]);
 
   return (
     <div className="min-h-screen text-slate-100 py-10">
@@ -183,7 +175,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
             </div>
 
             <button
-              onClick={deleteQuestion}
+              onClick={deleteQuestionCallback}
               className="text-sm text-red-400 hover:text-red-300"
             >
               Delete

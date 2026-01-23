@@ -10,7 +10,10 @@ export default [
   route("login", "./routes/login.tsx"),
 
   ...prefix("api", [
-    route("auth/*", "./routes/auth.tsx"),
+    ...prefix("auth", [
+      route("*", "./routes/auth.tsx"),
+      route("delete-user", "./routes/api/auth/deleteUser.tsx"),
+    ]),
 
     ...prefix("question", [
       route("create", "routes/api/question/create.tsx"),
@@ -24,7 +27,7 @@ export default [
     ]),
 
     ...prefix("answer", [
-      route("create", "routes/api/answer/create.tsx"),
+      route(":questionId/create", "routes/api/answer/create.tsx"),
 
       ...prefix(":id", [
         route("update", "routes/api/answer/update.tsx"),
