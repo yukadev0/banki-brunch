@@ -4,16 +4,7 @@ import { user } from "~/db/schemas/auth";
 
 export const UsersRepository = {
   async getAll(db: DrizzleD1Database<any>) {
-    return db
-      .select({
-        id: user.id,
-        name: user.name,
-        image: user.image,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        role: user.role,
-      })
-      .from(user);
+    return db.select().from(user);
   },
 
   async getById(db: DrizzleD1Database<any>, id: string) {

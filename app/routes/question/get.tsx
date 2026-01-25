@@ -163,25 +163,27 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
 
-        {session?.user.id === question.createdByUserId && (
-          <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
-            <div className="flex gap-4">
-              <Link
-                to={`/question/${question.id}/edit`}
-                className="text-sm text-blue-400 hover:text-blue-300"
-              >
-                Edit
-              </Link>
-            </div>
+        {session &&
+          (session.user.id === question.createdByUserId ||
+            session.user.role === "admin") && (
+            <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
+              <div className="flex gap-4">
+                <Link
+                  to={`/question/${question.id}/edit`}
+                  className="text-sm text-blue-400 hover:text-blue-300"
+                >
+                  Edit
+                </Link>
+              </div>
 
-            <button
-              onClick={deleteQuestionCallback}
-              className="text-sm text-red-400 hover:text-red-300"
-            >
-              Delete
-            </button>
-          </div>
-        )}
+              <button
+                onClick={deleteQuestionCallback}
+                className="text-sm text-red-400 hover:text-red-300"
+              >
+                Delete
+              </button>
+            </div>
+          )}
       </div>
 
       <div className="mt-10 mx-auto max-w-5xl">
@@ -196,7 +198,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
               <AnswerItem
                 key={answer.id}
                 answer={answer}
-                sessionUserId={session?.user.id}
+                user={session?.user}
                 questionId={question.id}
               />
             ))}

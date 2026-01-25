@@ -5,11 +5,25 @@ import { voteAnswer } from "~/routes/api/answer/helpers";
 
 export function AnswerItem({
   answer,
-  sessionUserId,
+  user,
   questionId,
 }: {
   answer: any;
-  sessionUserId?: string;
+  user:
+    | {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string;
+        emailVerified: boolean;
+        name: string;
+        image?: string | null | undefined;
+        banned: boolean | null | undefined;
+        role?: string | null | undefined;
+        banReason?: string | null | undefined;
+        banExpires?: Date | null | undefined;
+      }
+    | undefined;
   questionId: number;
 }) {
   const fetcher = useFetcher();
@@ -94,18 +108,19 @@ export function AnswerItem({
           </div>
         </div>
 
-        {sessionUserId === answer.createdByUserId && (
-          <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
-            <div className="flex gap-4">
-              <Link
-                to={`/question/${questionId}/answer/${answer.id}`}
-                className="text-sm text-blue-400 hover:text-blue-300"
-              >
-                View
-              </Link>
+        {user &&
+          (user.id === answer.createdByUserId || user.role === "admin") && (
+            <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
+              <div className="flex gap-4">
+                <Link
+                  to={`/question/${questionId}/answer/${answer.id}`}
+                  className="text-sm text-blue-400 hover:text-blue-300"
+                >
+                  View
+                </Link>
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );

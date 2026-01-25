@@ -117,22 +117,24 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
             onDownvoteClick={onDownvote}
           />
 
-          {session?.user.id === answer.createdByUserId && (
-            <div className="flex gap-4">
-              <Link
-                to={`/question/${params.questionId}/answer/${answer.id}/edit`}
-                className="text-sm text-blue-400 hover:text-blue-300"
-              >
-                Edit
-              </Link>
-              <button
-                onClick={deleteAnswerCallback}
-                className="cursor-pointer text-sm text-red-400 hover:text-red-300 transition"
-              >
-                Delete Answer
-              </button>
-            </div>
-          )}
+          {session &&
+            (session.user.id === answer.createdByUserId ||
+              session.user.role === "admin") && (
+              <div className="flex gap-4">
+                <Link
+                  to={`/question/${params.questionId}/answer/${answer.id}/edit`}
+                  className="text-sm text-blue-400 hover:text-blue-300"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={deleteAnswerCallback}
+                  className="cursor-pointer text-sm text-red-400 hover:text-red-300 transition"
+                >
+                  Delete Answer
+                </button>
+              </div>
+            )}
         </div>
       </div>
     </div>

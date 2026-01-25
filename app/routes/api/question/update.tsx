@@ -26,7 +26,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
       title: title as string,
       content: content as string,
       tags: selectedTags as string[],
-      createdByUserId: session.user.id,
+      createdByUserId: question.createdByUserId,
     });
 
     return { success: "Question updated successfully" };

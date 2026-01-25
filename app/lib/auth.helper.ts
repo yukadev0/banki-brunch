@@ -27,7 +27,7 @@ export async function requireOwnership(
 ) {
   const session = await requireSession(context, request);
 
-  if (ownerId !== session.user.id) {
+  if (ownerId !== session.user.id && session.user.role !== "admin") {
     throw new Response("Unauthorized", { status: 401 });
   }
 

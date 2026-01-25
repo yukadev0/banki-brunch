@@ -24,7 +24,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   await AnswersRepository.update(context.db, answerId, {
     content: content,
     questionId: questionId,
-    createdByUserId: session.user.id,
+    createdByUserId: answer.createdByUserId,
   });
 
   throw redirect(`/question/${questionId}/answer/${answerId}`);
