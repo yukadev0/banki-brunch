@@ -46,14 +46,17 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
 
         <h1 className="text-3xl font-semibold text-center">{user.name}</h1>
 
-        <p className="text-sm text-gray-400">
-          Joined on{" "}
-          {new Date(user.createdAt).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
+        <div className="text-center text-sm text-gray-400">
+          <span>{user.role.toUpperCase()}</span>
+          <p>
+            Joined on{" "}
+            {new Date(user.createdAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        </div>
       </div>
     </div>
   );
