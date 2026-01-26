@@ -12,6 +12,8 @@ export async function action({ params, request, context }: Route.ActionArgs) {
 
   const session = await requireAdmin(context, request);
 
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   try {
     await QuestionsRepository.validate(context.db, questionId, session.user.id);
 

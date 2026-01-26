@@ -17,10 +17,6 @@ export function QuestionItem({ question }: any) {
   }, [question.id]);
 
   const validated = useMemo(() => {
-    if (fetcher.formAction !== "/api/question/validate") {
-      return question.validated !== null;
-    }
-
     if (fetcher.formData) {
       return question.validated === null;
     }
