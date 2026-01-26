@@ -20,7 +20,12 @@ export async function action({ context }: Route.ActionArgs) {
 export async function loader({ context, request }: Route.LoaderArgs) {
   const session = await getSession(context, request);
 
-  const questions = await QuestionsRepository.getAll(context.db);
+  let questions = await QuestionsRepository.getAll(context.db);
+
+  if (session?.user.role !== "admin") {
+    questions = questions.filter((q) => q.validated !== null);
+  }
+
   const tags = await TagsRepository.getAll(context.db);
 
   return { session, questions, tags };

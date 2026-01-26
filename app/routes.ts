@@ -9,6 +9,12 @@ export default [
   index("routes/home.tsx"),
   route("login", "./routes/login.tsx"),
 
+  ...prefix("admin", [
+    index("routes/admin/index.tsx"),
+
+    route("question", "routes/admin/question/getAll.tsx"),
+  ]),
+
   ...prefix("api", [
     ...prefix("auth", [
       route("*", "./routes/auth.tsx"),
@@ -23,6 +29,7 @@ export default [
         route("delete", "routes/api/question/delete.tsx"),
 
         route("vote", "routes/api/question/vote.tsx"),
+        route("validate", "routes/api/question/validate.tsx"),
       ]),
     ]),
 

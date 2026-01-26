@@ -1,8 +1,9 @@
 @import "tailwindcss" source(".");
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 html,
@@ -12,4 +13,21 @@ body {
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
   }
+}
+
+.before\:clip-close::before {
+  clip-path: polygon(
+    15% 0%,
+    0% 15%,
+    35% 50%,
+    0% 85%,
+    15% 100%,
+    50% 65%,
+    85% 100%,
+    100% 85%,
+    65% 50%,
+    100% 15%,
+    85% 0%,
+    50% 35%
+  );
 }

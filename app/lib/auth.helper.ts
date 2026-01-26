@@ -20,6 +20,16 @@ export async function requireSession(
   return session;
 }
 
+export async function requireAdmin(context: AppLoadContext, request: Request) {
+  const session = await requireSession(context, request);
+
+  if (session.user.role !== "admin") {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+
+  return session;
+}
+
 export async function requireOwnership(
   context: AppLoadContext,
   request: Request,

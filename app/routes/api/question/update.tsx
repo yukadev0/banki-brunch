@@ -10,11 +10,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     throw new Response("Question not found", { status: 404 });
   }
 
-  const session = await requireOwnership(
-    context,
-    request,
-    question.createdByUserId,
-  );
+  await requireOwnership(context, request, question.createdByUserId);
 
   const formData = await request.formData();
   const title = formData.get("title");

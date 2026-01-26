@@ -43,6 +43,16 @@ export async function deleteQuestion(
   });
 }
 
+export async function validateQuestion(
+  questionId: number,
+  fetcher: FetcherWithComponents<any>,
+) {
+  await fetcher.submit(null, {
+    method: "post",
+    action: `/api/question/${questionId}/validate`,
+  });
+}
+
 export async function voteQuestion(
   questionId: number,
   voteType: "upvote" | "downvote",

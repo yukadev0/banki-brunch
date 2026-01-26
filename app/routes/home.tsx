@@ -59,6 +59,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         >
           Tags
         </Link>
+
+        {session && session.user.role === "admin" && (
+          <Link
+            to="/admin"
+            className="bg-red-500 text-white hover:bg-red-600 px-4 py-2 rounded-lg transition transform shadow-md"
+          >
+            Admin Panel
+          </Link>
+        )}
       </div>
 
       {!session && (

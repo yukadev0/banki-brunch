@@ -25,6 +25,18 @@ export const questionsSchema = sqliteTable("questions", {
     .notNull(),
 });
 
+export const questionValidationsSchema = sqliteTable("question_validations", {
+  id: integer("id").primaryKey(),
+
+  questionId: integer("question_id")
+    .notNull()
+    .references(() => questionsSchema.id, { onDelete: "cascade" }),
+
+  validatedByUserId: text("validated_by_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+});
+
 export const questionVotesSchema = sqliteTable("question_votes", {
   questionId: integer("question_id")
     .notNull()

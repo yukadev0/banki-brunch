@@ -18,6 +18,22 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 
   const questionId = Number(params.id);
   const question = await QuestionsRepository.getById(context.db, questionId);
+
+  if (!question.validated) {
+    if (!session) {
+      throw new Response("Unauthorized", { status: 401 });
+    }
+
+    if (
+      session.user.id !== question.createdByUserId &&
+      session.user.role !== "admin"
+    ) {
+      throw new Response("You do not have access to this question.", {
+        status: 403,
+      });
+    }
+  }
+
   const userId = session?.user?.id || "0";
 
   const answers = (

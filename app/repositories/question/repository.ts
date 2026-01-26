@@ -4,6 +4,7 @@ import { user } from "~/db/schemas/auth";
 import {
   questionsSchema,
   questionTagsSchema,
+  questionValidationsSchema,
   questionVotesSchema,
 } from "~/db/schemas/question";
 import { tagsSchema } from "~/db/schemas/tag";
@@ -16,18 +17,24 @@ export const QuestionsRepository = {
         question: questionsSchema,
         author: user,
         tags: questionTagsSchema,
+        validated: questionValidationsSchema,
       })
       .from(questionsSchema)
       .innerJoin(user, eq(user.id, questionsSchema.createdByUserId))
       .innerJoin(
         questionTagsSchema,
         eq(questionsSchema.id, questionTagsSchema.questionId),
+      )
+      .leftJoin(
+        questionValidationsSchema,
+        eq(questionsSchema.id, questionValidationsSchema.questionId),
       );
 
     return rows.map((row) => ({
       ...row.question,
       tags: row.tags.tags,
       author: row.author,
+      validated: row.validated,
     }));
   },
 
@@ -37,6 +44,7 @@ export const QuestionsRepository = {
         question: questionsSchema,
         author: user,
         tags: questionTagsSchema,
+        validated: questionValidationsSchema,
       })
       .from(questionsSchema)
       .where(eq(questionsSchema.id, id))
@@ -45,6 +53,10 @@ export const QuestionsRepository = {
       .innerJoin(
         questionTagsSchema,
         eq(questionTagsSchema.questionId, questionsSchema.id),
+      )
+      .leftJoin(
+        questionValidationsSchema,
+        eq(questionValidationsSchema.questionId, questionsSchema.id),
       );
 
     if (!question) {
@@ -55,6 +67,7 @@ export const QuestionsRepository = {
       ...question.question,
       author: question.author,
       tags: question.tags.tags,
+      validated: question.validated,
     };
   },
 
@@ -137,6 +150,27 @@ export const QuestionsRepository = {
 
   async delete(db: DrizzleD1Database<any>, id: number) {
     await db.delete(questionsSchema).where(eq(questionsSchema.id, id));
+  },
+
+  async validate(
+    db: DrizzleD1Database<any>,
+    id: number,
+    validatedByUserId: string,
+  ) {
+    const [v] = await db
+      .select()
+      .from(questionValidationsSchema)
+      .where(eq(questionValidationsSchema.questionId, id));
+
+    if (v) {
+      await db
+        .delete(questionValidationsSchema)
+        .where(eq(questionValidationsSchema.questionId, id));
+    } else {
+      await db
+        .insert(questionValidationsSchema)
+        .values({ questionId: id, validatedByUserId });
+    }
   },
 
   async vote(
