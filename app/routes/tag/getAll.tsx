@@ -51,8 +51,8 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
       <h1 className="text-4xl font-semibold text-center">Tags</h1>
 
       <div className="flex gap-2 flex-wrap text-sm">
-        {tags.map((tag: TagsSelectArgs, index: number) => (
-          <TagItem key={index} tag={tag} />
+        {tags.map((tag: TagsSelectArgs) => (
+          <TagItem key={tag.id} tag={tag} />
         ))}
       </div>
 

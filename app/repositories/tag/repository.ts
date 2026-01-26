@@ -13,10 +13,6 @@ export const TagsRepository = {
   },
 
   async create(db: DrizzleD1Database<any>, data: TagsInsertArgs) {
-    if (!data.name) {
-      throw new Error("Tag name is required");
-    }
-
     await db.insert(tagsSchema).values(data);
   },
 

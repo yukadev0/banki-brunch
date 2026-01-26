@@ -1,5 +1,6 @@
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const tagsSchema = sqliteTable("tags", {
+  id: integer("id").primaryKey(),
   name: text("name").notNull().unique(),
 });

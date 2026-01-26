@@ -102,10 +102,6 @@ export const QuestionsRepository = {
     db: DrizzleD1Database<any>,
     data: QuestionInsertArgs & { tags: string[] },
   ) {
-    if (!data.title || !data.content) {
-      throw new Error("Missing required fields");
-    }
-
     const id = (await db.insert(questionsSchema).values(data)).meta.last_row_id;
 
     await db

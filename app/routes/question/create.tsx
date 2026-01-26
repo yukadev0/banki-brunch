@@ -89,21 +89,26 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {allTags.map((tag) => (
-              <button
-                key={tag.name}
-                type="button"
-                onClick={() => toggleTag(tag.name)}
-                className={`px-3 py-1 rounded-full text-sm transition ${
-                  selectedTags.includes(tag.name)
-                    ? "bg-blue-500 text-white"
-                    : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                }`}
-              >
-                {tag.name}
-              </button>
-            ))}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium" htmlFor="content">
+              Tags
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => (
+                <button
+                  key={tag.name}
+                  type="button"
+                  onClick={() => toggleTag(tag.name)}
+                  className={`px-3 py-1 rounded-full text-sm transition ${
+                    selectedTags.includes(tag.name)
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button

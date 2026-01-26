@@ -2,7 +2,6 @@ import { and, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { answersSchema, answerVotesSchema } from "~/db/schemas/answer";
 import { user } from "~/db/schemas/auth";
-import { QuestionsRepository } from "../question/repository";
 import type { AnswerInsertArgs } from "./types";
 
 export const AnswersRepository = {
@@ -11,12 +10,6 @@ export const AnswersRepository = {
     questionId: number,
     userId: string,
   ) {
-    const question = await QuestionsRepository.getById(db, questionId);
-
-    if (!question) {
-      throw new Error("Question not found");
-    }
-
     const answers = await db
       .select({
         author: user,
