@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import { useCallback, useEffect, useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { Suspense, useCallback, useState } from "react";
+import { Await, Form, Link, redirect, useNavigation } from "react-router";
 import { tagsSchema } from "~/db/schemas/tag";
 import { requireSession } from "~/lib/auth.helper";
-import { createQuestion } from "../api/question/helpers";
+import { QuestionsRepository } from "~/repositories/question/repository";
 import type { Route } from "./+types/create";
 
 export function meta() {
@@ -13,19 +13,93 @@ export function meta() {
 export async function loader({ context, request }: Route.LoaderArgs) {
   await requireSession(context, request);
 
-  const allTags = await context.db.select().from(tagsSchema);
+  const allTags = context.db
+    .select()
+    .from(tagsSchema)
+    .then((tags) => tags);
+
   return { allTags };
 }
 
-export default function CreatePage({ loaderData }: Route.ComponentProps) {
-  const fetcher = useFetcher();
-  const fetchData = fetcher.data || {};
+export async function action({ request, context }: Route.ActionArgs) {
+  const session = await requireSession(context, request);
+  const formData = await request.formData();
 
+  const title = formData.get("title")?.toString().trim();
+  const content = formData.get("content")?.toString().trim();
+  const tags = formData.getAll("tags") as string[];
+
+  if (!title || !content || tags.length === 0) {
+    return {
+      status: "error" as const,
+      message: "Please fill all required fields and select at least one tag",
+    };
+  }
+
+  try {
+    await QuestionsRepository.create(context.db, {
+      tags,
+      title,
+      content,
+      createdByUserId: session.user.id,
+    });
+    return redirect("/question");
+  } catch (error) {
+    console.error("Question creation failed:", error);
+    return {
+      status: "error" as const,
+      message: "Failed to create question. Please try again.",
+    };
+  }
+}
+
+interface TagsProps {
+  allTags: { id: number; name: string }[];
+  toggleTag: (tagName: string) => void;
+  selectedTags: string[];
+}
+
+function Tags({ allTags, selectedTags, toggleTag }: TagsProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-medium">Tags *</label>
+      <div className="flex flex-wrap gap-2">
+        {allTags.map((tag) => (
+          <button
+            key={tag.name}
+            type="button"
+            onClick={() => toggleTag(tag.name)}
+            className={clsx(
+              "px-3 py-1 rounded-full text-sm transition",
+              selectedTags.includes(tag.name)
+                ? "bg-blue-500 text-white"
+                : "bg-slate-700 text-slate-300 hover:bg-slate-600",
+            )}
+          >
+            {tag.name}
+          </button>
+        ))}
+
+        {selectedTags.map((tag) => (
+          <input type="hidden" name="tags" value={tag} key={tag} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function CreatePage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const [titleInput, setTitleInput] = useState("");
   const [contentInput, setContentInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const allTags = loaderData?.allTags ?? [];
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+
+  const { allTags } = loaderData;
 
   const toggleTag = useCallback((tagName: string) => {
     setSelectedTags((prev) =>
@@ -34,20 +108,6 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
         : [...prev, tagName],
     );
   }, []);
-
-  const createQuestionCallback = useCallback(() => {
-    createQuestion(titleInput, contentInput, selectedTags, fetcher);
-  }, [titleInput, contentInput, selectedTags]);
-
-  useEffect(() => {
-    if (fetcher.state !== "idle") {
-      return;
-    }
-
-    setTitleInput("");
-    setContentInput("");
-    setSelectedTags([]);
-  }, [fetcher.state]);
 
   return (
     <div className="min-h-screen text-slate-100 py-10 flex flex-col gap-6 items-center justify-center">
@@ -63,10 +123,10 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
           Create a New Question
         </h1>
 
-        <div className="flex flex-col gap-6">
+        <Form method="post" className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium" htmlFor="title">
-              Title
+              Title *
             </label>
             <input
               type="text"
@@ -74,13 +134,14 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
               name="title"
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
-              className="hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              disabled={isSubmitting}
+              className="hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium" htmlFor="content">
-              Content
+              Content *
             </label>
             <textarea
               name="content"
@@ -88,53 +149,40 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
               rows={6}
               value={contentInput}
               onChange={(e) => setContentInput(e.target.value)}
-              className="hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              disabled={isSubmitting}
+              className="hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="content">
-              Tags
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {allTags.map((tag) => (
-                <button
-                  key={tag.name}
-                  type="button"
-                  onClick={() => toggleTag(tag.name)}
-                  className={clsx(
-                    "px-3 py-1 rounded-full text-sm transition",
-                    selectedTags.includes(tag.name)
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600",
-                  )}
-                >
-                  {tag.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {fetchData.message && (
-            <p
-              className={clsx(
-                "text-sm",
-                fetchData.status === "success"
-                  ? "text-green-500"
-                  : "text-red-500",
-              )}
+          <Suspense fallback={<div className="h-14">Loading tags...</div>}>
+            <Await
+              resolve={allTags}
+              errorElement={
+                <div className="text-red-500">Could not load tags</div>
+              }
             >
-              {fetchData.message}
-            </p>
+              {(allTagsResolved) => (
+                <Tags
+                  allTags={allTagsResolved}
+                  toggleTag={toggleTag}
+                  selectedTags={selectedTags}
+                />
+              )}
+            </Await>
+          </Suspense>
+
+          {actionData?.status === "error" && (
+            <p className="text-sm text-red-500">{actionData.message}</p>
           )}
 
           <button
-            onClick={createQuestionCallback}
-            className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Question
+            {isSubmitting ? "Creating..." : "Create Question"}
           </button>
-        </div>
+        </Form>
       </div>
     </div>
   );
