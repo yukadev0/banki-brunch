@@ -1,11 +1,12 @@
+import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { Form, Link, redirect, type LoaderFunctionArgs } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import { getSession } from "~/lib/auth.helper";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/getAll";
 
-export function meta({}: LoaderFunctionArgs) {
+export function meta() {
   return [{ title: "Questions" }];
 }
 
@@ -69,11 +70,12 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
                     : [...prev, tag.name],
                 )
               }
-              className={`cursor-pointer px-3 py-1 rounded-full text-sm border ${
+              className={clsx(
+                "cursor-pointer px-3 py-1 rounded-full text-sm border",
                 active
                   ? "bg-blue-500 border-blue-500"
-                  : "bg-gray-800 border-gray-600"
-              }`}
+                  : "bg-gray-800 border-gray-600",
+              )}
             >
               {tag.name}
             </button>

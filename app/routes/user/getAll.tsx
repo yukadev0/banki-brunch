@@ -1,8 +1,8 @@
-import { Link, type LoaderFunctionArgs } from "react-router";
+import { Link } from "react-router";
 import { UsersRepository } from "~/repositories/user/repository";
 import type { Route } from "./+types/getAll";
 
-export function meta({}: LoaderFunctionArgs) {
+export function meta() {
   return [{ title: "Users" }];
 }
 

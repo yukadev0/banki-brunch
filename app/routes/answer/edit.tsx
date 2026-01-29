@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useCallback, useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { requireOwnership } from "~/lib/auth.helper";
@@ -21,6 +22,8 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
   const { answer } = loaderData;
 
   const fetcher = useFetcher();
+  const fetchData = fetcher.data || {};
+
   const [content, setContent] = useState(answer.content);
 
   const updateAnswerCallback = useCallback(() => {
@@ -48,6 +51,19 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
           rows={5}
           className="w-full hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
+
+        {fetchData.message && (
+          <p
+            className={clsx(
+              "text-sm",
+              fetchData.status === "success"
+                ? "text-green-500"
+                : "text-red-500",
+            )}
+          >
+            {fetchData.message}
+          </p>
+        )}
 
         <button
           onClick={updateAnswerCallback}

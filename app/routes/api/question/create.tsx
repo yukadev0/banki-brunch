@@ -12,7 +12,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const tags = JSON.parse(formData.get("tags") as string);
 
   if (!title || !content || !tags) {
-    return { error: "Missing required fields" };
+    return { status: "error", message: "Missing required fields" };
   }
 
   try {
@@ -23,8 +23,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       createdByUserId: session.user.id,
     });
 
-    return { success: "Question created successfully" };
+    return { status: "success", message: "Question created successfully" };
   } catch (error) {
-    return { error: "Something went wrong" };
+    return { status: "error", message: "Something went wrong" };
   }
 }

@@ -16,7 +16,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     !answerId ||
     !questionId
   ) {
-    return { error: "Missing required fields" };
+    return { status: "error", message: "Missing required fields" };
   }
 
   try {
@@ -28,8 +28,8 @@ export async function action({ context, request, params }: Route.ActionArgs) {
       voteType as "upvote" | "downvote",
     );
 
-    return { success: "Answer voted successfully" };
+    return { status: "success", message: "Answer voted successfully" };
   } catch (error) {
-    return { error: "Something went wrong" };
+    return { status: "error", message: "Something went wrong" };
   }
 }

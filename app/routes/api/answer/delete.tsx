@@ -15,8 +15,9 @@ export async function action({ params, request, context }: Route.ActionArgs) {
 
   try {
     await AnswersRepository.delete(context.db, answerId);
-    throw redirect(`/question/${answer.questionId}`);
   } catch (error) {
-    return { error: "Something went wrong" };
+    return { status: "error", message: "Something went wrong" };
   }
+
+  throw redirect(`/question/${answer.questionId}`);
 }

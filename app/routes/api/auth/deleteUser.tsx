@@ -11,6 +11,6 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     throw redirect("/");
   } catch (error) {
-    return { error: "Something went wrong" };
+    return { status: "error", message: "Something went wrong" };
   }
 }

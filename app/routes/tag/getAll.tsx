@@ -56,7 +56,7 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
         ))}
       </div>
 
-      {session && (
+      {session?.user.role === "admin" && (
         <Link
           to="/tag/create"
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"

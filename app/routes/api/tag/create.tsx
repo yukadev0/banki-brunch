@@ -1,15 +1,15 @@
-import { requireSession } from "~/lib/auth.helper";
+import { requireAdmin } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/create";
 
 export async function action({ request, context }: Route.ActionArgs) {
-  await requireSession(context, request);
+  await requireAdmin(context, request);
 
   const formData = await request.formData();
   const tagName = formData.get("name");
 
   if (!tagName) {
-    return { error: "Tag name is required" };
+    return { status: "error", message: "Tag name is required" };
   }
 
   try {
@@ -17,8 +17,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       name: tagName.toString(),
     });
 
-    return { success: "Tag created successfully" };
+    return { status: "success", message: "Tag created successfully" };
   } catch (error) {
-    return { error: "Something went wrong" };
+    return { status: "error", message: "Something went wrong" };
   }
 }

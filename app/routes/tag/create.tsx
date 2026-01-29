@@ -1,6 +1,7 @@
+import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useFetcher } from "react-router";
-import { requireSession } from "~/lib/auth.helper";
+import { requireAdmin } from "~/lib/auth.helper";
 import { createTag } from "../api/tag/helpers";
 import type { Route } from "./+types/create";
 
@@ -9,11 +10,13 @@ export function meta() {
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  await requireSession(context, request);
+  await requireAdmin(context, request);
 }
 
 export default function CreatePage() {
   const fetcher = useFetcher();
+  const fetchData = fetcher.data || {};
+
   const [tagNameInput, setTagNameInput] = useState("");
 
   useEffect(() => {
@@ -53,6 +56,19 @@ export default function CreatePage() {
               className="hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
+
+          {fetchData.message && (
+            <p
+              className={clsx(
+                "text-sm",
+                fetchData.status === "success"
+                  ? "text-green-500"
+                  : "text-red-500",
+              )}
+            >
+              {fetchData.message}
+            </p>
+          )}
 
           <button
             onClick={createTagCallback}

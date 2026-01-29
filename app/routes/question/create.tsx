@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { tagsSchema } from "~/db/schemas/tag";
@@ -18,19 +19,21 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
 export default function CreatePage({ loaderData }: Route.ComponentProps) {
   const fetcher = useFetcher();
+  const fetchData = fetcher.data || {};
+
   const [titleInput, setTitleInput] = useState("");
   const [contentInput, setContentInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const allTags = loaderData?.allTags ?? [];
 
-  const toggleTag = (tagName: string) => {
+  const toggleTag = useCallback((tagName: string) => {
     setSelectedTags((prev) =>
       prev.includes(tagName)
         ? prev.filter((t) => t !== tagName)
         : [...prev, tagName],
     );
-  };
+  }, []);
 
   const createQuestionCallback = useCallback(() => {
     createQuestion(titleInput, contentInput, selectedTags, fetcher);
@@ -99,17 +102,31 @@ export default function CreatePage({ loaderData }: Route.ComponentProps) {
                   key={tag.name}
                   type="button"
                   onClick={() => toggleTag(tag.name)}
-                  className={`px-3 py-1 rounded-full text-sm transition ${
+                  className={clsx(
+                    "px-3 py-1 rounded-full text-sm transition",
                     selectedTags.includes(tag.name)
                       ? "bg-blue-500 text-white"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                  }`}
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600",
+                  )}
                 >
                   {tag.name}
                 </button>
               ))}
             </div>
           </div>
+
+          {fetchData.message && (
+            <p
+              className={clsx(
+                "text-sm",
+                fetchData.status === "success"
+                  ? "text-green-500"
+                  : "text-red-500",
+              )}
+            >
+              {fetchData.message}
+            </p>
+          )}
 
           <button
             onClick={createQuestionCallback}

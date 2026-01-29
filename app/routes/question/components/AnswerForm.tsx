@@ -1,9 +1,11 @@
+import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import { createAnswer } from "~/routes/api/answer/helpers";
 
 export function AnswerForm({ questionId }: { questionId: number }) {
   const fetcher = useFetcher();
+  const fetchData = fetcher.data || {};
 
   const [answerInput, setAnswerInput] = useState("");
 
@@ -29,6 +31,17 @@ export function AnswerForm({ questionId }: { questionId: number }) {
         placeholder="Write your answer here..."
         className="w-full rounded-lg bg-slate-900/70 px-4 py-3 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
+
+      {fetchData.message && (
+        <p
+          className={clsx(
+            "text-sm",
+            fetchData.status === "success" ? "text-green-500" : "text-red-500",
+          )}
+        >
+          {fetchData.message}
+        </p>
+      )}
 
       <button
         type="submit"

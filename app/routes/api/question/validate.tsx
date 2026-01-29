@@ -17,8 +17,8 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   try {
     await QuestionsRepository.validate(context.db, questionId, session.user.id);
 
-    return { success: "Question updated successfully" };
+    return { status: "success", message: "Question updated successfully" };
   } catch (error) {
-    return { error: "Something went wrong" };
+    return { status: "error", message: "Something went wrong" };
   }
 }

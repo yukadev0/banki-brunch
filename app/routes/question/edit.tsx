@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useCallback, useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { requireOwnership } from "~/lib/auth.helper";
@@ -27,15 +28,17 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
   const { question, allTags } = loaderData;
 
   const fetcher = useFetcher();
+  const fetchData = fetcher.data || {};
+
   const [tags, setTags] = useState<string[]>(question.tags ?? []);
   const [titleInput, setTitleInput] = useState(question.title);
   const [contentInput, setContentInput] = useState(question.content);
 
-  function toggleTag(tag: string) {
+  const toggleTag = useCallback((tag: string) => {
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
-  }
+  }, []);
 
   const updateQuestionCallback = useCallback(() => {
     updateQuestion(question.id, titleInput, contentInput, tags, fetcher);
@@ -79,11 +82,12 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
                 return (
                   <label
                     key={tag.name}
-                    className={`flex items-center gap-2 px-3 py-1 text-xs rounded-full cursor-pointer select-none ${
+                    className={clsx(
+                      "flex items-center gap-2 px-3 py-1 text-xs rounded-full cursor-pointer select-none",
                       active
                         ? "bg-blue-500 text-white"
-                        : "bg-gray-700 text-gray-200"
-                    }`}
+                        : "bg-gray-700 text-gray-200",
+                    )}
                   >
                     <input
                       type="checkbox"
@@ -99,6 +103,19 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
               })}
             </div>
           </div>
+
+          {fetchData.message && (
+            <p
+              className={clsx(
+                "text-sm",
+                fetchData.status === "success"
+                  ? "text-green-500"
+                  : "text-red-500",
+              )}
+            >
+              {fetchData.message}
+            </p>
+          )}
 
           <button
             onClick={updateQuestionCallback}

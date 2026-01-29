@@ -11,14 +11,15 @@ export async function action({ params, request, context }: Route.ActionArgs) {
     throw new Response("Answer not found", { status: 404 });
   }
 
-  const session = await requireOwnership(
-    context,
-    request,
-    answer.createdByUserId,
-  );
+  await requireOwnership(context, request, answer.createdByUserId);
 
   const formData = await request.formData();
   const content = formData.get("content") as string;
+
+  if (!content) {
+    return { status: "error", message: "Missing required fields" };
+  }
+
   const questionId = Number(formData.get("questionId"));
 
   await AnswersRepository.update(context.db, answerId, {

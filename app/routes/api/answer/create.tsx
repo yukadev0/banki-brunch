@@ -10,7 +10,7 @@ export async function action({ context, request }: Route.ActionArgs) {
   const questionId = Number(formData.get("questionId"));
 
   if (!content || !questionId) {
-    return { error: "Missing required fields" };
+    return { status: "error", message: "Missing required fields" };
   }
 
   try {
@@ -20,8 +20,8 @@ export async function action({ context, request }: Route.ActionArgs) {
       createdByUserId: session.user.id,
     });
 
-    return { success: "Answer created successfully" };
+    return { status: "success", message: "Answer created successfully" };
   } catch (error) {
-    return { error: "Something went wrong" };
+    return { status: "error", message: "Something went wrong" };
   }
 }

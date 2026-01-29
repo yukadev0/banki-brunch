@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Link } from "react-router";
-import { getSession } from "~/lib/auth.helper";
 import { UsersRepository } from "~/repositories/user/repository";
 import type { Route } from "./+types/get";
 
@@ -9,14 +8,13 @@ export function meta({ params }: Route.MetaArgs) {
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
-  const session = await getSession(context, request);
   const user = await UsersRepository.getById(context.db, params.id);
 
   if (!user) {
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user, session };
+  return { user };
 }
 
 export default function GetPage({ loaderData }: Route.ComponentProps) {
