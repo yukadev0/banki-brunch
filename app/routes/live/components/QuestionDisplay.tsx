@@ -29,44 +29,42 @@ export default function QuestionDisplay({
   const isPollActive = pollData !== null;
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div className="flex-1">
-          <span className="inline-block px-3 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 rounded-full mb-3">
+    <div className="flex-1 flex flex-col gap-4">
+      <div className="flex flex-col items-start justify-between gap-4">
+        <div className="flex justify-between items-center w-full">
+          <span className="inline-block px-3 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 rounded-full">
             Current Question
           </span>
-          <h1 className="text-3xl font-bold text-white leading-tight">
-            {title}
-          </h1>
+          {isPresenter && (
+            <div className="flex items-center gap-2">
+              {isPollActive ? (
+                <button
+                  onClick={onEndPoll}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  <span>End Poll</span>
+                </button>
+              ) : (
+                <button
+                  onClick={onStartPoll}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  <span>Start Poll</span>
+                </button>
+              )}
+
+              <button
+                onClick={onGetQuestion}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-600"
+              >
+                <span>Next</span>
+                <FaArrowRightLong className="text-xs" />
+              </button>
+            </div>
+          )}
         </div>
 
-        {isPresenter && (
-          <div className="flex items-center gap-2">
-            {isPollActive ? (
-              <button
-                onClick={onEndPoll}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-              >
-                <span>End Poll</span>
-              </button>
-            ) : (
-              <button
-                onClick={onStartPoll}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                <span>Start Poll</span>
-              </button>
-            )}
-
-            <button
-              onClick={onGetQuestion}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-600"
-            >
-              <span>Next</span>
-              <FaArrowRightLong className="text-xs" />
-            </button>
-          </div>
-        )}
+        <h1 className="text-3xl font-bold text-white leading-tight">{title}</h1>
       </div>
 
       <div className="flex-1 bg-gray-900/50 rounded-xl p-6 border border-gray-700/50 mb-6">
