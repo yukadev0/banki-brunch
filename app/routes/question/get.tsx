@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { getSession } from "~/lib/auth.helper";
@@ -9,8 +9,8 @@ import type { Route } from "./+types/get";
 import { AnswerForm } from "./components/AnswerForm";
 import { AnswerItem } from "./components/AnswerItem";
 
-export function meta({ params }: Route.MetaArgs) {
-  return [{ title: `Question: ${params.id}` }];
+export function meta({ loaderData }: Route.MetaArgs) {
+  return [{ title: `Question: ${loaderData.question.title}` }];
 }
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
@@ -106,10 +106,6 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
 
     return { voteState: state, voteDisplay: display };
   }, [fetcher.formData, question.vote, question.voteCount]);
-
-  useEffect(() => {
-    document.title = `Question: ${question.title}`;
-  }, [question]);
 
   const onUpvote = useCallback(() => {
     voteQuestion(question.id, "upvote", fetcher);

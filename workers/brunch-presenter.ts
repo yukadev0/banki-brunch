@@ -1,11 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
+import type { ClientMessage, UserInfo } from "../app/types/brunch-presenter";
 
-interface UserInfo {
-  name: string;
-  image?: string;
-}
-
-export class MyDurableObject extends DurableObject<Env> {
+export class BrunchPresenter extends DurableObject<Env> {
   currentlyConnectedWebSockets = 0;
   private sessions: Map<WebSocket, UserInfo> = new Map();
 
@@ -19,20 +15,17 @@ export class MyDurableObject extends DurableObject<Env> {
 
     server.addEventListener("message", (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data);
+        const data = JSON.parse(event.data) as ClientMessage;
 
         if (data.type === "identify") {
-          // Update user info when they identify themselves
           const userInfo: UserInfo = {
             name: data.name || "Anonymous",
             image: data.image,
           };
           this.sessions.set(server, userInfo);
 
-          // Broadcast updated user list to all connected clients
           this.broadcastUserList();
 
-          // Broadcast system message about user joining
           this.broadcast(
             JSON.stringify({
               type: "system",
@@ -41,7 +34,6 @@ export class MyDurableObject extends DurableObject<Env> {
             }),
           );
         } else if (data.type === "message") {
-          // Regular chat message
           const userInfo = this.sessions.get(server);
           this.broadcast(
             JSON.stringify({
@@ -53,7 +45,6 @@ export class MyDurableObject extends DurableObject<Env> {
           );
         }
       } catch (err) {
-        // Fallback for plain text messages (backward compatibility)
         this.broadcast(
           JSON.stringify({
             type: "message",
@@ -69,10 +60,8 @@ export class MyDurableObject extends DurableObject<Env> {
       this.currentlyConnectedWebSockets -= 1;
       this.sessions.delete(server);
 
-      // Broadcast updated user list
       this.broadcastUserList();
 
-      // Broadcast system message about user leaving
       if (userInfo) {
         this.broadcast(
           JSON.stringify({

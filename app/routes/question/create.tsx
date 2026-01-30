@@ -1,10 +1,10 @@
-import clsx from "clsx";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useState } from "react";
 import { Await, Form, Link, redirect, useNavigation } from "react-router";
 import { tagsSchema } from "~/db/schemas/tag";
 import { requireSession } from "~/lib/auth.helper";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import type { Route } from "./+types/create";
+import Tags from "./components/Tags";
 
 export function meta() {
   return [{ title: "Create Question" }];
@@ -52,42 +52,6 @@ export async function action({ request, context }: Route.ActionArgs) {
     };
   }
 }
-
-interface TagsProps {
-  allTags: { id: number; name: string }[];
-  toggleTag: (tagName: string) => void;
-  selectedTags: string[];
-}
-
-function Tags({ allTags, selectedTags, toggleTag }: TagsProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium">Tags *</label>
-      <div className="flex flex-wrap gap-2">
-        {allTags.map((tag) => (
-          <button
-            key={tag.name}
-            type="button"
-            onClick={() => toggleTag(tag.name)}
-            className={clsx(
-              "px-3 py-1 rounded-full text-sm transition",
-              selectedTags.includes(tag.name)
-                ? "bg-blue-500 text-white"
-                : "bg-slate-700 text-slate-300 hover:bg-slate-600",
-            )}
-          >
-            {tag.name}
-          </button>
-        ))}
-
-        {selectedTags.map((tag) => (
-          <input type="hidden" name="tags" value={tag} key={tag} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function CreatePage({
   loaderData,
   actionData,
@@ -100,14 +64,6 @@ export default function CreatePage({
   const isSubmitting = navigation.state === "submitting";
 
   const { allTags } = loaderData;
-
-  const toggleTag = useCallback((tagName: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagName)
-        ? prev.filter((t) => t !== tagName)
-        : [...prev, tagName],
-    );
-  }, []);
 
   return (
     <div className="min-h-screen text-slate-100 py-10 flex flex-col gap-6 items-center justify-center">
@@ -164,8 +120,8 @@ export default function CreatePage({
               {(allTagsResolved) => (
                 <Tags
                   allTags={allTagsResolved}
-                  toggleTag={toggleTag}
                   selectedTags={selectedTags}
+                  setSelectedTags={setSelectedTags}
                 />
               )}
             </Await>

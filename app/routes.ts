@@ -9,7 +9,7 @@ export default [
   index("routes/home.tsx"),
   route("login", "./routes/login.tsx"),
 
-  route("live", "./routes/live.tsx"),
+  route("live", "./routes/live/live.tsx"),
 
   ...prefix("admin", [
     index("routes/admin/index.tsx"),

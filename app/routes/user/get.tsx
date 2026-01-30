@@ -1,13 +1,12 @@
-import { useEffect } from "react";
 import { Link } from "react-router";
 import { UsersRepository } from "~/repositories/user/repository";
 import type { Route } from "./+types/get";
 
-export function meta({ params }: Route.MetaArgs) {
-  return [{ title: `User: ${params.id}` }];
+export function meta({ loaderData }: Route.MetaArgs) {
+  return [{ title: `User: ${loaderData.user.name}` }];
 }
 
-export async function loader({ request, params, context }: Route.LoaderArgs) {
+export async function loader({ params, context }: Route.LoaderArgs) {
   const user = await UsersRepository.getById(context.db, params.id);
 
   if (!user) {
@@ -19,10 +18,6 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 
 export default function GetPage({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
-
-  useEffect(() => {
-    document.title = `User: ${user.name}`;
-  }, [user]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-gray-100">

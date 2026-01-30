@@ -69,15 +69,15 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
 
   const onUpvote = useCallback(() => {
     voteAnswer(answer.id, Number(params.questionId), "upvote", fetcher);
-  }, [answer.id, voteState]);
+  }, [answer.id, params.questionId, fetcher]);
 
   const onDownvote = useCallback(() => {
     voteAnswer(answer.id, Number(params.questionId), "downvote", fetcher);
-  }, [answer.id, voteState]);
+  }, [answer.id, params.questionId, fetcher]);
 
   const deleteAnswerCallback = useCallback(() => {
     deleteAnswer(answer.id, fetcher);
-  }, [answer.id]);
+  }, [answer.id, fetcher]);
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10">

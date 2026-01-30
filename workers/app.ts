@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/d1";
 import { createRequestHandler } from "react-router";
-import { MyDurableObject } from "./durable-object";
+import { BrunchPresenter } from "./brunch-presenter";
 
-export { MyDurableObject };
+export { BrunchPresenter };
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -11,7 +11,7 @@ declare module "react-router" {
       ctx: ExecutionContext;
     };
     db: ReturnType<typeof drizzle>;
-    do: DurableObjectNamespace<MyDurableObject>;
+    do: DurableObjectNamespace<BrunchPresenter>;
   }
 }
 
@@ -34,7 +34,7 @@ export default {
         });
       }
 
-      let stub = env.MY_DO.getByName("foo");
+      let stub = env.brunch_presenter.getByName("foo");
 
       return stub.fetch(request);
     }
@@ -43,7 +43,7 @@ export default {
 
     return requestHandler(request, {
       db,
-      do: env.MY_DO,
+      do: env.brunch_presenter,
       cloudflare: { env, ctx },
     });
   },

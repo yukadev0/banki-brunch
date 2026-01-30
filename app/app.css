@@ -6,6 +6,16 @@
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 html,
 body {
   @apply bg-white dark:bg-gray-950;
@@ -30,4 +40,19 @@ body {
     85% 0%,
     50% 35%
   );
+}
+
+.animate-chat-message-fade-in {
+  animation: chat-message-fade-in 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes chat-message-fade-in {
+  from {
+    opacity: 0;
+    translate: -1.5rem;
+  }
+  to {
+    opacity: 1;
+    translate: 0;
+  }
 }
