@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import type {
+  CastVoteMessage,
   ClientMessage,
   ClientQuestionInfo,
   IdentifyMessage,
@@ -12,6 +13,9 @@ import type {
 export class BrunchPresenter extends DurableObject<Env> {
   private sessions: Map<WebSocket, UserInfo> = new Map();
   private currentQuestion: ServerQuestionInfo | null = null;
+  private pollOptions: string[] = ["A", "B", "C", "D"];
+  private pollVotes: Map<string, string> = new Map();
+  private isPollActive: boolean = false;
 
   async fetch(request: Request): Promise<Response> {
     const webSocketPair = new WebSocketPair();
@@ -59,6 +63,15 @@ export class BrunchPresenter extends DurableObject<Env> {
         case "get_question":
           await this.handleGetQuestion(server);
           break;
+        case "start_poll":
+          this.handleStartPoll(server);
+          break;
+        case "cast_vote":
+          this.handleCastVote(server, data);
+          break;
+        case "end_poll":
+          this.handleEndPoll(server);
+          break;
         default:
           console.warn("Unknown message type:", (data as ClientMessage).type);
       }
@@ -103,6 +116,25 @@ export class BrunchPresenter extends DurableObject<Env> {
       : null;
 
     this.sendToClient(server, { type: "question", question: clientQuestion });
+
+    if (this.isPollActive) {
+      const votes: Record<string, number> = {};
+      for (const option of this.pollOptions) {
+        votes[option] = 0;
+      }
+      for (const vote of this.pollVotes.values()) {
+        if (votes[vote] !== undefined) {
+          votes[vote]++;
+        }
+      }
+      this.sendToClient(server, {
+        type: "poll_update",
+        options: this.pollOptions,
+        votes: votes,
+        totalVotes: this.pollVotes.size,
+        userVote: null,
+      });
+    }
   }
 
   private isDuplicateSession(userId: string): boolean {
@@ -151,6 +183,68 @@ export class BrunchPresenter extends DurableObject<Env> {
       type: "question",
       question: clientQuestion,
     });
+  }
+
+  private resetPoll(): void {
+    this.pollVotes.clear();
+    this.isPollActive = false;
+  }
+
+  private handleStartPoll(server: WebSocket): void {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo || userInfo.role !== "presenter") return;
+    if (!this.currentQuestion) return;
+
+    this.resetPoll();
+    this.isPollActive = true;
+    this.broadcastPollUpdate();
+  }
+
+  private handleCastVote(server: WebSocket, data: CastVoteMessage): void {
+    if (!this.isPollActive) return;
+    if (!this.pollOptions.includes(data.option)) return;
+
+    const userInfo = this.sessions.get(server);
+    if (!userInfo) return;
+
+    if (this.pollVotes.get(userInfo.id) === data.option) {
+      this.pollVotes.delete(userInfo.id);
+    } else {
+      this.pollVotes.set(userInfo.id, data.option);
+    }
+
+    this.broadcastPollUpdate();
+  }
+
+  private handleEndPoll(server: WebSocket): void {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo || userInfo.role !== "presenter") return;
+
+    this.isPollActive = false;
+    this.broadcastPollUpdate();
+  }
+
+  private broadcastPollUpdate(): void {
+    const votes: Record<string, number> = {};
+    for (const option of this.pollOptions) {
+      votes[option] = 0;
+    }
+    for (const vote of this.pollVotes.values()) {
+      if (votes[vote] !== undefined) {
+        votes[vote]++;
+      }
+    }
+
+    for (const [session, userInfo] of this.sessions) {
+      const userVote = this.pollVotes.get(userInfo.id) || null;
+      this.sendToClient(session, {
+        type: "poll_update",
+        options: this.pollOptions,
+        votes: votes,
+        totalVotes: this.pollVotes.size,
+        userVote: userVote,
+      });
+    }
   }
 
   private handleClose(server: WebSocket, event: CloseEvent): void {

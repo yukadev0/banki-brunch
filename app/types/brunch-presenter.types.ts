@@ -52,14 +52,39 @@ export interface GetQestionMessage {
   type: "get_question";
 }
 
+export interface StartPollMessage {
+  type: "start_poll";
+}
+
+export interface CastVoteMessage {
+  type: "cast_vote";
+  option: string;
+}
+
+export interface EndPollMessage {
+  type: "end_poll";
+}
+
+export interface PollUpdateMessage {
+  type: "poll_update";
+  options: string[];
+  votes: Record<string, number>;
+  totalVotes: number;
+  userVote: string | null;
+}
+
 export type ServerMessage =
   | UsersMessage
   | QuestionMessage
-  | DuplicateSessionMessage;
+  | DuplicateSessionMessage
+  | PollUpdateMessage;
 
 export type ClientMessage =
   | IdentifyMessage
   | ClientChatMessage
   | ChangeRoleMessage
   | GetQestionMessage
-  | ToggleLurkingMessage;
+  | ToggleLurkingMessage
+  | StartPollMessage
+  | CastVoteMessage
+  | EndPollMessage;

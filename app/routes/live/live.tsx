@@ -4,6 +4,7 @@ import { requireSession } from "~/lib/auth.helper";
 import type {
   ClientQuestionInfo,
   IdentifyMessage,
+  PollUpdateMessage,
   ServerMessage,
   UserInfo,
 } from "~/types/brunch-presenter.types";
@@ -29,6 +30,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [self, setSelf] = useState<UserInfo | null>(null);
   const [currentQuestion, setCurrentQuestion] =
     useState<ClientQuestionInfo | null>(null);
+  const [pollData, setPollData] = useState<PollUpdateMessage | null>(null);
   const navigate = useNavigate();
 
   const { user } = loaderData;
@@ -60,8 +62,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
           navigate("/");
         } else if (data.type === "question") {
           setCurrentQuestion(data.question);
+          setPollData(null);
+        } else if (data.type === "poll_update") {
+          setPollData(data);
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Error parsing message:", err);
+      }
     });
 
     ws.addEventListener("close", () => {
@@ -82,6 +89,22 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   const handleGetQuestion = () => {
     if (self?.role === "presenter") {
       socket?.send(JSON.stringify({ type: "get_question" }));
+    }
+  };
+
+  const handleStartPoll = () => {
+    if (self?.role === "presenter") {
+      socket?.send(JSON.stringify({ type: "start_poll" }));
+    }
+  };
+
+  const handleCastVote = (option: string) => {
+    socket?.send(JSON.stringify({ type: "cast_vote", option }));
+  };
+
+  const handleEndPoll = () => {
+    if (self?.role === "presenter") {
+      socket?.send(JSON.stringify({ type: "end_poll" }));
     }
   };
 
@@ -107,6 +130,10 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             isPresenter={self?.role === "presenter"}
             question={currentQuestion}
             onGetQuestion={handleGetQuestion}
+            pollData={pollData}
+            onStartPoll={handleStartPoll}
+            onCastVote={handleCastVote}
+            onEndPoll={handleEndPoll}
           />
 
           <ControlPanel user={self} socket={socket} isConnected={isConnected} />

@@ -12,6 +12,7 @@ declare module "react-router" {
     };
     db: ReturnType<typeof drizzle>;
     do: DurableObjectNamespace<BrunchPresenter>;
+    ai: Ai<AiModels>;
   }
 }
 
@@ -43,6 +44,7 @@ export default {
 
     return requestHandler(request, {
       db,
+      ai: env.question_ai,
       do: env.brunch_presenter,
       cloudflare: { env, ctx },
     });

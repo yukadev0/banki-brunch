@@ -18,7 +18,57 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     .from(tagsSchema)
     .then((tags) => tags);
 
-  return { allTags };
+  const aiResponse = await context.ai.run("@cf/meta/llama-3-8b-instruct", {
+    prompt: `CRITICAL: Return ONLY a valid JSON object. NO markdown, NO explanations, NO code blocks, NO extra text before or after.
+
+Format must be exactly:
+{"title":"Brief technical interview question","content":"Detailed question with code examples about JavaScript/TypeScript/React/Node.js"}
+
+Rules:
+- ONLY the JSON object
+- NO markdown formatting (\`\`\`json)
+- NO introductory text like "Here is..."
+- NO trailing text after the JSON
+- Question should be for mid-level web developers`,
+  });
+
+  let generatedQuestion = { title: "", content: "" };
+  try {
+    let responseText = aiResponse.response || "";
+
+    // Remove markdown code blocks
+    responseText = responseText.replace(/```json\s*/g, "");
+    responseText = responseText.replace(/```\s*/g, "");
+
+    // Try to parse as JSON first
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.title && parsed.content) {
+          generatedQuestion = {
+            title: String(parsed.title).trim(),
+            content: String(parsed.content).trim(),
+          };
+        }
+      } catch {
+        // If JSON parse fails, try regex extraction
+        const titleMatch = responseText.match(/"title"\s*:\s*"([^"]+)"/);
+        const contentMatch = responseText.match(/"content"\s*:\s*"([^"]+)"/);
+
+        if (titleMatch) {
+          generatedQuestion.title = titleMatch[1];
+        }
+        if (contentMatch) {
+          generatedQuestion.content = contentMatch[1];
+        }
+      }
+    }
+  } catch {
+    // If parsing fails, leave fields empty
+  }
+
+  return { allTags, generatedQuestion };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -45,7 +95,6 @@ export async function action({ request, context }: Route.ActionArgs) {
     });
     return redirect("/question");
   } catch (error) {
-    console.error("Question creation failed:", error);
     return {
       status: "error" as const,
       message: "Failed to create question. Please try again.",
@@ -56,14 +105,14 @@ export default function CreatePage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const [titleInput, setTitleInput] = useState("");
-  const [contentInput, setContentInput] = useState("");
+  const { allTags, generatedQuestion } = loaderData;
+
+  const [titleInput, setTitleInput] = useState(generatedQuestion.title);
+  const [contentInput, setContentInput] = useState(generatedQuestion.content);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
-
-  const { allTags } = loaderData;
 
   return (
     <div className="min-h-screen text-slate-100 py-10 flex flex-col gap-6 items-center justify-center">
