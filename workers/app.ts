@@ -22,6 +22,23 @@ const requestHandler = createRequestHandler(
 
 export default {
   async fetch(request, env, ctx) {
+    if (request.method === "GET" && request.url.endsWith("/websocket")) {
+      const upgradeHeader = request.headers.get("Upgrade");
+      if (!upgradeHeader || upgradeHeader !== "websocket") {
+        return new Response(null, {
+          status: 426,
+          statusText: "Durable Object expected Upgrade: websocket",
+          headers: {
+            "Content-Type": "text/plain",
+          },
+        });
+      }
+
+      let stub = env.MY_DO.getByName("foo");
+
+      return stub.fetch(request);
+    }
+
     const db = drizzle(env.banki_brunch_db);
 
     return requestHandler(request, {
