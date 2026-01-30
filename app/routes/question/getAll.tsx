@@ -113,7 +113,7 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
                       </span>
                       <br />
                       <span className="font-semibold">
-                        {question.author.name ?? "Anonymous"}
+                        {question.author.name}
                       </span>
                     </div>
                   </div>

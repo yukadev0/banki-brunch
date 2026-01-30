@@ -1,8 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
-import type { ClientMessage, UserInfo } from "../app/types/brunch-presenter";
+import type {
+  ClientChatMessage,
+  ClientMessage,
+  IdentifyMessage,
+  UserInfo,
+} from "../app/types/brunch-presenter.types";
 
 export class BrunchPresenter extends DurableObject<Env> {
-  currentlyConnectedWebSockets = 0;
   private sessions: Map<WebSocket, UserInfo> = new Map();
 
   async fetch(request: Request): Promise<Response> {
@@ -10,75 +14,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     const [client, server] = Object.values(webSocketPair);
 
     server.accept();
-    this.currentlyConnectedWebSockets += 1;
-    this.sessions.set(server, { name: "Anonymous", image: undefined });
-
-    server.addEventListener("message", (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data) as ClientMessage;
-
-        if (data.type === "identify") {
-          const userInfo: UserInfo = {
-            name: data.name || "Anonymous",
-            image: data.image,
-          };
-          this.sessions.set(server, userInfo);
-
-          this.broadcastUserList();
-
-          this.broadcast(
-            JSON.stringify({
-              type: "system",
-              message: `${userInfo.name} joined the chat`,
-              timestamp: new Date().toISOString(),
-            }),
-          );
-        } else if (data.type === "message") {
-          const userInfo = this.sessions.get(server);
-          this.broadcast(
-            JSON.stringify({
-              type: "message",
-              message: data.message,
-              user: userInfo,
-              timestamp: new Date().toISOString(),
-            }),
-          );
-        }
-      } catch (err) {
-        this.broadcast(
-          JSON.stringify({
-            type: "message",
-            message: event.data,
-            timestamp: new Date().toISOString(),
-          }),
-        );
-      }
-    });
-
-    server.addEventListener("close", (cls: CloseEvent) => {
-      const userInfo = this.sessions.get(server);
-      this.currentlyConnectedWebSockets -= 1;
-      this.sessions.delete(server);
-
-      this.broadcastUserList();
-
-      if (userInfo) {
-        this.broadcast(
-          JSON.stringify({
-            type: "system",
-            message: `${userInfo.name} left the chat`,
-            timestamp: new Date().toISOString(),
-          }),
-        );
-      }
-
-      server.close(cls.code, "Durable Object is closing WebSocket");
-    });
-
-    server.addEventListener("error", (error) => {
-      console.error("WebSocket error in DO:", error);
-      this.sessions.delete(server);
-    });
+    this.setupEventListeners(server);
 
     return new Response(null, {
       status: 101,
@@ -86,25 +22,155 @@ export class BrunchPresenter extends DurableObject<Env> {
     });
   }
 
-  broadcast(message: string) {
-    this.sessions.forEach((_, session) => {
-      try {
-        session.send(message);
-      } catch (err) {
-        console.error("Error broadcasting to session:", err);
-        this.sessions.delete(session);
+  private setupEventListeners(server: WebSocket): void {
+    server.addEventListener("message", (event) =>
+      this.handleMessage(server, event),
+    );
+    server.addEventListener("close", (event) =>
+      this.handleClose(server, event),
+    );
+    server.addEventListener("error", (error) =>
+      this.handleError(server, error),
+    );
+  }
+
+  private handleMessage(server: WebSocket, event: MessageEvent): void {
+    try {
+      const data = this.parseMessage(event.data);
+      if (!data) return;
+
+      switch (data.type) {
+        case "identify":
+          this.handleIdentify(server, data);
+          break;
+        case "message":
+          this.handleChatMessage(server, data);
+          break;
+        case "toggle_lurking":
+          this.handleToggleLurking(server);
+          break;
+        default:
+          console.warn("Unknown message type:", (data as ClientMessage).type);
       }
+    } catch (err) {
+      this.handleParseError(server, event.data);
+    }
+  }
+
+  private parseMessage(data: unknown): ClientMessage | null {
+    try {
+      return JSON.parse(data as string) as ClientMessage;
+    } catch {
+      return null;
+    }
+  }
+
+  private handleIdentify(server: WebSocket, data: IdentifyMessage): void {
+    if (this.isDuplicateSession(data.id)) {
+      this.sendToClient(server, {
+        type: "duplicate_session",
+        message: "You already have an active session in another tab",
+      });
+      server.close(1008, "Duplicate session detected");
+      return;
+    }
+
+    const userInfo: UserInfo = {
+      id: data.id,
+      name: data.name,
+      image: data.image,
+      isLurking: true,
+    };
+
+    this.sessions.set(server, userInfo);
+    this.broadcastUserList();
+    this.broadcastSystemMessage(`${userInfo.name} joined the chat`);
+  }
+
+  private isDuplicateSession(userId: string): boolean {
+    return Array.from(this.sessions.values()).some(
+      (user) => user.id === userId,
+    );
+  }
+
+  private handleChatMessage(server: WebSocket, data: ClientChatMessage): void {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo) return;
+
+    this.broadcast({
+      type: "message",
+      message: data.message,
+      user: userInfo,
     });
   }
 
-  broadcastUserList() {
+  private handleToggleLurking(server: WebSocket): void {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo) return;
+
+    userInfo.isLurking = !userInfo.isLurking;
+    this.sessions.set(server, userInfo);
+    this.broadcastUserList();
+  }
+
+  private handleClose(server: WebSocket, event: CloseEvent): void {
+    const userInfo = this.sessions.get(server);
+
+    this.sessions.delete(server);
+    this.broadcastUserList();
+
+    if (userInfo) {
+      this.broadcastSystemMessage(`${userInfo.name} left the chat`);
+    }
+  }
+
+  private handleError(server: WebSocket, error: Event): void {
+    console.error("WebSocket error in DO:", error);
+    this.sessions.delete(server);
+  }
+
+  private handleParseError(server: WebSocket, rawData: unknown): void {
+    this.broadcast({
+      type: "message",
+      message: rawData as string,
+    });
+  }
+
+  private broadcast(message: object): void {
+    this.sessions.forEach((_, session) => {
+      this.sendToClient(session, message);
+    });
+  }
+
+  private broadcastUserList(): void {
     const users = Array.from(this.sessions.values());
-    this.broadcast(
-      JSON.stringify({
-        type: "users",
-        users: users,
-        timestamp: new Date().toISOString(),
-      }),
-    );
+    this.broadcast({
+      type: "users",
+      users: users,
+    });
+  }
+
+  private broadcastSystemMessage(message: string): void {
+    this.broadcast({
+      type: "system",
+      message: message,
+    });
+  }
+
+  private sendToClient(server: WebSocket, message: object): void {
+    try {
+      const payload = this.createPayload(message);
+      server.send(payload);
+    } catch (err) {
+      console.error("Error sending to client:", err);
+      this.sessions.delete(server);
+    }
+  }
+
+  private createPayload(message: object): string {
+    return JSON.stringify({
+      ...message,
+      timestamp: new Date().toISOString(),
+    });
   }
 }

@@ -1,6 +1,8 @@
 export interface UserInfo {
+  id: string;
   name: string;
-  image?: string;
+  isLurking: boolean;
+  image?: string | null | undefined;
 }
 
 export interface BaseMessage {
@@ -28,16 +30,29 @@ export interface CountMessage extends BaseMessage {
   value: number;
 }
 
+export interface DuplicateSessionMessage extends BaseMessage {
+  type: "duplicate_session";
+  message: string;
+}
+
 export type ServerMessage =
-  | SystemMessage
   | ChatMessage
   | UsersMessage
-  | CountMessage;
+  | CountMessage
+  | SystemMessage
+  | DuplicateSessionMessage;
+
+export type DisplayMessage =
+  | ChatMessage
+  | CountMessage
+  | SystemMessage
+  | DuplicateSessionMessage;
 
 export interface IdentifyMessage {
   type: "identify";
+  id: string;
   name: string;
-  image?: string;
+  image?: string | null | undefined;
 }
 
 export interface ClientChatMessage {
@@ -45,4 +60,11 @@ export interface ClientChatMessage {
   message: string;
 }
 
-export type ClientMessage = IdentifyMessage | ClientChatMessage;
+export interface ToggleLurkingMessage {
+  type: "toggle_lurking";
+}
+
+export type ClientMessage =
+  | IdentifyMessage
+  | ClientChatMessage
+  | ToggleLurkingMessage;

@@ -1,9 +1,9 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useRef } from "react";
-import type { ServerMessage } from "~/types/brunch-presenter";
+import type { DisplayMessage } from "~/types/brunch-presenter.types";
 
 interface Props {
-  messages: Exclude<ServerMessage, { type: "users" }>[];
+  messages: DisplayMessage[];
 }
 
 export default function MessagesSection({ messages }: Props) {

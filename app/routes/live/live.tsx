@@ -1,31 +1,33 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router";
-import { getSession } from "~/lib/auth.helper";
-import type { ServerMessage, UserInfo } from "~/types/brunch-presenter";
+import { Link, useNavigate } from "react-router";
+import { requireSession } from "~/lib/auth.helper";
+import type {
+  DisplayMessage,
+  IdentifyMessage,
+  ServerMessage,
+  UserInfo,
+} from "~/types/brunch-presenter.types";
 import type { Route } from "./+types/live";
 import HeaderSection from "./components/HeaderSection";
 import InputSection from "./components/InputSection";
 import MessagesSection from "./components/MessagesSection";
 import UsersSection from "./components/UsersSection";
 
+export function meta() {
+  return [{ title: "Live room" }];
+}
+
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const session = (await getSession(context, request)) || {
-    user: {
-      name: `Anonymous ${Math.floor(Math.random() * 8999 + 1000)}`,
-      image: "",
-      id: crypto.randomUUID(),
-    },
-  };
+  const session = await requireSession(context, request);
   return { user: session.user };
 }
 
 export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [messages, setMessages] = useState<
-    Exclude<ServerMessage, { type: "users" }>[]
-  >([]);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [activeUsers, setActiveUsers] = useState<UserInfo[]>([]);
+  const navigate = useNavigate();
 
   const { user } = loaderData;
 
@@ -36,13 +38,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     ws.addEventListener("open", () => {
       setIsConnected(true);
 
-      ws.send(
-        JSON.stringify({
-          type: "identify",
-          name: user.name,
-          image: user.image,
-        }),
-      );
+      const data: IdentifyMessage = {
+        type: "identify",
+        id: user.id,
+        name: user.name,
+        image: user.image,
+      };
+      ws.send(JSON.stringify(data));
     });
 
     ws.addEventListener("message", (event) => {
@@ -51,6 +53,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
         if (data.type === "users") {
           setActiveUsers(data.users || []);
+        } else if (data.type === "duplicate_session") {
+          navigate("/");
         } else {
           setMessages((prev) => [...prev, data]);
         }
@@ -79,16 +83,19 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     };
   }, []);
 
-  const handleSendMessage = useCallback((message: string) => {
-    if (socket && isConnected && message.trim()) {
-      socket.send(
-        JSON.stringify({
-          type: "message",
-          message: message,
-        }),
-      );
-    }
-  }, []);
+  const handleSendMessage = useCallback(
+    (message: string) => {
+      if (socket && isConnected && message.trim()) {
+        socket.send(
+          JSON.stringify({
+            type: "message",
+            message: message,
+          }),
+        );
+      }
+    },
+    [socket, isConnected],
+  );
 
   return (
     <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-4">
@@ -103,7 +110,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
       <div className="flex gap-4 w-full max-w-4xl">
         <MessagesSection messages={messages} />
-        <UsersSection activeUsers={activeUsers} />
+        <UsersSection activeUsers={activeUsers} self={user} socket={socket} />
       </div>
 
       <InputSection

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   isConnected: boolean;
@@ -11,17 +11,38 @@ export default function InputSection({
   handleSendMessage,
 }: Props) {
   const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const submit = () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim()) {
+      return;
+    }
+
     handleSendMessage(inputValue);
     setInputValue("");
   };
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Enter" || !inputRef.current) {
+        return;
+      }
+
+      if (document.activeElement !== inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="flex gap-2 w-full max-w-4xl">
       <input
         type="text"
+        ref={inputRef}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submit()}
