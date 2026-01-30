@@ -1,8 +1,13 @@
 import { DurableObject } from "cloudflare:workers";
 
+interface UserInfo {
+  name: string;
+  image?: string;
+}
+
 export class MyDurableObject extends DurableObject<Env> {
   currentlyConnectedWebSockets = 0;
-  private sessions: Set<WebSocket> = new Set();
+  private sessions: Map<WebSocket, UserInfo> = new Map();
 
   async fetch(request: Request): Promise<Response> {
     const webSocketPair = new WebSocketPair();
@@ -10,37 +15,73 @@ export class MyDurableObject extends DurableObject<Env> {
 
     server.accept();
     this.currentlyConnectedWebSockets += 1;
-    this.sessions.add(server);
-
-    this.broadcast(
-      JSON.stringify({
-        type: "system",
-        message: `A user connected. Total: ${this.currentlyConnectedWebSockets}`,
-        timestamp: new Date().toISOString(),
-      }),
-    );
+    this.sessions.set(server, { name: "Anonymous", image: undefined });
 
     server.addEventListener("message", (event: MessageEvent) => {
-      this.broadcast(
-        JSON.stringify({
-          type: "message",
-          message: event.data,
-          timestamp: new Date().toISOString(),
-        }),
-      );
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "identify") {
+          // Update user info when they identify themselves
+          const userInfo: UserInfo = {
+            name: data.name || "Anonymous",
+            image: data.image,
+          };
+          this.sessions.set(server, userInfo);
+
+          // Broadcast updated user list to all connected clients
+          this.broadcastUserList();
+
+          // Broadcast system message about user joining
+          this.broadcast(
+            JSON.stringify({
+              type: "system",
+              message: `${userInfo.name} joined the chat`,
+              timestamp: new Date().toISOString(),
+            }),
+          );
+        } else if (data.type === "message") {
+          // Regular chat message
+          const userInfo = this.sessions.get(server);
+          this.broadcast(
+            JSON.stringify({
+              type: "message",
+              message: data.message,
+              user: userInfo,
+              timestamp: new Date().toISOString(),
+            }),
+          );
+        }
+      } catch (err) {
+        // Fallback for plain text messages (backward compatibility)
+        this.broadcast(
+          JSON.stringify({
+            type: "message",
+            message: event.data,
+            timestamp: new Date().toISOString(),
+          }),
+        );
+      }
     });
 
     server.addEventListener("close", (cls: CloseEvent) => {
+      const userInfo = this.sessions.get(server);
       this.currentlyConnectedWebSockets -= 1;
       this.sessions.delete(server);
 
-      this.broadcast(
-        JSON.stringify({
-          type: "system",
-          message: `A user disconnected. Total: ${this.currentlyConnectedWebSockets}`,
-          timestamp: new Date().toISOString(),
-        }),
-      );
+      // Broadcast updated user list
+      this.broadcastUserList();
+
+      // Broadcast system message about user leaving
+      if (userInfo) {
+        this.broadcast(
+          JSON.stringify({
+            type: "system",
+            message: `${userInfo.name} left the chat`,
+            timestamp: new Date().toISOString(),
+          }),
+        );
+      }
 
       server.close(cls.code, "Durable Object is closing WebSocket");
     });
@@ -57,7 +98,7 @@ export class MyDurableObject extends DurableObject<Env> {
   }
 
   broadcast(message: string) {
-    this.sessions.forEach((session) => {
+    this.sessions.forEach((_, session) => {
       try {
         session.send(message);
       } catch (err) {
@@ -65,6 +106,17 @@ export class MyDurableObject extends DurableObject<Env> {
         this.sessions.delete(session);
       }
     });
+  }
+
+  broadcastUserList() {
+    const users = Array.from(this.sessions.values());
+    this.broadcast(
+      JSON.stringify({
+        type: "users",
+        users: users,
+        timestamp: new Date().toISOString(),
+      }),
+    );
   }
 
   async getValue() {

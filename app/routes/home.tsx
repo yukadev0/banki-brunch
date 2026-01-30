@@ -60,6 +60,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           Tags
         </Link>
 
+        <Link
+          to="/live"
+          className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
+        >
+          Live
+        </Link>
+
         {session && session.user.role === "admin" && (
           <Link
             to="/admin"

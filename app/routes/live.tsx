@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { requireSession } from "~/lib/auth.helper";
 import type { Route } from "./+types/live";
 
@@ -7,10 +8,17 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   return { user: session.user };
 }
 
+interface UserInfo {
+  name: string;
+  image?: string;
+}
+
 interface Message {
-  type: "message" | "system" | "count";
+  type: "message" | "system" | "count" | "users";
   message?: string;
   value?: number;
+  users?: UserInfo[];
+  user?: UserInfo;
   timestamp: string;
 }
 
@@ -19,9 +27,11 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [activeUsers, setActiveUsers] = useState<UserInfo[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const username = loaderData.user.name;
+  const userImage = loaderData.user.image;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,13 +42,28 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
     ws.addEventListener("open", () => {
       setIsConnected(true);
-      console.log("WebSocket connected");
+
+      // Send identification message with user info
+      ws.send(
+        JSON.stringify({
+          type: "identify",
+          name: username,
+          image: userImage,
+        }),
+      );
     });
 
     ws.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(event.data) as Message;
-        setMessages((prev) => [...prev, data]);
+
+        if (data.type === "users") {
+          // Update active users list
+          setActiveUsers(data.users || []);
+        } else {
+          // Add to messages
+          setMessages((prev) => [...prev, data]);
+        }
       } catch (err) {
         setMessages((prev) => [
           ...prev,
@@ -53,7 +78,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
     ws.addEventListener("close", () => {
       setIsConnected(false);
-      console.log("WebSocket disconnected");
     });
 
     ws.addEventListener("error", (error) => {
@@ -65,18 +89,28 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [username, userImage]);
 
   const handleSendMessage = () => {
     if (socket && isConnected && inputValue.trim()) {
-      socket.send(`${username}: ${inputValue}`);
+      socket.send(
+        JSON.stringify({
+          type: "message",
+          message: inputValue,
+        }),
+      );
       setInputValue("");
     }
   };
 
   const handleIncreaseCount = () => {
     if (socket && isConnected) {
-      socket.send(`${username} increased the count`);
+      socket.send(
+        JSON.stringify({
+          type: "message",
+          message: `${username} increased the count`,
+        }),
+      );
     }
   };
 
@@ -89,6 +123,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-4">
+      <Link
+        to="/"
+        className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
+      >
+        Home
+      </Link>
+
       <h1 className="text-4xl font-semibold text-center text-white">
         WebSocket Chat - {username}
       </h1>
@@ -104,43 +145,93 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
         </span>
       </div>
 
-      <div className="w-full max-w-2xl bg-gray-800 rounded-lg p-4 h-96 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4 sticky -top-4 bg-gray-800 p-2">
-          Messages:
-        </h2>
-        {messages.length === 0 ? (
-          <p className="text-gray-500 text-sm">No messages yet...</p>
-        ) : (
-          <div className="space-y-2">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`rounded px-3 py-2 text-sm ${
-                  msg.type === "system"
-                    ? "bg-gray-900 text-gray-400 italic text-center"
-                    : msg.type === "count"
-                      ? "bg-purple-900/50 text-purple-200 text-center"
-                      : "bg-gray-700"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="wrap-break-word flex-1">
-                    {msg.type === "count"
-                      ? `Count updated to: ${msg.value}`
-                      : msg.message}
-                  </span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">
-                    {formatTime(msg.timestamp)}
-                  </span>
+      <div className="flex gap-4 w-full max-w-4xl">
+        <div className="flex-1 bg-gray-800 rounded-lg p-4 h-96 overflow-y-auto">
+          <h2 className="text-lg font-semibold mb-4 sticky -top-4 bg-gray-800 p-2">
+            Messages:
+          </h2>
+          {messages.length === 0 ? (
+            <p className="text-gray-500 text-sm">No messages yet...</p>
+          ) : (
+            <div className="space-y-2">
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`rounded px-3 py-2 text-sm ${
+                    msg.type === "system"
+                      ? "bg-gray-900 text-gray-400 italic text-center"
+                      : msg.type === "count"
+                        ? "bg-purple-900/50 text-purple-200 text-center"
+                        : "bg-gray-700"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="wrap-break-word flex-1">
+                      {msg.type === "count" ? (
+                        `Count updated to: ${msg.value}`
+                      ) : msg.type === "message" && msg.user ? (
+                        <>
+                          <span className="font-semibold text-blue-400">
+                            {msg.user.name}:{" "}
+                          </span>
+                          {msg.message}
+                        </>
+                      ) : (
+                        msg.message
+                      )}
+                    </span>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                      {formatTime(msg.timestamp)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        <div className="w-64 bg-gray-800 rounded-lg p-4 h-96 overflow-y-auto flexshrink-0">
+          <h2 className="text-lg font-semibold mb-4 sticky -top-4 bg-gray-800 p-2 border-b border-gray-700">
+            Active Users ({activeUsers.length})
+          </h2>
+          {activeUsers.length === 0 ? (
+            <p className="text-gray-500 text-sm">No active users</p>
+          ) : (
+            <div className="space-y-3">
+              {activeUsers.map((user, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  {user.image ? (
+                    <img
+                      src={user.image}
+                      alt={user.name}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm border-2 border-gray-600">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {user.name}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-xs text-gray-400">Online</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex gap-2 w-full max-w-2xl">
+      <div className="flex gap-2 w-full max-w-4xl">
         <input
           type="text"
           value={inputValue}
