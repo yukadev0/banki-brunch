@@ -1,13 +1,18 @@
 import { DurableObject } from "cloudflare:workers";
+import { drizzle } from "drizzle-orm/d1";
+import { QuestionsRepository } from "~/repositories/question/repository";
 import type {
   ClientChatMessage,
   ClientMessage,
+  ClientQuestionInfo,
   IdentifyMessage,
+  ServerQuestionInfo,
   UserInfo,
 } from "../app/types/brunch-presenter.types";
 
 export class BrunchPresenter extends DurableObject<Env> {
   private sessions: Map<WebSocket, UserInfo> = new Map();
+  private currentQuestion: ServerQuestionInfo | null = null;
 
   async fetch(request: Request): Promise<Response> {
     const webSocketPair = new WebSocketPair();
@@ -34,7 +39,10 @@ export class BrunchPresenter extends DurableObject<Env> {
     );
   }
 
-  private handleMessage(server: WebSocket, event: MessageEvent): void {
+  private async handleMessage(
+    server: WebSocket,
+    event: MessageEvent,
+  ): Promise<void> {
     try {
       const data = this.parseMessage(event.data);
       if (!data) return;
@@ -51,6 +59,9 @@ export class BrunchPresenter extends DurableObject<Env> {
           break;
         case "change_role":
           this.handleChangeRole(server);
+          break;
+        case "get_question":
+          await this.handleGetQuestion(server);
           break;
         default:
           console.warn("Unknown message type:", (data as ClientMessage).type);
@@ -124,6 +135,30 @@ export class BrunchPresenter extends DurableObject<Env> {
     userInfo.role = userInfo.role === "viewer" ? "presenter" : "viewer";
     this.sessions.set(server, userInfo);
     this.broadcastUserList();
+  }
+
+  async handleGetQuestion(server: WebSocket) {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo || userInfo.role !== "presenter") return;
+
+    const db = drizzle(this.env.banki_brunch_db);
+    const question = await QuestionsRepository.getRandom(db);
+
+    this.currentQuestion = {
+      content: question.content,
+      id: question.id,
+      title: question.title,
+    };
+
+    const clientQuestion: ClientQuestionInfo = {
+      content: question.content,
+      title: question.title,
+    };
+
+    this.broadcast({
+      type: "question",
+      question: clientQuestion,
+    });
   }
 
   private handleClose(server: WebSocket, event: CloseEvent): void {

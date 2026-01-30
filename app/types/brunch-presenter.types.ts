@@ -6,6 +6,14 @@ export interface UserInfo {
   image?: string | null | undefined;
 }
 
+export interface ServerQuestionInfo {
+  id: number;
+  title: string;
+  content: string;
+}
+
+export type ClientQuestionInfo = Omit<ServerQuestionInfo, "id">;
+
 export interface BaseMessage {
   timestamp: string;
 }
@@ -20,9 +28,9 @@ export interface UsersMessage extends BaseMessage {
   users: UserInfo[];
 }
 
-export interface CountMessage extends BaseMessage {
-  type: "count";
-  value: number;
+export interface QuestionMessage extends BaseMessage {
+  type: "question";
+  question: ClientQuestionInfo;
 }
 
 export interface DuplicateSessionMessage extends BaseMessage {
@@ -30,16 +38,7 @@ export interface DuplicateSessionMessage extends BaseMessage {
   message: string;
 }
 
-export type ServerMessage =
-  | UsersMessage
-  | CountMessage
-  | SystemMessage
-  | DuplicateSessionMessage;
-
-export type DisplayMessage =
-  | CountMessage
-  | SystemMessage
-  | DuplicateSessionMessage;
+export type DisplayMessage = SystemMessage | DuplicateSessionMessage;
 
 export interface IdentifyMessage {
   type: "identify";
@@ -61,8 +60,19 @@ export interface ChangeRoleMessage {
   type: "change_role";
 }
 
+export interface GetQestionMessage {
+  type: "get_question";
+}
+
+export type ServerMessage =
+  | UsersMessage
+  | SystemMessage
+  | DuplicateSessionMessage
+  | QuestionMessage;
+
 export type ClientMessage =
   | IdentifyMessage
   | ClientChatMessage
   | ToggleLurkingMessage
-  | ChangeRoleMessage;
+  | ChangeRoleMessage
+  | GetQestionMessage;

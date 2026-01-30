@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { requireSession } from "~/lib/auth.helper";
 import type {
+  ClientQuestionInfo,
   IdentifyMessage,
   ServerMessage,
   UserInfo,
 } from "~/types/brunch-presenter.types";
 import type { Route } from "./+types/live";
+import ControlPanel from "./components/ControlPanel";
 import HeaderSection from "./components/HeaderSection";
+import QuestionSection from "./components/QuestionSection";
 import UsersSection from "./components/UsersSection";
 
 export function meta() {
@@ -23,6 +26,9 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [activeUsers, setActiveUsers] = useState<UserInfo[]>([]);
+  const [self, setSelf] = useState<UserInfo | null>(null);
+  const [currentQuestion, setCurrentQuestion] =
+    useState<ClientQuestionInfo | null>(null);
   const navigate = useNavigate();
 
   const { user } = loaderData;
@@ -49,9 +55,11 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
         if (data.type === "users") {
           setActiveUsers(data.users || []);
+          setSelf(data.users.find((u) => u.id === user.id) || null);
         } else if (data.type === "duplicate_session") {
           navigate("/");
-        } else {
+        } else if (data.type === "question") {
+          setCurrentQuestion(data.question);
         }
       } catch (err) {}
     });
@@ -71,8 +79,14 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     };
   }, []);
 
+  const handleGetQuestion = () => {
+    if (self?.role === "presenter") {
+      socket?.send(JSON.stringify({ type: "get_question" }));
+    }
+  };
+
   return (
-    <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-4">
+    <div className="min-h-screen py-6">
       <Link
         to="/"
         className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
@@ -80,10 +94,25 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
         Home
       </Link>
 
-      <HeaderSection isConnected={isConnected} name={user.name} />
+      <div className="max-w-7xl mx-auto">
+        <HeaderSection name={user.name} />
 
-      <div className="flex gap-4 w-full max-w-4xl">
-        <UsersSection activeUsers={activeUsers} self={user} socket={socket} />
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_240px] gap-2 mt-8">
+          <UsersSection
+            activeUsers={activeUsers}
+            isSelf={self?.id === user.id}
+          />
+
+          <div className="flex flex-col gap-6 shrink-0">
+            <QuestionSection
+              isPresenter={self?.role === "presenter"}
+              question={currentQuestion}
+              onGetQuestion={handleGetQuestion}
+            />
+          </div>
+
+          <ControlPanel user={self} socket={socket} isConnected={isConnected} />
+        </div>
       </div>
     </div>
   );
