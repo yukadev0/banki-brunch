@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { requireSession } from "~/lib/auth.helper";
@@ -104,17 +105,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     }
   };
 
-  const handleIncreaseCount = () => {
-    if (socket && isConnected) {
-      socket.send(
-        JSON.stringify({
-          type: "message",
-          message: `${username} increased the count`,
-        }),
-      );
-    }
-  };
-
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString("tr-TR", {
       hour: "2-digit",
@@ -137,9 +127,10 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
       <div className="flex items-center gap-2">
         <div
-          className={`w-3 h-3 rounded-full ${
-            isConnected ? "bg-green-500" : "bg-red-500"
-          }`}
+          className={clsx(
+            "w-3 h-3 rounded-full",
+            isConnected ? "bg-green-500" : "bg-red-500",
+          )}
         />
         <span className="text-sm">
           {isConnected ? "Connected" : "Disconnected"}
@@ -158,13 +149,14 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
               {messages.map((msg, index) => (
                 <div
                   key={index}
-                  className={`rounded px-3 py-2 text-sm ${
-                    msg.type === "system"
-                      ? "bg-gray-900 text-gray-400 italic text-center"
-                      : msg.type === "count"
-                        ? "bg-purple-900/50 text-purple-200 text-center"
-                        : "bg-gray-700"
-                  }`}
+                  className={clsx("rounded px-3 py-2 text-sm", {
+                    "bg-gray-900 text-gray-400 italic text-center":
+                      msg.type === "system",
+                    "bg-purple-900/50 text-purple-200 text-center":
+                      msg.type === "count",
+                    "bg-gray-700":
+                      msg.type !== "system" && msg.type !== "count",
+                  })}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="wrap-break-word flex-1">
@@ -245,19 +237,15 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
         <button
           onClick={handleSendMessage}
           disabled={!isConnected || !inputValue.trim()}
-          className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-2 rounded-lg transition transform shadow-md"
+          className={clsx(
+            "bg-blue-500 text-white px-6 py-2 rounded-lg transition transform shadow-md",
+            "hover:bg-blue-600",
+            "disabled:bg-gray-600 disabled:cursor-not-allowed",
+          )}
         >
           Send
         </button>
       </div>
-
-      <button
-        onClick={handleIncreaseCount}
-        disabled={!isConnected}
-        className="bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition transform shadow-md"
-      >
-        Increase Count
-      </button>
     </div>
   );
 }
