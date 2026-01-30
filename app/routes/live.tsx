@@ -38,7 +38,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   }, [messages]);
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://${window.location.host}/websocket`);
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${protocol}://${window.location.host}/websocket`);
 
     ws.addEventListener("open", () => {
       setIsConnected(true);
