@@ -2,7 +2,6 @@ import { DurableObject } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import type {
-  ClientChatMessage,
   ClientMessage,
   ClientQuestionInfo,
   IdentifyMessage,
@@ -51,9 +50,6 @@ export class BrunchPresenter extends DurableObject<Env> {
         case "identify":
           this.handleIdentify(server, data);
           break;
-        case "message":
-          this.handleChatMessage(server, data);
-          break;
         case "toggle_lurking":
           this.handleToggleLurking(server);
           break;
@@ -83,7 +79,6 @@ export class BrunchPresenter extends DurableObject<Env> {
     if (this.isDuplicateSession(data.id)) {
       this.sendToClient(server, {
         type: "duplicate_session",
-        message: "You already have an active session in another tab",
       });
       server.close(1008, "Duplicate session detected");
       return;
@@ -99,24 +94,21 @@ export class BrunchPresenter extends DurableObject<Env> {
 
     this.sessions.set(server, userInfo);
     this.broadcastUserList();
-    this.broadcastSystemMessage(`${userInfo.name} joined the chat`);
+
+    const clientQuestion: ClientQuestionInfo | null = this.currentQuestion
+      ? {
+          content: this.currentQuestion.content,
+          title: this.currentQuestion.title,
+        }
+      : null;
+
+    this.sendToClient(server, { type: "question", question: clientQuestion });
   }
 
   private isDuplicateSession(userId: string): boolean {
     return Array.from(this.sessions.values()).some(
       (user) => user.id === userId,
     );
-  }
-
-  private handleChatMessage(server: WebSocket, data: ClientChatMessage): void {
-    const userInfo = this.sessions.get(server);
-    if (!userInfo) return;
-
-    this.broadcast({
-      type: "message",
-      message: data.message,
-      user: userInfo,
-    });
   }
 
   private handleToggleLurking(server: WebSocket): void {
@@ -162,14 +154,8 @@ export class BrunchPresenter extends DurableObject<Env> {
   }
 
   private handleClose(server: WebSocket, event: CloseEvent): void {
-    const userInfo = this.sessions.get(server);
-
     this.sessions.delete(server);
     this.broadcastUserList();
-
-    if (userInfo) {
-      this.broadcastSystemMessage(`${userInfo.name} left the chat`);
-    }
   }
 
   private handleError(server: WebSocket, error: Event): void {
@@ -195,13 +181,6 @@ export class BrunchPresenter extends DurableObject<Env> {
     this.broadcast({
       type: "users",
       users: users,
-    });
-  }
-
-  private broadcastSystemMessage(message: string): void {
-    this.broadcast({
-      type: "system",
-      message: message,
     });
   }
 

@@ -60,7 +60,7 @@ export default function UsersSection({
   isSelf,
 }: UsersSectionProps) {
   return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 h-fit max-h-[calc(100vh-200px)] overflow-y-auto">
+    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <h2 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">
         Active Users ({activeUsers.length})
       </h2>

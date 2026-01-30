@@ -103,13 +103,11 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             isSelf={self?.id === user.id}
           />
 
-          <div className="flex flex-col gap-6 shrink-0">
-            <QuestionSection
-              isPresenter={self?.role === "presenter"}
-              question={currentQuestion}
-              onGetQuestion={handleGetQuestion}
-            />
-          </div>
+          <QuestionSection
+            isPresenter={self?.role === "presenter"}
+            question={currentQuestion}
+            onGetQuestion={handleGetQuestion}
+          />
 
           <ControlPanel user={self} socket={socket} isConnected={isConnected} />
         </div>

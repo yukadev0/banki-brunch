@@ -18,11 +18,6 @@ export interface BaseMessage {
   timestamp: string;
 }
 
-export interface SystemMessage extends BaseMessage {
-  type: "system";
-  message: string;
-}
-
 export interface UsersMessage extends BaseMessage {
   type: "users";
   users: UserInfo[];
@@ -35,10 +30,7 @@ export interface QuestionMessage extends BaseMessage {
 
 export interface DuplicateSessionMessage extends BaseMessage {
   type: "duplicate_session";
-  message: string;
 }
-
-export type DisplayMessage = SystemMessage | DuplicateSessionMessage;
 
 export interface IdentifyMessage {
   type: "identify";
@@ -66,13 +58,12 @@ export interface GetQestionMessage {
 
 export type ServerMessage =
   | UsersMessage
-  | SystemMessage
-  | DuplicateSessionMessage
-  | QuestionMessage;
+  | QuestionMessage
+  | DuplicateSessionMessage;
 
 export type ClientMessage =
   | IdentifyMessage
   | ClientChatMessage
-  | ToggleLurkingMessage
   | ChangeRoleMessage
-  | GetQestionMessage;
+  | GetQestionMessage
+  | ToggleLurkingMessage;
