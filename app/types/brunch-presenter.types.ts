@@ -14,21 +14,17 @@ export interface ServerQuestionInfo {
 
 export type ClientQuestionInfo = Omit<ServerQuestionInfo, "id">;
 
-export interface BaseMessage {
-  timestamp: string;
-}
-
-export interface UsersMessage extends BaseMessage {
+export interface UsersMessage {
   type: "users";
   users: UserInfo[];
 }
 
-export interface QuestionMessage extends BaseMessage {
+export interface QuestionMessage {
   type: "question";
   question: ClientQuestionInfo;
 }
 
-export interface DuplicateSessionMessage extends BaseMessage {
+export interface DuplicateSessionMessage {
   type: "duplicate_session";
 }
 
