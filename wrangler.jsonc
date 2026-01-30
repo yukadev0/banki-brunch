@@ -19,7 +19,7 @@
       },
     ],
   },
-  "migrations": [{ "new_sqlite_classes": ["BrunchPresenter"], "tag": "v1" }],
+  "migrations": [{ "new_sqlite_classes": ["BrunchPresenter"], "tag": "v2" }],
   "d1_databases": [
     {
       "binding": "banki_brunch_db",

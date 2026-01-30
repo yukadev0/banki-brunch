@@ -49,6 +49,9 @@ export class BrunchPresenter extends DurableObject<Env> {
         case "toggle_lurking":
           this.handleToggleLurking(server);
           break;
+        case "change_role":
+          this.handleChangeRole(server);
+          break;
         default:
           console.warn("Unknown message type:", (data as ClientMessage).type);
       }
@@ -77,6 +80,7 @@ export class BrunchPresenter extends DurableObject<Env> {
 
     const userInfo: UserInfo = {
       id: data.id,
+      role: "viewer",
       name: data.name,
       image: data.image,
       isLurking: true,
@@ -109,6 +113,15 @@ export class BrunchPresenter extends DurableObject<Env> {
     if (!userInfo) return;
 
     userInfo.isLurking = !userInfo.isLurking;
+    this.sessions.set(server, userInfo);
+    this.broadcastUserList();
+  }
+
+  private handleChangeRole(server: WebSocket): void {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo) return;
+
+    userInfo.role = userInfo.role === "viewer" ? "presenter" : "viewer";
     this.sessions.set(server, userInfo);
     this.broadcastUserList();
   }

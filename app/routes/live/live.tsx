@@ -1,16 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { requireSession } from "~/lib/auth.helper";
 import type {
-  DisplayMessage,
   IdentifyMessage,
   ServerMessage,
   UserInfo,
 } from "~/types/brunch-presenter.types";
 import type { Route } from "./+types/live";
 import HeaderSection from "./components/HeaderSection";
-import InputSection from "./components/InputSection";
-import MessagesSection from "./components/MessagesSection";
 import UsersSection from "./components/UsersSection";
 
 export function meta() {
@@ -25,7 +22,6 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [activeUsers, setActiveUsers] = useState<UserInfo[]>([]);
   const navigate = useNavigate();
 
@@ -56,16 +52,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
         } else if (data.type === "duplicate_session") {
           navigate("/");
         } else {
-          setMessages((prev) => [...prev, data]);
         }
-      } catch (err) {
-        const fallbackMessage: ServerMessage = {
-          type: "message",
-          message: event.data,
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, fallbackMessage]);
-      }
+      } catch (err) {}
     });
 
     ws.addEventListener("close", () => {
@@ -83,20 +71,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     };
   }, []);
 
-  const handleSendMessage = useCallback(
-    (message: string) => {
-      if (socket && isConnected && message.trim()) {
-        socket.send(
-          JSON.stringify({
-            type: "message",
-            message: message,
-          }),
-        );
-      }
-    },
-    [socket, isConnected],
-  );
-
   return (
     <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12 px-4">
       <Link
@@ -109,14 +83,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       <HeaderSection isConnected={isConnected} name={user.name} />
 
       <div className="flex gap-4 w-full max-w-4xl">
-        <MessagesSection messages={messages} />
         <UsersSection activeUsers={activeUsers} self={user} socket={socket} />
       </div>
-
-      <InputSection
-        handleSendMessage={handleSendMessage}
-        isConnected={isConnected}
-      />
     </div>
   );
 }

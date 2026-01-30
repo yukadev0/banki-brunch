@@ -2,6 +2,7 @@ export interface UserInfo {
   id: string;
   name: string;
   isLurking: boolean;
+  role: "viewer" | "presenter";
   image?: string | null | undefined;
 }
 
@@ -12,12 +13,6 @@ export interface BaseMessage {
 export interface SystemMessage extends BaseMessage {
   type: "system";
   message: string;
-}
-
-export interface ChatMessage extends BaseMessage {
-  type: "message";
-  message: string;
-  user?: UserInfo;
 }
 
 export interface UsersMessage extends BaseMessage {
@@ -36,14 +31,12 @@ export interface DuplicateSessionMessage extends BaseMessage {
 }
 
 export type ServerMessage =
-  | ChatMessage
   | UsersMessage
   | CountMessage
   | SystemMessage
   | DuplicateSessionMessage;
 
 export type DisplayMessage =
-  | ChatMessage
   | CountMessage
   | SystemMessage
   | DuplicateSessionMessage;
@@ -64,7 +57,12 @@ export interface ToggleLurkingMessage {
   type: "toggle_lurking";
 }
 
+export interface ChangeRoleMessage {
+  type: "change_role";
+}
+
 export type ClientMessage =
   | IdentifyMessage
   | ClientChatMessage
-  | ToggleLurkingMessage;
+  | ToggleLurkingMessage
+  | ChangeRoleMessage;
