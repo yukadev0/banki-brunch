@@ -5,8 +5,11 @@ import type {
   CastVoteMessage,
   ClientMessage,
   ClientQuestionInfo,
+  GetRandomQuestionForUserMessage,
   IdentifyMessage,
+  RequestTagChangeMessage,
   ServerQuestionInfo,
+  SetTagPreferencesMessage,
   UserInfo,
 } from "../app/types/brunch-presenter.types";
 
@@ -16,6 +19,9 @@ export class BrunchPresenter extends DurableObject<Env> {
   private pollOptions: string[] = ["A", "B", "C", "D"];
   private pollVotes: Map<string, string> = new Map();
   private isPollActive: boolean = false;
+  private viewerQueue: string[] = [];
+  private currentQueueIndex: number = 0;
+  private askedQuestionIds: Set<number> = new Set();
 
   async fetch(request: Request): Promise<Response> {
     const webSocketPair = new WebSocketPair();
@@ -72,6 +78,18 @@ export class BrunchPresenter extends DurableObject<Env> {
         case "end_poll":
           this.handleEndPoll(server);
           break;
+        case "set_tag_preferences":
+          this.handleSetTagPreferences(server, data);
+          break;
+        case "request_tag_change":
+          this.handleRequestTagChange(server, data);
+          break;
+        case "get_random_question_for_user":
+          await this.handleGetRandomQuestionForUser(server, data);
+          break;
+        case "skip_user":
+          await this.handleSkipUser(server);
+          break;
         default:
           console.warn("Unknown message type:", (data as ClientMessage).type);
       }
@@ -103,6 +121,7 @@ export class BrunchPresenter extends DurableObject<Env> {
       name: data.name,
       image: data.image,
       isLurking: true,
+      preferredTags: data.preferredTags || [],
     };
 
     this.sessions.set(server, userInfo);
@@ -149,6 +168,7 @@ export class BrunchPresenter extends DurableObject<Env> {
 
     userInfo.isLurking = !userInfo.isLurking;
     this.sessions.set(server, userInfo);
+    this.updateViewerQueue();
     this.broadcastUserList();
   }
 
@@ -165,23 +185,231 @@ export class BrunchPresenter extends DurableObject<Env> {
     const userInfo = this.sessions.get(server);
     if (!userInfo || userInfo.role !== "presenter") return;
 
-    const db = drizzle(this.env.banki_brunch_db);
-    const question = await QuestionsRepository.getRandom(db);
+    // Get the next viewer in queue
+    const nextViewer = this.getNextViewer();
 
+    if (!nextViewer) {
+      // No viewers in queue, get a random question
+      const db = drizzle(this.env.banki_brunch_db);
+      const question = await QuestionsRepository.getRandomExcluding(
+        db,
+        Array.from(this.askedQuestionIds),
+      );
+
+      if (!question) {
+        // No more questions available, reset the asked questions
+        this.askedQuestionIds.clear();
+        const freshQuestion = await QuestionsRepository.getRandom(db);
+        if (freshQuestion) {
+          this.setCurrentQuestion(freshQuestion);
+          this.broadcastQuestion(null, null);
+        }
+        return;
+      }
+
+      this.setCurrentQuestion(question);
+      this.broadcastQuestion(null, null);
+      return;
+    }
+
+    // Viewer has preferred tags, try to find a matching question
+    const db = drizzle(this.env.banki_brunch_db);
+
+    if (nextViewer.preferredTags.length === 0) {
+      // No tag preferences, get random question
+      const question = await QuestionsRepository.getRandomExcluding(
+        db,
+        Array.from(this.askedQuestionIds),
+      );
+
+      if (question) {
+        this.setCurrentQuestion(question);
+        this.advanceQueue();
+        this.broadcastQuestion(nextViewer.id, nextViewer.name);
+      }
+      return;
+    }
+
+    // Try to find a question matching the viewer's tags
+    const question = await QuestionsRepository.getByTags(
+      db,
+      nextViewer.preferredTags,
+      Array.from(this.askedQuestionIds),
+    );
+
+    if (question) {
+      this.setCurrentQuestion(question);
+      this.advanceQueue();
+      this.broadcastQuestion(nextViewer.id, nextViewer.name);
+    } else {
+      // No matching question found, notify presenter
+      this.broadcast({
+        type: "no_matching_question",
+        forUserId: nextViewer.id,
+        forUserName: nextViewer.name,
+        requestedTags: nextViewer.preferredTags,
+      });
+    }
+  }
+
+  private setCurrentQuestion(question: {
+    id: number;
+    title: string;
+    content: string;
+  }): void {
     this.currentQuestion = {
       content: question.content,
       id: question.id,
       title: question.title,
     };
+    this.askedQuestionIds.add(question.id);
+  }
+
+  private broadcastQuestion(
+    forUserId: string | null,
+    forUserName: string | null,
+  ): void {
+    if (!this.currentQuestion) return;
 
     const clientQuestion: ClientQuestionInfo = {
-      content: question.content,
-      title: question.title,
+      content: this.currentQuestion.content,
+      title: this.currentQuestion.title,
     };
 
     this.broadcast({
       type: "question",
       question: clientQuestion,
+      forUserId: forUserId || undefined,
+      forUserName: forUserName || undefined,
+    });
+  }
+
+  private handleSetTagPreferences(
+    server: WebSocket,
+    data: SetTagPreferencesMessage,
+  ): void {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo) return;
+
+    userInfo.preferredTags = data.tags;
+    this.sessions.set(server, userInfo);
+    this.broadcastUserList();
+  }
+
+  private handleRequestTagChange(
+    server: WebSocket,
+    data: RequestTagChangeMessage,
+  ): void {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo || userInfo.role !== "presenter") return;
+
+    // Find the target user's socket and send them a notification
+    for (const [socket, user] of this.sessions) {
+      if (user.id === data.targetUserId) {
+        this.sendToClient(socket, {
+          type: "tag_change_requested",
+        });
+        break;
+      }
+    }
+  }
+
+  private async handleGetRandomQuestionForUser(
+    server: WebSocket,
+    data: GetRandomQuestionForUserMessage,
+  ): Promise<void> {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo || userInfo.role !== "presenter") return;
+
+    // Find the target user
+    let targetUser: UserInfo | null = null;
+    for (const user of this.sessions.values()) {
+      if (user.id === data.targetUserId) {
+        targetUser = user;
+        break;
+      }
+    }
+
+    const db = drizzle(this.env.banki_brunch_db);
+    const question = await QuestionsRepository.getRandomExcluding(
+      db,
+      Array.from(this.askedQuestionIds),
+    );
+
+    if (question) {
+      this.setCurrentQuestion(question);
+      this.advanceQueue();
+      this.broadcastQuestion(
+        targetUser?.id || null,
+        targetUser?.name || null,
+      );
+    }
+  }
+
+  private async handleSkipUser(server: WebSocket): Promise<void> {
+    const userInfo = this.sessions.get(server);
+    if (!userInfo || userInfo.role !== "presenter") return;
+
+    this.advanceQueue();
+    this.broadcastQueueUpdate();
+
+    // Automatically try to get the next question
+    await this.handleGetQuestion(server);
+  }
+
+  private updateViewerQueue(): void {
+    const activeViewers = Array.from(this.sessions.values())
+      .filter((user) => user.role === "viewer" && !user.isLurking)
+      .map((user) => user.id);
+
+    // Keep existing order for users still in queue, add new ones at end
+    const newQueue = this.viewerQueue.filter((id) =>
+      activeViewers.includes(id),
+    );
+    for (const id of activeViewers) {
+      if (!newQueue.includes(id)) {
+        newQueue.push(id);
+      }
+    }
+
+    this.viewerQueue = newQueue;
+
+    // Adjust index if needed
+    if (this.currentQueueIndex >= this.viewerQueue.length) {
+      this.currentQueueIndex = 0;
+    }
+
+    this.broadcastQueueUpdate();
+  }
+
+  private getNextViewer(): UserInfo | null {
+    if (this.viewerQueue.length === 0) {
+      return null;
+    }
+
+    const nextUserId = this.viewerQueue[this.currentQueueIndex];
+    for (const user of this.sessions.values()) {
+      if (user.id === nextUserId) {
+        return user;
+      }
+    }
+
+    return null;
+  }
+
+  private advanceQueue(): void {
+    if (this.viewerQueue.length === 0) return;
+
+    this.currentQueueIndex =
+      (this.currentQueueIndex + 1) % this.viewerQueue.length;
+    this.broadcastQueueUpdate();
+  }
+
+  private broadcastQueueUpdate(): void {
+    this.broadcast({
+      type: "queue_update",
+      queue: this.viewerQueue,
+      currentIndex: this.currentQueueIndex,
     });
   }
 
@@ -249,6 +477,7 @@ export class BrunchPresenter extends DurableObject<Env> {
 
   private handleClose(server: WebSocket, event: CloseEvent): void {
     this.sessions.delete(server);
+    this.updateViewerQueue();
     this.broadcastUserList();
   }
 
@@ -291,7 +520,6 @@ export class BrunchPresenter extends DurableObject<Env> {
   private createPayload(message: object): string {
     return JSON.stringify({
       ...message,
-      timestamp: new Date().toISOString(),
     });
   }
 }

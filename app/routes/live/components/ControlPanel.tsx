@@ -1,14 +1,22 @@
 import clsx from "clsx";
-import { HiEye, HiEyeOff, HiMicrophone, HiVolumeUp } from "react-icons/hi";
+import { HiEye, HiEyeOff, HiMicrophone, HiTag, HiVolumeUp } from "react-icons/hi";
 import type { UserInfo } from "~/types/brunch-presenter.types";
 
 interface Props {
   user: UserInfo | null;
   socket: WebSocket | null;
   isConnected: boolean;
+  preferredTags: string[];
+  onOpenTagModal: () => void;
 }
 
-export default function ControlPanel({ user, socket, isConnected }: Props) {
+export default function ControlPanel({
+  user,
+  socket,
+  isConnected,
+  preferredTags,
+  onOpenTagModal,
+}: Props) {
   const handleToggleLurking = () => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "toggle_lurking" }));
@@ -36,6 +44,40 @@ export default function ControlPanel({ user, socket, isConnected }: Props) {
       </h3>
 
       <div className="space-y-3">
+        {/* Tag Preferences Button */}
+        <button
+          onClick={onOpenTagModal}
+          disabled={!isConnected}
+          className={clsx(
+            "w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            preferredTags.length > 0
+              ? "bg-indigo-500 hover:bg-indigo-600 text-white"
+              : "bg-gray-700 hover:bg-gray-600 text-gray-300",
+          )}
+        >
+          <HiTag className="w-5 h-5" />
+          <span>
+            {preferredTags.length > 0
+              ? `Tags (${preferredTags.length})`
+              : "Set Tag Preferences"}
+          </span>
+        </button>
+
+        {/* Show selected tags */}
+        {preferredTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 p-2 bg-gray-900/50 rounded-lg">
+            {preferredTags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 text-xs bg-indigo-600/30 text-indigo-300 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         <button
           onClick={handleToggleLurking}
           disabled={!isConnected}

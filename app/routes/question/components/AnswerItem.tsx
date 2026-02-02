@@ -9,21 +9,11 @@ export function AnswerItem({
   questionId,
 }: {
   answer: any;
-  user:
-    | {
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        email: string;
-        emailVerified: boolean;
-        name: string;
-        image?: string | null | undefined;
-        banned: boolean | null | undefined;
-        role?: string | null | undefined;
-        banReason?: string | null | undefined;
-        banExpires?: Date | null | undefined;
-      }
-    | undefined;
+  user: {
+    id: string;
+    name: string;
+    role?: string | null | undefined;
+  } | null;
   questionId: number;
 }) {
   const fetcher = useFetcher();

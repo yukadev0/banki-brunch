@@ -1,13 +1,16 @@
 import { useCallback, useMemo } from "react";
-import { Link, useFetcher } from "react-router";
+import { Form, Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { getSession } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import { QuestionsRepository } from "~/repositories/question/repository";
-import { deleteQuestion, voteQuestion } from "../api/question/helpers";
+import { voteQuestion } from "../api/question/helpers";
 import type { Route } from "./+types/get";
 import { AnswerForm } from "./components/AnswerForm";
 import { AnswerItem } from "./components/AnswerItem";
+import { action } from "./get.action";
+
+export { action };
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [{ title: `Question: ${loaderData.question.title}` }];
@@ -20,17 +23,13 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
   const question = await QuestionsRepository.getById(context.db, questionId);
 
   if (!question.validated) {
-    if (!session) {
-      throw new Response("Unauthorized", { status: 401 });
-    }
+    if (!session) throw new Response("Unauthorized", { status: 401 });
 
     if (
       session.user.id !== question.createdByUserId &&
       session.user.role !== "admin"
     ) {
-      throw new Response("You do not have access to this question.", {
-        status: 403,
-      });
+      throw new Response("Forbidden", { status: 403 });
     }
   }
 
@@ -40,12 +39,12 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     await AnswersRepository.getAllByQuestionId(context.db, questionId, userId)
   ).sort((a, b) => b.voteCount - a.voteCount);
 
-  const questionVoteCount = await QuestionsRepository.getVoteCount(
+  const voteCount = await QuestionsRepository.getVoteCount(
     context.db,
     questionId,
   );
 
-  const questionVote = await QuestionsRepository.getUserVote(
+  const vote = await QuestionsRepository.getUserVote(
     context.db,
     questionId,
     userId,
@@ -54,16 +53,22 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
   return {
     question: {
       ...question,
-      vote: questionVote,
-      voteCount: questionVoteCount,
+      vote,
+      voteCount,
     },
     answers,
-    session,
+    user: session
+      ? {
+          id: session.user.id,
+          name: session.user.name,
+          role: session.user.role,
+        }
+      : null,
   };
 }
 
 export default function GetPage({ loaderData }: Route.ComponentProps) {
-  const { question, answers, session } = loaderData;
+  const { question, answers, user } = loaderData;
 
   const fetcher = useFetcher();
 
@@ -113,10 +118,6 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
 
   const onDownvote = useCallback(() => {
     voteQuestion(question.id, "downvote", fetcher);
-  }, [question.id]);
-
-  const deleteQuestionCallback = useCallback(() => {
-    deleteQuestion(question.id, fetcher);
   }, [question.id]);
 
   return (
@@ -175,9 +176,8 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
 
-        {session &&
-          (session.user.id === question.createdByUserId ||
-            session.user.role === "admin") && (
+        {user &&
+          (user.id === question.createdByUserId || user.role === "admin") && (
             <div className="mt-6 pt-4 border-t border-slate-700 flex items-center justify-end gap-4">
               <div className="flex gap-4">
                 <Link
@@ -188,12 +188,15 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
                 </Link>
               </div>
 
-              <button
-                onClick={deleteQuestionCallback}
-                className="text-sm text-red-400 hover:text-red-300"
-              >
-                Delete
-              </button>
+              <Form method="post">
+                <input type="hidden" name="intent" value="delete" />
+                <button
+                  type="submit"
+                  className="text-sm text-red-400 hover:text-red-300"
+                >
+                  Delete
+                </button>
+              </Form>
             </div>
           )}
       </div>
@@ -210,7 +213,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
               <AnswerItem
                 key={answer.id}
                 answer={answer}
-                user={session?.user}
+                user={user}
                 questionId={question.id}
               />
             ))}
@@ -218,7 +221,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {session && <AnswerForm questionId={question.id} />}
+      {user && <AnswerForm questionId={question.id} />}
     </div>
   );
 }

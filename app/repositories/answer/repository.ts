@@ -12,10 +12,17 @@ export const AnswersRepository = {
   ) {
     const answers = await db
       .select({
-        author: user,
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
         answer: answersSchema,
         vote: answerVotesSchema,
-        voteCount: sql<number>`SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
+        voteCount:
+          sql<number>`COALESCE(SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END), 0)`.mapWith(
+            Number,
+          ),
       })
       .from(answersSchema)
       .where(eq(answersSchema.questionId, questionId))
@@ -41,10 +48,17 @@ export const AnswersRepository = {
   async getById(db: DrizzleD1Database<any>, id: number) {
     const [answer] = await db
       .select({
-        author: user,
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
         answer: answersSchema,
         vote: answerVotesSchema,
-        voteCount: sql<number>`SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
+        voteCount:
+          sql<number>`COALESCE(SUM(CASE WHEN ${answerVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${answerVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END), 0)`.mapWith(
+            Number,
+          ),
       })
       .from(answersSchema)
       .where(eq(answersSchema.id, id))
@@ -53,7 +67,8 @@ export const AnswersRepository = {
       .leftJoin(
         answerVotesSchema,
         eq(answerVotesSchema.answerId, answersSchema.id),
-      );
+      )
+      .groupBy(answersSchema.id, user.id);
 
     return {
       ...answer.answer,

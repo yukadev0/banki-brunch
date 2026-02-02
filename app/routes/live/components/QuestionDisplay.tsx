@@ -1,4 +1,4 @@
-import { FaArrowRightLong } from "react-icons/fa6";
+import { FaArrowRightLong, FaUser } from "react-icons/fa6";
 import type {
   ClientQuestionInfo,
   PollUpdateMessage,
@@ -7,6 +7,7 @@ import Option from "./Option";
 
 interface Props {
   question: ClientQuestionInfo;
+  questionForUser: { id: string; name: string } | null;
   isPresenter: boolean;
   onGetQuestion: () => void;
   pollData: PollUpdateMessage | null;
@@ -17,6 +18,7 @@ interface Props {
 
 export default function QuestionDisplay({
   question,
+  questionForUser,
   isPresenter,
   onGetQuestion,
   pollData,
@@ -32,9 +34,17 @@ export default function QuestionDisplay({
     <div className="flex-1 flex flex-col gap-4">
       <div className="flex flex-col items-start justify-between gap-4">
         <div className="flex justify-between items-center w-full">
-          <span className="inline-block px-3 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 rounded-full">
-            Current Question
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="inline-block px-3 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 rounded-full">
+              Current Question
+            </span>
+            {questionForUser && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-green-400 bg-green-400/10 rounded-full">
+                <FaUser className="w-3 h-3" />
+                For {questionForUser.name}
+              </span>
+            )}
+          </div>
           {isPresenter && (
             <div className="flex items-center gap-2">
               {isPollActive ? (

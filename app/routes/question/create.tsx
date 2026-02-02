@@ -18,23 +18,24 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     .from(tagsSchema)
     .then((tags) => tags);
 
-  const aiResponse = await context.ai.run("@cf/meta/llama-3-8b-instruct", {
-    prompt: `CRITICAL: Return ONLY a valid JSON object. NO markdown, NO explanations, NO code blocks, NO extra text before or after.
+  //   const aiResponse = await context.ai.run("@cf/meta/llama-3-8b-instruct", {
+  //     prompt: `CRITICAL: Return ONLY a valid JSON object. NO markdown, NO explanations, NO code blocks, NO extra text before or after.
 
-Format must be exactly:
-{"title":"Brief technical interview question","content":"Detailed question with code examples about JavaScript/TypeScript/React/Node.js"}
+  // Format must be exactly:
+  // {"title":"Brief technical interview question","content":"Detailed question with code examples about JavaScript/TypeScript/React/Node.js"}
 
-Rules:
-- ONLY the JSON object
-- NO markdown formatting (\`\`\`json)
-- NO introductory text like "Here is..."
-- NO trailing text after the JSON
-- Question should be for mid-level web developers`,
-  });
+  // Rules:
+  // - ONLY the JSON object
+  // - NO markdown formatting (\`\`\`json)
+  // - NO introductory text like "Here is..."
+  // - NO trailing text after the JSON
+  // - Question should be for mid-level web developers`,
+  //   });
 
   let generatedQuestion = { title: "", content: "" };
   try {
-    let responseText = aiResponse.response || "";
+    // let responseText = aiResponse.response || "";
+    let responseText = "";
 
     // Remove markdown code blocks
     responseText = responseText.replace(/```json\s*/g, "");

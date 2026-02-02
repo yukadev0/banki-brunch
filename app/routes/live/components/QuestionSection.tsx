@@ -8,6 +8,7 @@ import QuestionEmptyState from "./QuestionEmptyState";
 interface Props {
   isPresenter: boolean;
   question: ClientQuestionInfo | null;
+  questionForUser: { id: string; name: string } | null;
   onGetQuestion: () => void;
   pollData: PollUpdateMessage | null;
   onStartPoll: () => void;
@@ -17,6 +18,7 @@ interface Props {
 
 export default function QuestionSection({
   question,
+  questionForUser,
   onGetQuestion,
   isPresenter,
   pollData,
@@ -25,7 +27,7 @@ export default function QuestionSection({
   onEndPoll,
 }: Props) {
   return (
-    <div className="bg-gray-800 rounded-xl p-8 shadow-lg border border-gray-700 min-h-100 flex flex-col">
+    <div className="bg-gray-800 rounded-lg p-4 shadow-lg border border-gray-700 min-h-100 flex flex-col">
       {!question ? (
         <QuestionEmptyState
           isPresenter={isPresenter}
@@ -34,6 +36,7 @@ export default function QuestionSection({
       ) : (
         <QuestionDisplay
           question={question}
+          questionForUser={questionForUser}
           isPresenter={isPresenter}
           onGetQuestion={onGetQuestion}
           pollData={pollData}

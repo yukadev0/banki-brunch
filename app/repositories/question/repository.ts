@@ -15,7 +15,11 @@ export const QuestionsRepository = {
     const rows = await db
       .select({
         question: questionsSchema,
-        author: user,
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
         tags: questionTagsSchema,
         validated: questionValidationsSchema,
       })
@@ -42,7 +46,11 @@ export const QuestionsRepository = {
     const [question] = await db
       .select({
         question: questionsSchema,
-        author: user,
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        },
         tags: questionTagsSchema,
         validated: questionValidationsSchema,
       })
@@ -81,6 +89,63 @@ export const QuestionsRepository = {
     return question;
   },
 
+  async getRandomExcluding(db: DrizzleD1Database<any>, excludeIds: number[]) {
+    if (excludeIds.length === 0) {
+      return this.getRandom(db);
+    }
+
+    const [question] = await db
+      .select()
+      .from(questionsSchema)
+      .where(sql`${questionsSchema.id} NOT IN (${sql.join(excludeIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(sql`RANDOM()`)
+      .limit(1);
+
+    return question || null;
+  },
+
+  async getByTags(
+    db: DrizzleD1Database<any>,
+    tags: string[],
+    excludeIds: number[] = [],
+  ) {
+    if (tags.length === 0) {
+      return this.getRandomExcluding(db, excludeIds);
+    }
+
+    // Build a query that finds questions with any of the specified tags
+    // question_tags.tags is a JSON array stored as text
+    const rows = await db
+      .select({
+        question: questionsSchema,
+        tags: questionTagsSchema.tags,
+      })
+      .from(questionsSchema)
+      .innerJoin(
+        questionTagsSchema,
+        eq(questionsSchema.id, questionTagsSchema.questionId),
+      )
+      .orderBy(sql`RANDOM()`);
+
+    // Filter in JS since SQLite JSON operations are limited
+    const matchingQuestions = rows.filter((row) => {
+      // Exclude already asked questions
+      if (excludeIds.includes(row.question.id)) {
+        return false;
+      }
+      // Check if any of the question's tags match any of the requested tags
+      const questionTags = row.tags || [];
+      return tags.some((tag) => questionTags.includes(tag));
+    });
+
+    if (matchingQuestions.length === 0) {
+      return null;
+    }
+
+    // Return a random matching question (already shuffled by RANDOM())
+    return matchingQuestions[0].question;
+  },
+
   async getUserVote(
     db: DrizzleD1Database<any>,
     questionId: number,
@@ -103,7 +168,10 @@ export const QuestionsRepository = {
   async getVoteCount(db: DrizzleD1Database<any>, questionId: number) {
     const [{ count }] = await db
       .select({
-        count: sql<number>`SUM(CASE WHEN ${questionVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${questionVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END)`,
+        count:
+          sql<number>`COALESCE(SUM(CASE WHEN ${questionVotesSchema.vote_type} = 'upvote' THEN 1 WHEN ${questionVotesSchema.vote_type} = 'downvote' THEN -1 ELSE 0 END), 0)`.mapWith(
+            Number,
+          ),
       })
       .from(questionVotesSchema)
       .where(eq(questionVotesSchema.questionId, questionId));

@@ -4,6 +4,7 @@ export interface UserInfo {
   isLurking: boolean;
   role: "viewer" | "presenter";
   image?: string | null | undefined;
+  preferredTags: string[];
 }
 
 export interface ServerQuestionInfo {
@@ -21,7 +22,30 @@ export interface UsersMessage {
 
 export interface QuestionMessage {
   type: "question";
-  question: ClientQuestionInfo;
+  question: ClientQuestionInfo | null;
+  forUserId?: string;
+  forUserName?: string;
+}
+
+export interface NoMatchingQuestionMessage {
+  type: "no_matching_question";
+  forUserId: string;
+  forUserName: string;
+  requestedTags: string[];
+}
+
+export interface RequestTagChangeMessage {
+  type: "request_tag_change";
+  targetUserId: string;
+}
+
+export interface TagChangeRequestedMessage {
+  type: "tag_change_requested";
+}
+
+export interface GetRandomQuestionForUserMessage {
+  type: "get_random_question_for_user";
+  targetUserId: string;
 }
 
 export interface DuplicateSessionMessage {
@@ -33,6 +57,7 @@ export interface IdentifyMessage {
   id: string;
   name: string;
   image?: string | null | undefined;
+  preferredTags?: string[];
 }
 
 export interface ClientChatMessage {
@@ -50,6 +75,15 @@ export interface ChangeRoleMessage {
 
 export interface GetQestionMessage {
   type: "get_question";
+}
+
+export interface SetTagPreferencesMessage {
+  type: "set_tag_preferences";
+  tags: string[];
+}
+
+export interface SkipUserMessage {
+  type: "skip_user";
 }
 
 export interface StartPollMessage {
@@ -77,7 +111,16 @@ export type ServerMessage =
   | UsersMessage
   | QuestionMessage
   | DuplicateSessionMessage
-  | PollUpdateMessage;
+  | PollUpdateMessage
+  | NoMatchingQuestionMessage
+  | TagChangeRequestedMessage
+  | QueueUpdateMessage;
+
+export interface QueueUpdateMessage {
+  type: "queue_update";
+  queue: string[];
+  currentIndex: number;
+}
 
 export type ClientMessage =
   | IdentifyMessage
@@ -87,4 +130,8 @@ export type ClientMessage =
   | ToggleLurkingMessage
   | StartPollMessage
   | CastVoteMessage
-  | EndPollMessage;
+  | EndPollMessage
+  | SetTagPreferencesMessage
+  | RequestTagChangeMessage
+  | GetRandomQuestionForUserMessage
+  | SkipUserMessage;
