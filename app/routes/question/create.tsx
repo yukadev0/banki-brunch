@@ -29,10 +29,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   const content = formData.get("content")?.toString().trim();
   const tags = formData.getAll("tags") as string[];
 
-  if (!title || !content || tags.length === 0) {
+  if (!title || !content) {
+    return { status: "error" as const, message: "Missing required fields" };
+  }
+
+  if (tags.length === 0) {
     return {
       status: "error" as const,
-      message: "Please fill all required fields and select at least one tag",
+      message: "Please select at least one tag",
     };
   }
 
@@ -43,6 +47,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       content,
       createdByUserId: session.user.id,
     });
+
     return redirect("/question");
   } catch (error) {
     return {
@@ -51,6 +56,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     };
   }
 }
+
 export default function CreatePage({
   loaderData,
   actionData,

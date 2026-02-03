@@ -1,16 +1,17 @@
 import { useCallback, useMemo } from "react";
-import { Form, Link, useFetcher } from "react-router";
+import { Form, Link, redirect, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
-import { getSession } from "~/lib/auth.helper";
+import {
+  getSession,
+  requireOwnership,
+  requireSession,
+} from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { voteQuestion } from "../api/question/helpers";
 import type { Route } from "./+types/get";
 import { AnswerForm } from "./components/AnswerForm";
 import { AnswerItem } from "./components/AnswerItem";
-import { action } from "./get.action";
-
-export { action };
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return [{ title: `Question: ${loaderData.question.title}` }];
@@ -76,7 +77,62 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
   };
 }
 
-export default function GetPage({ loaderData }: Route.ComponentProps) {
+export async function action({ request, params, context }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+  const questionId = Number(params.id);
+
+  switch (intent) {
+    case "delete-question":
+      const question = await QuestionsRepository.getById(
+        context.db,
+        questionId,
+      );
+
+      if (!question) {
+        throw new Response("Question not found", { status: 404 });
+      }
+
+      await requireOwnership(context, request, question.createdByUserId);
+
+      try {
+        await QuestionsRepository.delete(context.db, questionId);
+        return redirect("/question");
+      } catch (error) {
+        return { status: "error" as const, message: "Something went wrong" };
+      }
+    case "create-answer":
+      const session = await requireSession(context, request);
+
+      const content = formData.get("content") as string;
+
+      if (!content) {
+        return { status: "error" as const, message: "Missing required fields" };
+      }
+
+      try {
+        await AnswersRepository.create(context.db, {
+          content: content,
+          questionId: questionId,
+          createdByUserId: session.user.id,
+        });
+
+        return {
+          status: "success" as const,
+          message: "Answer created successfully",
+        };
+      } catch (error) {
+        return { status: "error" as const, message: "Something went wrong" };
+      }
+    default:
+      throw new Response("Invalid intent", { status: 400 });
+  }
+}
+
+export default function GetPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const { question, answers, user } = loaderData;
 
   const fetcher = useFetcher();
@@ -198,7 +254,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
               </div>
 
               <Form method="post">
-                <input type="hidden" name="intent" value="delete" />
+                <input type="hidden" name="intent" value="delete-question" />
                 <button
                   type="submit"
                   className="text-sm text-red-400 hover:text-red-300"
@@ -230,7 +286,7 @@ export default function GetPage({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {user && <AnswerForm questionId={question.id} />}
+      {user && <AnswerForm actionData={actionData} />}
     </div>
   );
 }

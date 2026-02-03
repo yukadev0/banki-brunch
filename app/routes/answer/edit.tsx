@@ -1,9 +1,8 @@
 import clsx from "clsx";
-import { useCallback, useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { useState } from "react";
+import { Form, Link, redirect } from "react-router";
 import { requireOwnership } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
-import { updateAnswer } from "../api/answer/helpers";
 import type { Route } from "./+types/edit";
 
 export function meta() {
@@ -12,6 +11,10 @@ export function meta() {
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const answer = await AnswersRepository.getById(context.db, Number(params.id));
+
+  if (!answer) {
+    throw new Response("Answer not found", { status: 404 });
+  }
 
   await requireOwnership(context, request, answer.createdByUserId);
 
@@ -24,17 +27,45 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   };
 }
 
-export default function EditPage({ loaderData }: Route.ComponentProps) {
+export async function action({ params, request, context }: Route.ActionArgs) {
+  const answerId = Number(params.id);
+  const answer = await AnswersRepository.getById(context.db, answerId);
+
+  if (!answer) {
+    throw new Response("Answer not found", { status: 404 });
+  }
+
+  await requireOwnership(context, request, answer.createdByUserId);
+
+  const formData = await request.formData();
+  const content = formData.get("content") as string;
+
+  if (!content) {
+    return { status: "error" as const, message: "Missing required fields" };
+  }
+
+  const questionId = Number(formData.get("questionId"));
+
+  try {
+    await AnswersRepository.update(context.db, answerId, {
+      content: content,
+      questionId: questionId,
+      createdByUserId: answer.createdByUserId,
+    });
+
+    return redirect(`/question/${questionId}/answer/${answerId}`);
+  } catch (error) {
+    return { status: "error" as const, message: "Something went wrong" };
+  }
+}
+
+export default function EditPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const { answer } = loaderData;
 
-  const fetcher = useFetcher();
-  const fetchData = fetcher.data || {};
-
   const [content, setContent] = useState(answer.content);
-
-  const onUpdateAnswer = useCallback(() => {
-    updateAnswer(content, answer.id, answer.questionId, fetcher);
-  }, [content, answer.id, answer.questionId]);
 
   return (
     <div className="text-gray-100 flex flex-col items-center justify-center gap-8 py-12">
@@ -58,25 +89,27 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
           className="w-full hover:ring-blue-500 rounded-lg bg-slate-900/70 px-4 py-2 text-slate-100 ring-1 ring-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
 
-        {fetchData.message && (
+        {actionData && (
           <p
             className={clsx(
               "text-sm",
-              fetchData.status === "success"
-                ? "text-green-500"
-                : "text-red-500",
+              actionData.status === "error" ? "text-red-500" : "text-green-500",
             )}
           >
-            {fetchData.message}
+            {actionData.message}
           </p>
         )}
 
-        <button
-          onClick={onUpdateAnswer}
-          className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
-        >
-          Save
-        </button>
+        <Form method="post">
+          <input type="hidden" name="content" value={content} />
+          <input type="hidden" name="questionId" value={answer.questionId} />
+          <button
+            type="submit"
+            className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
+          >
+            Save
+          </button>
+        </Form>
       </div>
     </div>
   );

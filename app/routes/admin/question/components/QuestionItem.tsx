@@ -1,28 +1,31 @@
-import { useCallback, useMemo } from "react";
-import { Link, useFetcher } from "react-router";
-import {
-  deleteQuestion,
-  validateQuestion,
-} from "~/routes/api/question/helpers";
+import clsx from "clsx";
+import { Form, Link } from "react-router";
 
-export function QuestionItem({ question }: any) {
-  const fetcher = useFetcher();
+type Props = {
+  question: {
+    tags: string[];
+    author: {
+      id: string;
+      name: string;
+      image: string | null;
+    };
+    validated: {
+      id: number;
+      questionId: number;
+      validatedByUserId: string;
+    } | null;
+    id: number;
+    title: string;
+    content: string;
+    status: "pending" | "approved" | "rejected";
+    interviewCount: number;
+    createdByUserId: string;
+    createdAt: Date;
+  };
+};
 
-  const deleteQuestionCallback = useCallback(() => {
-    deleteQuestion(question.id, fetcher);
-  }, [question.id]);
-
-  const handleValidate = useCallback(() => {
-    validateQuestion(question.id, fetcher);
-  }, [question.id]);
-
-  const validated = useMemo(() => {
-    if (fetcher.formData) {
-      return question.validated === null;
-    }
-
-    return question.validated !== null;
-  }, [fetcher.formData, question.validated]);
+export function QuestionItem({ question }: Props) {
+  const validated = question.validated !== null;
 
   return (
     <tr className="text-sm hover:bg-gray-700 transition duration-200 ease-in-out">
@@ -36,13 +39,17 @@ export function QuestionItem({ question }: any) {
         {question.tags.join(", ")}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-center">
-        <input
-          type="checkbox"
-          onClick={handleValidate}
-          checked={validated}
-          readOnly
-          className="flex items-center justify-center cursor-pointer appearance-none border focus:ring duration-300 shrink-0 w-6 h-6 rounded before:block before:clip-close before:origin-bottom-left before:scale-0 checked:before:scale-100 before:transition before:bg-green-400 before:w-3 before:h-3"
-        />
+        <Form method="post">
+          <input type="hidden" name="intent" value="validate" />
+          <input type="hidden" name="id" value={question.id} />
+          <button
+            type="submit"
+            className={clsx(
+              "flex items-center justify-center cursor-pointer appearance-none border focus:ring duration-300 shrink-0 w-6 h-6 rounded before:block before:clip-close before:origin-bottom-left before:scale-0 before:transition before:bg-green-400 before:w-3 before:h-3",
+              validated && "before:scale-100",
+            )}
+          />
+        </Form>
       </td>
       <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-300">
         <Link
@@ -51,12 +58,17 @@ export function QuestionItem({ question }: any) {
         >
           Edit
         </Link>
-        <button
-          onClick={deleteQuestionCallback}
-          className="text-red-400 hover:text-red-500 transition duration-150 ease-in-out"
-        >
-          Delete
-        </button>
+
+        <Form method="post">
+          <input type="hidden" name="intent" value="delete" />
+          <input type="hidden" name="id" value={question.id} />
+          <button
+            type="submit"
+            className="text-red-400 hover:text-red-500 transition duration-150 ease-in-out cursor-pointer"
+          >
+            Delete
+          </button>
+        </Form>
       </td>
     </tr>
   );

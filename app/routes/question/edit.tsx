@@ -1,10 +1,9 @@
 import clsx from "clsx";
 import { useCallback, useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import { requireOwnership } from "~/lib/auth.helper";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import { TagsRepository } from "~/repositories/tag/repository";
-import { updateQuestion } from "../api/question/helpers";
 import type { Route } from "./+types/edit";
 
 export function meta() {
@@ -32,11 +31,52 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   };
 }
 
-export default function EditPage({ loaderData }: Route.ComponentProps) {
-  const { question, allTags } = loaderData;
+export async function action({ params, request, context }: Route.ActionArgs) {
+  const questionId = Number(params.id);
+  const question = await QuestionsRepository.getById(context.db, questionId);
 
-  const fetcher = useFetcher();
-  const fetchData = fetcher.data || {};
+  if (!question) {
+    throw new Response("Question not found", { status: 404 });
+  }
+
+  await requireOwnership(context, request, question.createdByUserId);
+
+  const formData = await request.formData();
+  const title = formData.get("title");
+  const content = formData.get("content");
+
+  if (!title || !content) {
+    return { status: "error" as const, message: "Missing required fields" };
+  }
+
+  const tags = formData.getAll("tags");
+
+  if (tags.length === 0) {
+    return {
+      status: "error" as const,
+      message: "Please select at least one tag",
+    };
+  }
+
+  try {
+    await QuestionsRepository.update(context.db, questionId, {
+      title: title as string,
+      content: content as string,
+      tags: tags as string[],
+      createdByUserId: question.createdByUserId,
+    });
+
+    return redirect(`/question/${questionId}`);
+  } catch (error) {
+    return { status: "error" as const, message: "Something went wrong" };
+  }
+}
+
+export default function EditPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { question, allTags } = loaderData;
 
   const [tags, setTags] = useState<string[]>(question.tags ?? []);
   const [titleInput, setTitleInput] = useState(question.title);
@@ -47,10 +87,6 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   }, []);
-
-  const updateQuestionCallback = useCallback(() => {
-    updateQuestion(question.id, titleInput, contentInput, tags, fetcher);
-  }, [titleInput, contentInput, tags]);
 
   return (
     <div className="text-gray-100 flex flex-col items-center justify-center gap-8 pt-12">
@@ -83,8 +119,8 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
           />
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-300 mb-2">Tags</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
+            <h3 className="text-sm font-semibold text-gray-300">Tags</h3>
+            <div className="flex flex-wrap gap-2">
               {allTags.map((tag) => {
                 const active = tags.includes(tag);
                 return (
@@ -112,25 +148,38 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
             </div>
           </div>
 
-          {fetchData.message && (
+          {actionData && (
             <p
               className={clsx(
                 "text-sm",
-                fetchData.status === "success"
-                  ? "text-green-500"
-                  : "text-red-500",
+                actionData.status === "error"
+                  ? "text-red-500"
+                  : "text-green-500",
               )}
             >
-              {fetchData.message}
+              {actionData.message}
             </p>
           )}
 
-          <button
-            onClick={updateQuestionCallback}
-            className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
-          >
-            Save
-          </button>
+          <Form method="post" className="self-center">
+            <input type="hidden" name="title" value={titleInput} />
+            <input type="hidden" name="content" value={contentInput} />
+            {tags.map((tag) => (
+              <input
+                key={tag}
+                type="hidden"
+                name="tags"
+                value={tag}
+                className="hidden"
+              />
+            ))}
+            <button
+              type="submit"
+              className="text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
+            >
+              Save
+            </button>
+          </Form>
         </div>
       </div>
     </div>

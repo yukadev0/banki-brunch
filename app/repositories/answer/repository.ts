@@ -70,12 +70,14 @@ export const AnswersRepository = {
       )
       .groupBy(answersSchema.id, user.id);
 
-    return {
-      ...answer.answer,
-      vote: answer.vote,
-      author: answer.author,
-      voteCount: answer.voteCount,
-    };
+    return answer
+      ? {
+          ...answer.answer,
+          vote: answer.vote,
+          author: answer.author,
+          voteCount: answer.voteCount,
+        }
+      : null;
   },
 
   async create(db: DrizzleD1Database<any>, data: AnswerInsertArgs) {

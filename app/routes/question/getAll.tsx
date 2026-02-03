@@ -10,14 +10,6 @@ export function meta() {
   return [{ title: "Questions" }];
 }
 
-export async function action({ context }: Route.ActionArgs) {
-  const question = await QuestionsRepository.getRandom(context.db);
-
-  if (question) {
-    return redirect(`/question/${question.id}`);
-  }
-}
-
 export async function loader({ context, request }: Route.LoaderArgs) {
   const session = await getSession(context, request);
 
@@ -41,6 +33,14 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       author: { name: question.author.name },
     })),
   };
+}
+
+export async function action({ context }: Route.ActionArgs) {
+  const question = await QuestionsRepository.getRandom(context.db);
+
+  if (question) {
+    return redirect(`/question/${question.id}`);
+  }
 }
 
 export default function GetAllPage({ loaderData }: Route.ComponentProps) {
@@ -135,24 +135,24 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {hasSession && (
-        <div className="flex gap-2 mt-6">
+      <div className="flex gap-2 mt-6">
+        {hasSession && (
           <Link
             to="./create"
             className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg"
           >
             Create Question
           </Link>
-          <Form method="post">
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg"
-            >
-              Random Question
-            </button>
-          </Form>
-        </div>
-      )}
+        )}
+        <Form method="post">
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-lg"
+          >
+            Random Question
+          </button>
+        </Form>
+      </div>
     </div>
   );
 }

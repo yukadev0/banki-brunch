@@ -17,7 +17,7 @@ export async function action({ params, request, context }: Route.ActionArgs) {
   const content = formData.get("content");
 
   if (!title || !content) {
-    return { status: "error", message: "Missing required fields" };
+    return { status: "error" as const, message: "Missing required fields" };
   }
 
   const selectedTags = JSON.parse(formData.get("tags") as string);
@@ -30,8 +30,11 @@ export async function action({ params, request, context }: Route.ActionArgs) {
       createdByUserId: question.createdByUserId,
     });
 
-    return { status: "success", message: "Question updated successfully" };
+    return {
+      status: "success" as const,
+      message: "Question updated successfully",
+    };
   } catch (error) {
-    return { status: "error", message: "Something went wrong" };
+    return { status: "error" as const, message: "Something went wrong" };
   }
 }

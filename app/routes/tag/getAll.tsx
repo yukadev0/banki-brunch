@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { getSession } from "~/lib/auth.helper";
+import { getSession, requireAdmin } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/getAll";
 import { TagItem } from "./components/TagItem";
@@ -14,6 +14,20 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const tags = await TagsRepository.getAll(context.db);
 
   return { tags: tags.map((tag) => tag.name), role: session?.user.role };
+}
+
+export async function action({ request, context }: Route.ActionArgs) {
+  await requireAdmin(context, request);
+
+  const formdata = await request.formData();
+  const tagName = formdata.get("name");
+
+  try {
+    await TagsRepository.delete(context.db, tagName as string);
+    return { status: "success" as const, message: "Tag deleted successfully" };
+  } catch (error) {
+    return { status: "error" as const, message: "Something went wrong" };
+  }
 }
 
 export default function GetAllPage({ loaderData }: Route.ComponentProps) {

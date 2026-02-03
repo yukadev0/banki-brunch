@@ -9,7 +9,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const tagName = formData.get("name");
 
   if (!tagName) {
-    return { status: "error", message: "Tag name is required" };
+    return { status: "error" as const, message: "Tag name is required" };
   }
 
   try {
@@ -17,8 +17,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       name: tagName.toString(),
     });
 
-    return { status: "success", message: "Tag created successfully" };
+    return { status: "success" as const, message: "Tag created successfully" };
   } catch (error) {
-    return { status: "error", message: "Something went wrong" };
+    return { status: "error" as const, message: "Something went wrong" };
   }
 }

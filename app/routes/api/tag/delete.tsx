@@ -7,8 +7,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 
   try {
     await TagsRepository.delete(context.db, params.name);
-    return { status: "success", message: "Tag deleted successfully" };
+    return { status: "success" as const, message: "Tag deleted successfully" };
   } catch (error) {
-    return { status: "error", message: "Something went wrong" };
+    return { status: "error" as const, message: "Something went wrong" };
   }
 }

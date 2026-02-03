@@ -1,8 +1,8 @@
 import clsx from "clsx";
-import { useCallback, useEffect, useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { useState } from "react";
+import { Form, Link } from "react-router";
 import { requireAdmin } from "~/lib/auth.helper";
-import { createTag } from "../api/tag/helpers";
+import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/create";
 
 export function meta() {
@@ -13,21 +13,29 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   await requireAdmin(context, request);
 }
 
-export default function CreatePage() {
-  const fetcher = useFetcher();
-  const fetchData = fetcher.data || {};
+export async function action({ request, context }: Route.ActionArgs) {
+  await requireAdmin(context, request);
 
+  const formData = await request.formData();
+  const tagName = formData.get("name");
+
+  if (!tagName) {
+    return { status: "error" as const, message: "Tag name is required" };
+  }
+
+  try {
+    await TagsRepository.create(context.db, {
+      name: tagName.toString(),
+    });
+
+    return { status: "success" as const, message: "Tag created successfully" };
+  } catch (error) {
+    return { status: "error" as const, message: "Something went wrong" };
+  }
+}
+
+export default function CreatePage({ actionData }: Route.ComponentProps) {
   const [tagNameInput, setTagNameInput] = useState("");
-
-  useEffect(() => {
-    if (fetcher.state === "idle") {
-      setTagNameInput("");
-    }
-  }, [fetcher.state]);
-
-  const createTagCallback = useCallback(() => {
-    createTag(tagNameInput, fetcher);
-  }, [tagNameInput]);
 
   return (
     <div className="min-h-screen text-slate-100 py-10 flex flex-col gap-6 items-center justify-center">
@@ -57,25 +65,28 @@ export default function CreatePage() {
             />
           </div>
 
-          {fetchData.message && (
+          {actionData && (
             <p
               className={clsx(
                 "text-sm",
-                fetchData.status === "success"
+                actionData.status === "success"
                   ? "text-green-500"
                   : "text-red-500",
               )}
             >
-              {fetchData.message}
+              {actionData.message}
             </p>
           )}
 
-          <button
-            onClick={createTagCallback}
-            className="rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
-          >
-            Create Tag
-          </button>
+          <Form method="post">
+            <input type="hidden" name="name" value={tagNameInput} />
+            <button
+              type="submit"
+              className="w-full rounded-xl py-2.5 font-semibold bg-blue-500 hover:bg-blue-600 transition"
+            >
+              Create Tag
+            </button>
+          </Form>
         </div>
       </div>
     </div>

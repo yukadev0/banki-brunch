@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from "react";
-import { Link, useFetcher } from "react-router";
+import { Form, Link, redirect, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { requireOwnership } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
-import { deleteAnswer, voteAnswer } from "../api/answer/helpers";
+import { voteAnswer } from "../api/answer/helpers";
 import type { Route } from "./+types/get";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -12,6 +12,10 @@ export function meta({ params }: Route.MetaArgs) {
 
 export async function loader({ params, context, request }: Route.LoaderArgs) {
   const answer = await AnswersRepository.getById(context.db, Number(params.id));
+
+  if (!answer) {
+    throw new Response("Answer not found", { status: 404 });
+  }
 
   const session = await requireOwnership(
     context,
@@ -40,6 +44,25 @@ export async function loader({ params, context, request }: Route.LoaderArgs) {
       },
     },
   };
+}
+
+export async function action({ params, request, context }: Route.ActionArgs) {
+  const answerId = Number(params.id);
+  const answer = await AnswersRepository.getById(context.db, answerId);
+
+  if (!answer) {
+    throw new Response("Answer not found", { status: 404 });
+  }
+
+  await requireOwnership(context, request, answer.createdByUserId);
+
+  try {
+    await AnswersRepository.delete(context.db, answerId);
+
+    return redirect(`/question/${answer.questionId}`);
+  } catch (error) {
+    return { status: "error" as const, message: "Something went wrong" };
+  }
 }
 
 export default function GetPage({ loaderData, params }: Route.ComponentProps) {
@@ -95,10 +118,6 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
     voteAnswer(answer.id, Number(params.questionId), "downvote", fetcher);
   }, [answer.id, params.questionId, fetcher]);
 
-  const onDeleteAnswer = useCallback(() => {
-    deleteAnswer(answer.id, fetcher);
-  }, [answer.id, fetcher]);
-
   return (
     <div className="min-h-screen text-slate-100 flex flex-col gap-6 items-center justify-center py-10">
       <Link
@@ -139,19 +158,22 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
 
           {user &&
             (user.id === answer.createdByUserId || user.role === "admin") && (
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-center">
                 <Link
                   to={`/question/${params.questionId}/answer/${answer.id}/edit`}
                   className="text-sm text-blue-400 hover:text-blue-300"
                 >
                   Edit
                 </Link>
-                <button
-                  onClick={onDeleteAnswer}
-                  className="cursor-pointer text-sm text-red-400 hover:text-red-300 transition"
-                >
-                  Delete Answer
-                </button>
+                <Form method="post">
+                  <input type="hidden" name="id" value={answer.id} />
+                  <button
+                    type="submit"
+                    className="cursor-pointer text-sm text-red-400 hover:text-red-300 transition"
+                  >
+                    Delete Answer
+                  </button>
+                </Form>
               </div>
             )}
         </div>

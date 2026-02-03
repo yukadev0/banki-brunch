@@ -2,6 +2,9 @@ import { Link } from "react-router";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import type { Route } from "./+types/getAll";
 import { QuestionItem } from "./components/QuestionItem";
+import { action } from "./getAll.action";
+
+export { action };
 
 export function meta() {
   return [{ title: "Admin Questions" }];

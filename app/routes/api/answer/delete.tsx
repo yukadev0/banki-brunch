@@ -1,4 +1,3 @@
-import { redirect } from "react-router";
 import { requireOwnership } from "~/lib/auth.helper";
 import { AnswersRepository } from "~/repositories/answer/repository";
 import type { Route } from "./+types/delete";
@@ -15,9 +14,12 @@ export async function action({ params, request, context }: Route.ActionArgs) {
 
   try {
     await AnswersRepository.delete(context.db, answerId);
-  } catch (error) {
-    return { status: "error", message: "Something went wrong" };
-  }
 
-  throw redirect(`/question/${answer.questionId}`);
+    return {
+      status: "success" as const,
+      message: "Answer deleted successfully",
+    };
+  } catch (error) {
+    return { status: "error" as const, message: "Something went wrong" };
+  }
 }
