@@ -3,18 +3,20 @@ import type { NoMatchingQuestionMessage } from "~/types/brunch-presenter.types";
 
 interface Props {
   data: NoMatchingQuestionMessage;
-  onRequestTagChange: () => void;
-  onGetRandom: () => void;
   onSkip: () => void;
   onClose: () => void;
+  onGetRandom: () => void;
+  onResetQuestions: () => void;
+  onRequestTagChange: () => void;
 }
 
 export default function NoMatchingQuestionModal({
   data,
-  onRequestTagChange,
-  onGetRandom,
   onSkip,
   onClose,
+  onGetRandom,
+  onResetQuestions,
+  onRequestTagChange,
 }: Props) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -28,9 +30,7 @@ export default function NoMatchingQuestionModal({
               <h2 className="text-lg font-bold text-white">
                 No Matching Question
               </h2>
-              <p className="text-sm text-gray-400">
-                For {data.forUserName}
-              </p>
+              <p className="text-sm text-gray-400">For {data.forUserName}</p>
             </div>
           </div>
         </div>
@@ -65,6 +65,12 @@ export default function NoMatchingQuestionModal({
             className="w-full px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
           >
             Get Random Question for {data.forUserName}
+          </button>
+          <button
+            onClick={onResetQuestions}
+            className="w-full px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+          >
+            Reset Asked Questions
           </button>
           <button
             onClick={onSkip}

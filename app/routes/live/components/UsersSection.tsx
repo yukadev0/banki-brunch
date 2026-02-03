@@ -43,7 +43,6 @@ function User({
       )}
     >
       <div className="flex items-center gap-3">
-        {/* Avatar */}
         <div className="relative">
           {image ? (
             <img
@@ -63,7 +62,6 @@ function User({
           )}
         </div>
 
-        {/* Name & Status */}
         <div className="flex-1 min-w-0">
           <div className="flex gap-2 items-center">
             {role === "presenter" && (
@@ -93,7 +91,6 @@ function User({
         </div>
       </div>
 
-      {/* Tags - only show for viewers, visible to presenter */}
       {isPresenter && role === "viewer" && preferredTags.length > 0 && (
         <div className="flex flex-wrap gap-1 ml-11">
           {preferredTags.map((tag) => (
@@ -108,7 +105,6 @@ function User({
         </div>
       )}
 
-      {/* Request tag change button - only for presenter */}
       {isPresenter && role === "viewer" && !isLurking && (
         <button
           onClick={() => onRequestTagChange(user.id)}

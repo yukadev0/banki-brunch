@@ -1,5 +1,11 @@
 import clsx from "clsx";
-import { HiEye, HiEyeOff, HiMicrophone, HiTag, HiVolumeUp } from "react-icons/hi";
+import {
+  HiEye,
+  HiEyeOff,
+  HiMicrophone,
+  HiTag,
+  HiVolumeUp,
+} from "react-icons/hi";
 import type { UserInfo } from "~/types/brunch-presenter.types";
 
 interface Props {
@@ -44,7 +50,6 @@ export default function ControlPanel({
       </h3>
 
       <div className="space-y-3">
-        {/* Tag Preferences Button */}
         <button
           onClick={onOpenTagModal}
           disabled={!isConnected}
@@ -64,7 +69,6 @@ export default function ControlPanel({
           </span>
         </button>
 
-        {/* Show selected tags */}
         {preferredTags.length > 0 && (
           <div className="flex flex-wrap gap-1 p-2 bg-gray-900/50 rounded-lg">
             {preferredTags.map((tag) => (

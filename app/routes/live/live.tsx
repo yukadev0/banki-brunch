@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { requireSession } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
 import type {
+  ClientMessage,
   ClientQuestionInfo,
   IdentifyMessage,
   NoMatchingQuestionMessage,
@@ -109,29 +110,46 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       try {
         const data = JSON.parse(event.data) as ServerMessage;
 
-        if (data.type === "users") {
-          setActiveUsers(data.users || []);
-          setSelf(data.users.find((u) => u.id === user.id) || null);
-        } else if (data.type === "duplicate_session") {
-          navigate("/");
-        } else if (data.type === "question") {
-          setCurrentQuestion(data.question);
-          setQuestionForUser(
-            data.forUserId && data.forUserName
-              ? { id: data.forUserId, name: data.forUserName }
-              : null,
-          );
-          setPollData(null);
-          setNoMatchingQuestion(null);
-        } else if (data.type === "poll_update") {
-          setPollData(data);
-        } else if (data.type === "queue_update") {
-          setQueueData(data);
-        } else if (data.type === "no_matching_question") {
-          setNoMatchingQuestion(data);
-        } else if (data.type === "tag_change_requested") {
-          setShowTagChangeRequest(true);
-          setShowTagModal(true);
+        switch (data.type) {
+          case "users":
+            setActiveUsers(data.users || []);
+            setSelf(data.users.find((u) => u.id === user.id) || null);
+            break;
+
+          case "duplicate_session":
+            navigate("/");
+            break;
+
+          case "question":
+            setCurrentQuestion(data.question || null);
+            setQuestionForUser(
+              data.forUserId && data.forUserName
+                ? { id: data.forUserId, name: data.forUserName }
+                : null,
+            );
+            setPollData(null);
+            setNoMatchingQuestion(null);
+            break;
+
+          case "poll_update":
+            setPollData(data);
+            break;
+
+          case "queue_update":
+            setQueueData(data);
+            break;
+
+          case "no_matching_question":
+            setNoMatchingQuestion(data);
+            break;
+
+          case "tag_change_requested":
+            setShowTagChangeRequest(true);
+            setShowTagModal(true);
+            break;
+
+          default:
+            console.warn("Unknown message type:", (data as ClientMessage).type);
         }
       } catch (err) {
         console.error("Error parsing message:", err);
@@ -274,6 +292,10 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       {noMatchingQuestion && self?.role === "presenter" && (
         <NoMatchingQuestionModal
           data={noMatchingQuestion}
+          onResetQuestions={() => {
+            socket?.send(JSON.stringify({ type: "reset_questions" }));
+            setNoMatchingQuestion(null);
+          }}
           onRequestTagChange={() => {
             handleRequestTagChange(noMatchingQuestion.forUserId);
             setNoMatchingQuestion(null);

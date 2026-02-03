@@ -13,15 +13,18 @@ export function meta() {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const session = await getSession(context, request);
 
-  return { session };
+  return {
+    user:
+      (session && { name: session.user.name, role: session.user.role }) || null,
+  };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { session } = loaderData;
+  const { user } = loaderData;
 
   return (
     <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center gap-8 py-12">
-      {session && (
+      {user && (
         <button
           onClick={async () => {
             await authClient.signOut();
@@ -34,8 +37,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       )}
 
       <h1 className="text-4xl font-semibold text-center text-white">
-        Welcome {session !== null ? session.user.name : "Guest"}, to Banki
-        Brunch!
+        Welcome {user ? user.name : "Guest"}, to Banki Brunch!
       </h1>
 
       <div className="flex gap-2 flex-wrap justify-center">
@@ -67,7 +69,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           Live
         </Link>
 
-        {session && session.user.role === "admin" && (
+        {user && user.role === "admin" && (
           <Link
             to="/admin"
             className="bg-red-500 text-white hover:bg-red-600 px-4 py-2 rounded-lg transition transform shadow-md"
@@ -77,7 +79,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {!session && (
+      {!user && (
         <Link
           to="/login"
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"

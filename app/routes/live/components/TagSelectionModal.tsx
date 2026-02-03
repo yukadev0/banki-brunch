@@ -1,28 +1,35 @@
 import clsx from "clsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HiCheck, HiX } from "react-icons/hi";
 
 interface Props {
+  title: string;
   isOpen: boolean;
-  availableTags: string[];
+  description: string;
   selectedTags: string[];
-  onConfirm: (tags: string[]) => void;
+  availableTags: string[];
+
   onClose: () => void;
-  title?: string;
-  description?: string;
+  onConfirm: (tags: string[]) => void;
 }
 
 export default function TagSelectionModal({
   isOpen,
+  onClose,
+  onConfirm,
   availableTags,
   selectedTags: initialSelectedTags,
-  onConfirm,
-  onClose,
   title = "Select Your Preferred Tags",
   description = "Choose the topics you're interested in. Questions will be prioritized based on your selections.",
 }: Props) {
   const [selectedTags, setSelectedTags] =
     useState<string[]>(initialSelectedTags);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedTags(initialSelectedTags);
+    }
+  }, [isOpen, initialSelectedTags]);
 
   if (!isOpen) return null;
 
@@ -32,14 +39,6 @@ export default function TagSelectionModal({
         ? prev.filter((t) => t !== tagName)
         : [...prev, tagName],
     );
-  };
-
-  const handleConfirm = () => {
-    onConfirm(selectedTags);
-  };
-
-  const handleSkip = () => {
-    onConfirm([]);
   };
 
   return (
@@ -94,13 +93,17 @@ export default function TagSelectionModal({
 
         <div className="p-6 border-t border-gray-700 flex gap-3">
           <button
-            onClick={handleSkip}
+            onClick={() => {
+              onConfirm([]);
+            }}
             className="flex-1 px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
           >
             Skip
           </button>
           <button
-            onClick={handleConfirm}
+            onClick={() => {
+              onConfirm(selectedTags);
+            }}
             className="flex-1 px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
           >
             Confirm {selectedTags.length > 0 && `(${selectedTags.length})`}

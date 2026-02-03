@@ -60,11 +60,6 @@ export interface IdentifyMessage {
   preferredTags?: string[];
 }
 
-export interface ClientChatMessage {
-  type: "message";
-  message: string;
-}
-
 export interface ToggleLurkingMessage {
   type: "toggle_lurking";
 }
@@ -122,9 +117,12 @@ export interface QueueUpdateMessage {
   currentIndex: number;
 }
 
+export interface ResetQuestionsMessage {
+  type: "reset_questions";
+}
+
 export type ClientMessage =
   | IdentifyMessage
-  | ClientChatMessage
   | ChangeRoleMessage
   | GetQestionMessage
   | ToggleLurkingMessage
@@ -134,4 +132,5 @@ export type ClientMessage =
   | SetTagPreferencesMessage
   | RequestTagChangeMessage
   | GetRandomQuestionForUserMessage
-  | SkipUserMessage;
+  | SkipUserMessage
+  | ResetQuestionsMessage;

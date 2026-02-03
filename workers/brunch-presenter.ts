@@ -23,7 +23,7 @@ export class BrunchPresenter extends DurableObject<Env> {
   private currentQueueIndex: number = 0;
   private askedQuestionIds: Set<number> = new Set();
 
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request) {
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
 
@@ -36,7 +36,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     });
   }
 
-  private setupEventListeners(server: WebSocket): void {
+  private setupEventListeners(server: WebSocket) {
     server.addEventListener("message", (event) =>
       this.handleMessage(server, event),
     );
@@ -48,10 +48,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     );
   }
 
-  private async handleMessage(
-    server: WebSocket,
-    event: MessageEvent,
-  ): Promise<void> {
+  private async handleMessage(server: WebSocket, event: MessageEvent) {
     try {
       const data = this.parseMessage(event.data);
       if (!data) return;
@@ -90,24 +87,19 @@ export class BrunchPresenter extends DurableObject<Env> {
         case "skip_user":
           await this.handleSkipUser(server);
           break;
+        case "reset_questions":
+          this.handleResetQuestions(server);
+          break;
         default:
           console.warn("Unknown message type:", (data as ClientMessage).type);
       }
     } catch (err) {
-      this.handleParseError(server, event.data);
+      console.error("Error handling message:", err);
     }
   }
 
-  private parseMessage(data: unknown): ClientMessage | null {
-    try {
-      return JSON.parse(data as string) as ClientMessage;
-    } catch {
-      return null;
-    }
-  }
-
-  private handleIdentify(server: WebSocket, data: IdentifyMessage): void {
-    if (this.isDuplicateSession(data.id)) {
+  private handleIdentify(server: WebSocket, data: IdentifyMessage) {
+    if (this.getUserById(data.id)) {
       this.sendToClient(server, {
         type: "duplicate_session",
       });
@@ -136,6 +128,10 @@ export class BrunchPresenter extends DurableObject<Env> {
 
     this.sendToClient(server, { type: "question", question: clientQuestion });
 
+    if (this.viewerQueue.length > 0) {
+      this.broadcastQueueUpdate();
+    }
+
     if (this.isPollActive) {
       const votes: Record<string, number> = {};
       for (const option of this.pollOptions) {
@@ -156,34 +152,31 @@ export class BrunchPresenter extends DurableObject<Env> {
     }
   }
 
-  private isDuplicateSession(userId: string): boolean {
-    return Array.from(this.sessions.values()).some(
-      (user) => user.id === userId,
-    );
-  }
-
-  private handleToggleLurking(server: WebSocket): void {
+  private handleToggleLurking(server: WebSocket) {
     const userInfo = this.sessions.get(server);
     if (!userInfo) return;
 
     userInfo.isLurking = !userInfo.isLurking;
     this.sessions.set(server, userInfo);
-    this.updateViewerQueue();
+    if (userInfo.role !== "presenter") {
+      this.updateViewerQueue();
+    }
     this.broadcastUserList();
   }
 
-  private handleChangeRole(server: WebSocket): void {
+  private handleChangeRole(server: WebSocket) {
     const userInfo = this.sessions.get(server);
     if (!userInfo) return;
 
     userInfo.role = userInfo.role === "viewer" ? "presenter" : "viewer";
+
     this.sessions.set(server, userInfo);
+    this.updateViewerQueue();
     this.broadcastUserList();
   }
 
   async handleGetQuestion(server: WebSocket) {
-    const userInfo = this.sessions.get(server);
-    if (!userInfo || userInfo.role !== "presenter") return;
+    if (!this.isPresenter(server)) return;
 
     const nextViewer = this.getNextViewer();
 
@@ -194,18 +187,10 @@ export class BrunchPresenter extends DurableObject<Env> {
         Array.from(this.askedQuestionIds),
       );
 
-      if (!question) {
-        this.askedQuestionIds.clear();
-        const freshQuestion = await QuestionsRepository.getRandom(db);
-        if (freshQuestion) {
-          this.setCurrentQuestion(freshQuestion);
-          this.broadcastQuestion(null, null);
-        }
-        return;
+      if (question) {
+        this.setCurrentQuestion(question);
+        this.broadcastQuestion(null, null);
       }
-
-      this.setCurrentQuestion(question);
-      this.broadcastQuestion(null, null);
       return;
     }
 
@@ -221,6 +206,8 @@ export class BrunchPresenter extends DurableObject<Env> {
         this.setCurrentQuestion(question);
         this.advanceQueue();
         this.broadcastQuestion(nextViewer.id, nextViewer.name);
+      } else {
+        this.handleNoMatchingQuestion(server, nextViewer);
       }
       return;
     }
@@ -236,20 +223,24 @@ export class BrunchPresenter extends DurableObject<Env> {
       this.advanceQueue();
       this.broadcastQuestion(nextViewer.id, nextViewer.name);
     } else {
-      this.broadcast({
-        type: "no_matching_question",
-        forUserId: nextViewer.id,
-        forUserName: nextViewer.name,
-        requestedTags: nextViewer.preferredTags,
-      });
+      this.handleNoMatchingQuestion(server, nextViewer);
     }
+  }
+
+  private handleNoMatchingQuestion(server: WebSocket, userInfo: UserInfo) {
+    this.sendToClient(server, {
+      type: "no_matching_question",
+      forUserId: userInfo.id,
+      forUserName: userInfo.name,
+      requestedTags: userInfo.preferredTags,
+    });
   }
 
   private setCurrentQuestion(question: {
     id: number;
     title: string;
     content: string;
-  }): void {
+  }) {
     this.currentQuestion = {
       content: question.content,
       id: question.id,
@@ -261,7 +252,7 @@ export class BrunchPresenter extends DurableObject<Env> {
   private broadcastQuestion(
     forUserId: string | null,
     forUserName: string | null,
-  ): void {
+  ) {
     if (!this.currentQuestion) return;
 
     const clientQuestion: ClientQuestionInfo = {
@@ -280,7 +271,7 @@ export class BrunchPresenter extends DurableObject<Env> {
   private handleSetTagPreferences(
     server: WebSocket,
     data: SetTagPreferencesMessage,
-  ): void {
+  ) {
     const userInfo = this.sessions.get(server);
     if (!userInfo) return;
 
@@ -292,34 +283,20 @@ export class BrunchPresenter extends DurableObject<Env> {
   private handleRequestTagChange(
     server: WebSocket,
     data: RequestTagChangeMessage,
-  ): void {
-    const userInfo = this.sessions.get(server);
-    if (!userInfo || userInfo.role !== "presenter") return;
+  ) {
+    if (!this.isPresenter(server)) return;
 
-    for (const [socket, user] of this.sessions) {
-      if (user.id === data.targetUserId) {
-        this.sendToClient(socket, {
-          type: "tag_change_requested",
-        });
-        break;
-      }
+    const socket = this.getSessionByUserId(data.targetUserId);
+    if (socket) {
+      this.sendToClient(socket, { type: "tag_change_requested" });
     }
   }
 
   private async handleGetRandomQuestionForUser(
     server: WebSocket,
     data: GetRandomQuestionForUserMessage,
-  ): Promise<void> {
-    const userInfo = this.sessions.get(server);
-    if (!userInfo || userInfo.role !== "presenter") return;
-
-    let targetUser: UserInfo | null = null;
-    for (const user of this.sessions.values()) {
-      if (user.id === data.targetUserId) {
-        targetUser = user;
-        break;
-      }
-    }
+  ) {
+    if (!this.isPresenter(server)) return;
 
     const db = drizzle(this.env.banki_brunch_db);
     const question = await QuestionsRepository.getRandomExcluding(
@@ -328,23 +305,29 @@ export class BrunchPresenter extends DurableObject<Env> {
     );
 
     if (question) {
+      let targetUser = this.getUserById(data.targetUserId);
+
       this.setCurrentQuestion(question);
       this.advanceQueue();
       this.broadcastQuestion(targetUser?.id || null, targetUser?.name || null);
     }
   }
 
-  private async handleSkipUser(server: WebSocket): Promise<void> {
-    const userInfo = this.sessions.get(server);
-    if (!userInfo || userInfo.role !== "presenter") return;
+  private async handleSkipUser(server: WebSocket) {
+    if (!this.isPresenter(server)) return;
 
     this.advanceQueue();
-    this.broadcastQueueUpdate();
-
     await this.handleGetQuestion(server);
   }
 
-  private updateViewerQueue(): void {
+  private handleResetQuestions(server: WebSocket) {
+    const userInfo = this.sessions.get(server);
+    if (userInfo && userInfo.role === "presenter") {
+      this.askedQuestionIds.clear();
+    }
+  }
+
+  private updateViewerQueue() {
     const activeViewers = Array.from(this.sessions.values())
       .filter((user) => user.role === "viewer" && !user.isLurking)
       .map((user) => user.id);
@@ -352,15 +335,19 @@ export class BrunchPresenter extends DurableObject<Env> {
     const newQueue = this.viewerQueue.filter((id) =>
       activeViewers.includes(id),
     );
+
     for (const id of activeViewers) {
       if (!newQueue.includes(id)) {
         newQueue.push(id);
       }
     }
 
+    const currentId = this.viewerQueue[this.currentQueueIndex];
+
     this.viewerQueue = newQueue;
 
-    if (this.currentQueueIndex >= this.viewerQueue.length) {
+    this.currentQueueIndex = this.viewerQueue.indexOf(currentId);
+    if (this.currentQueueIndex === -1) {
       this.currentQueueIndex = 0;
     }
 
@@ -368,21 +355,27 @@ export class BrunchPresenter extends DurableObject<Env> {
   }
 
   private getNextViewer(): UserInfo | null {
-    if (this.viewerQueue.length === 0) {
-      return null;
-    }
+    if (this.viewerQueue.length === 0) return null;
 
-    const nextUserId = this.viewerQueue[this.currentQueueIndex];
-    for (const user of this.sessions.values()) {
-      if (user.id === nextUserId) {
+    const startIndex = this.currentQueueIndex;
+    let index = startIndex;
+
+    do {
+      const id = this.viewerQueue[index];
+      const user = this.getUserById(id);
+
+      if (user && user.role === "viewer" && !user.isLurking) {
+        this.currentQueueIndex = index;
         return user;
       }
-    }
+
+      index = (index + 1) % this.viewerQueue.length;
+    } while (index !== startIndex);
 
     return null;
   }
 
-  private advanceQueue(): void {
+  private advanceQueue() {
     if (this.viewerQueue.length === 0) return;
 
     this.currentQueueIndex =
@@ -390,7 +383,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     this.broadcastQueueUpdate();
   }
 
-  private broadcastQueueUpdate(): void {
+  private broadcastQueueUpdate() {
     this.broadcast({
       type: "queue_update",
       queue: this.viewerQueue,
@@ -398,14 +391,13 @@ export class BrunchPresenter extends DurableObject<Env> {
     });
   }
 
-  private resetPoll(): void {
+  private resetPoll() {
     this.pollVotes.clear();
     this.isPollActive = false;
   }
 
-  private handleStartPoll(server: WebSocket): void {
-    const userInfo = this.sessions.get(server);
-    if (!userInfo || userInfo.role !== "presenter") return;
+  private handleStartPoll(server: WebSocket) {
+    if (!this.isPresenter(server)) return;
     if (!this.currentQuestion) return;
 
     this.resetPoll();
@@ -413,7 +405,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     this.broadcastPollUpdate();
   }
 
-  private handleCastVote(server: WebSocket, data: CastVoteMessage): void {
+  private handleCastVote(server: WebSocket, data: CastVoteMessage) {
     if (!this.isPollActive) return;
     if (!this.pollOptions.includes(data.option)) return;
 
@@ -429,15 +421,14 @@ export class BrunchPresenter extends DurableObject<Env> {
     this.broadcastPollUpdate();
   }
 
-  private handleEndPoll(server: WebSocket): void {
-    const userInfo = this.sessions.get(server);
-    if (!userInfo || userInfo.role !== "presenter") return;
+  private handleEndPoll(server: WebSocket) {
+    if (!this.isPresenter(server)) return;
 
     this.isPollActive = false;
     this.broadcastPollUpdate();
   }
 
-  private broadcastPollUpdate(): void {
+  private broadcastPollUpdate() {
     const votes: Record<string, number> = {};
     for (const option of this.pollOptions) {
       votes[option] = 0;
@@ -460,31 +451,26 @@ export class BrunchPresenter extends DurableObject<Env> {
     }
   }
 
-  private handleClose(server: WebSocket, event: CloseEvent): void {
+  private handleClose(server: WebSocket, event: CloseEvent) {
     this.sessions.delete(server);
     this.updateViewerQueue();
     this.broadcastUserList();
   }
 
-  private handleError(server: WebSocket, error: Event): void {
+  private handleError(server: WebSocket, error: Event) {
     console.error("WebSocket error in DO:", error);
     this.sessions.delete(server);
+    this.updateViewerQueue();
+    this.broadcastUserList();
   }
 
-  private handleParseError(server: WebSocket, rawData: unknown): void {
-    this.broadcast({
-      type: "message",
-      message: rawData as string,
-    });
-  }
-
-  private broadcast(message: object): void {
+  private broadcast(message: object) {
     this.sessions.forEach((_, session) => {
       this.sendToClient(session, message);
     });
   }
 
-  private broadcastUserList(): void {
+  private broadcastUserList() {
     const users = Array.from(this.sessions.values());
     this.broadcast({
       type: "users",
@@ -492,7 +478,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     });
   }
 
-  private sendToClient(server: WebSocket, message: object): void {
+  private sendToClient(server: WebSocket, message: object) {
     try {
       const payload = this.createPayload(message);
       server.send(payload);
@@ -502,7 +488,34 @@ export class BrunchPresenter extends DurableObject<Env> {
     }
   }
 
-  private createPayload(message: object): string {
+  private isPresenter(server: WebSocket) {
+    const userInfo = this.sessions.get(server);
+    return !!userInfo && userInfo.role === "presenter";
+  }
+
+  private getSessionByUserId(id: string) {
+    for (const [socket, user] of this.sessions) {
+      if (user.id === id) return socket;
+    }
+    return null;
+  }
+
+  private getUserById(id: string) {
+    for (const user of this.sessions.values()) {
+      if (user.id === id) return user;
+    }
+    return null;
+  }
+
+  private parseMessage(data: unknown) {
+    try {
+      return JSON.parse(data as string) as ClientMessage;
+    } catch {
+      return null;
+    }
+  }
+
+  private createPayload(message: object) {
     return JSON.stringify({
       ...message,
     });
