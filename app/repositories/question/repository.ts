@@ -97,7 +97,12 @@ export const QuestionsRepository = {
     const [question] = await db
       .select()
       .from(questionsSchema)
-      .where(sql`${questionsSchema.id} NOT IN (${sql.join(excludeIds.map(id => sql`${id}`), sql`, `)})`)
+      .where(
+        sql`${questionsSchema.id} NOT IN (${sql.join(
+          excludeIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      )
       .orderBy(sql`RANDOM()`)
       .limit(1);
 
@@ -113,8 +118,6 @@ export const QuestionsRepository = {
       return this.getRandomExcluding(db, excludeIds);
     }
 
-    // Build a query that finds questions with any of the specified tags
-    // question_tags.tags is a JSON array stored as text
     const rows = await db
       .select({
         question: questionsSchema,
@@ -127,13 +130,10 @@ export const QuestionsRepository = {
       )
       .orderBy(sql`RANDOM()`);
 
-    // Filter in JS since SQLite JSON operations are limited
     const matchingQuestions = rows.filter((row) => {
-      // Exclude already asked questions
       if (excludeIds.includes(row.question.id)) {
         return false;
       }
-      // Check if any of the question's tags match any of the requested tags
       const questionTags = row.tags || [];
       return tags.some((tag) => questionTags.includes(tag));
     });
@@ -142,7 +142,6 @@ export const QuestionsRepository = {
       return null;
     }
 
-    // Return a random matching question (already shuffled by RANDOM())
     return matchingQuestions[0].question;
   },
 

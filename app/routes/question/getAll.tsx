@@ -29,11 +29,22 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
   const tags = await TagsRepository.getAll(context.db);
 
-  return { session, questions, tags };
+  return {
+    tags,
+    hasSession: !!session,
+    questions: questions.map((question) => ({
+      id: question.id,
+      tags: question.tags,
+      title: question.title,
+      content: question.content,
+      createdAt: question.createdAt,
+      author: { name: question.author.name },
+    })),
+  };
 }
 
 export default function GetAllPage({ loaderData }: Route.ComponentProps) {
-  const { questions, session, tags } = loaderData;
+  const { questions, hasSession, tags } = loaderData;
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const filteredQuestions = useMemo(() => {
@@ -124,7 +135,7 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {session && (
+      {hasSession && (
         <div className="flex gap-2 mt-6">
           <Link
             to="./create"

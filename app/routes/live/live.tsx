@@ -43,7 +43,15 @@ export function meta() {
 export async function loader({ context, request }: Route.LoaderArgs) {
   const session = await requireSession(context, request);
   const tags = await TagsRepository.getAll(context.db);
-  return { user: session.user, availableTags: tags };
+
+  return {
+    user: {
+      id: session.user.id,
+      name: session.user.name,
+      image: session.user.image,
+    },
+    availableTags: tags.map((tag) => tag.name),
+  };
 }
 
 export default function LivePage({ loaderData }: Route.ComponentProps) {
@@ -69,7 +77,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
   const { user, availableTags } = loaderData;
 
-  // Load stored tags on mount
   useEffect(() => {
     const stored = getStoredTags();
     setPreferredTags(stored);
@@ -92,7 +99,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       };
       ws.send(JSON.stringify(data));
 
-      // Show tag selection modal if no stored tags
       if (storedTags.length === 0 && !hasShownInitialModal) {
         setShowTagModal(true);
         setHasShownInitialModal(true);
@@ -182,9 +188,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
   const handleRequestTagChange = (targetUserId: string) => {
     if (self?.role === "presenter" && socket) {
-      socket.send(
-        JSON.stringify({ type: "request_tag_change", targetUserId }),
-      );
+      socket.send(JSON.stringify({ type: "request_tag_change", targetUserId }));
     }
   };
 
@@ -274,7 +278,9 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             handleRequestTagChange(noMatchingQuestion.forUserId);
             setNoMatchingQuestion(null);
           }}
-          onGetRandom={() => handleGetRandomForUser(noMatchingQuestion.forUserId)}
+          onGetRandom={() =>
+            handleGetRandomForUser(noMatchingQuestion.forUserId)
+          }
           onSkip={handleSkipUser}
           onClose={() => setNoMatchingQuestion(null)}
         />

@@ -3,19 +3,24 @@ import { Link, useFetcher } from "react-router";
 import UpvoteDownvote from "~/components/UpvoteDownvote";
 import { voteAnswer } from "~/routes/api/answer/helpers";
 
-export function AnswerItem({
-  answer,
-  user,
-  questionId,
-}: {
-  answer: any;
+type Props = {
+  answer: {
+    id: number;
+    content: string;
+    voteCount: number;
+    createdAt: Date;
+    author: { name: string; image: string | null };
+    createdByUserId: string;
+    vote: { vote_type: "upvote" | "downvote" | "unvote" };
+  };
   user: {
     id: string;
-    name: string;
     role?: string | null | undefined;
   } | null;
   questionId: number;
-}) {
+};
+
+export function AnswerItem({ answer, user, questionId }: Props) {
   const fetcher = useFetcher();
 
   const { voteState, voteDisplay } = useMemo(() => {

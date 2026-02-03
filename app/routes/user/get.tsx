@@ -13,7 +13,14 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
+  return {
+    user: {
+      name: user.name,
+      role: user.role,
+      image: user.image,
+      createdAt: user.createdAt,
+    },
+  };
 }
 
 export default function GetPage({ loaderData }: Route.ComponentProps) {

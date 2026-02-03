@@ -3,7 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import { createAnswer } from "~/routes/api/answer/helpers";
 
-export function AnswerForm({ questionId }: { questionId: number }) {
+type Props = {
+  questionId: number;
+};
+
+export function AnswerForm({ questionId }: Props) {
   const fetcher = useFetcher();
   const fetchData = fetcher.data || {};
 

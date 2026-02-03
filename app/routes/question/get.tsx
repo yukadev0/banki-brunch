@@ -56,11 +56,20 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
       vote,
       voteCount,
     },
-    answers,
+    answers: answers.map((answer) => ({
+      id: answer.id,
+      content: answer.content,
+      voteCount: answer.voteCount,
+      createdAt: answer.createdAt,
+      createdByUserId: answer.createdByUserId,
+      author: { name: answer.author.name, image: answer.author.image },
+      vote: {
+        vote_type: answer.vote ? answer.vote.vote_type : ("unvote" as const),
+      },
+    })),
     user: session
       ? {
           id: session.user.id,
-          name: session.user.name,
           role: session.user.role,
         }
       : null,

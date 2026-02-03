@@ -185,11 +185,9 @@ export class BrunchPresenter extends DurableObject<Env> {
     const userInfo = this.sessions.get(server);
     if (!userInfo || userInfo.role !== "presenter") return;
 
-    // Get the next viewer in queue
     const nextViewer = this.getNextViewer();
 
     if (!nextViewer) {
-      // No viewers in queue, get a random question
       const db = drizzle(this.env.banki_brunch_db);
       const question = await QuestionsRepository.getRandomExcluding(
         db,
@@ -197,7 +195,6 @@ export class BrunchPresenter extends DurableObject<Env> {
       );
 
       if (!question) {
-        // No more questions available, reset the asked questions
         this.askedQuestionIds.clear();
         const freshQuestion = await QuestionsRepository.getRandom(db);
         if (freshQuestion) {
@@ -212,11 +209,9 @@ export class BrunchPresenter extends DurableObject<Env> {
       return;
     }
 
-    // Viewer has preferred tags, try to find a matching question
     const db = drizzle(this.env.banki_brunch_db);
 
     if (nextViewer.preferredTags.length === 0) {
-      // No tag preferences, get random question
       const question = await QuestionsRepository.getRandomExcluding(
         db,
         Array.from(this.askedQuestionIds),
@@ -230,7 +225,6 @@ export class BrunchPresenter extends DurableObject<Env> {
       return;
     }
 
-    // Try to find a question matching the viewer's tags
     const question = await QuestionsRepository.getByTags(
       db,
       nextViewer.preferredTags,
@@ -242,7 +236,6 @@ export class BrunchPresenter extends DurableObject<Env> {
       this.advanceQueue();
       this.broadcastQuestion(nextViewer.id, nextViewer.name);
     } else {
-      // No matching question found, notify presenter
       this.broadcast({
         type: "no_matching_question",
         forUserId: nextViewer.id,
@@ -303,7 +296,6 @@ export class BrunchPresenter extends DurableObject<Env> {
     const userInfo = this.sessions.get(server);
     if (!userInfo || userInfo.role !== "presenter") return;
 
-    // Find the target user's socket and send them a notification
     for (const [socket, user] of this.sessions) {
       if (user.id === data.targetUserId) {
         this.sendToClient(socket, {
@@ -321,7 +313,6 @@ export class BrunchPresenter extends DurableObject<Env> {
     const userInfo = this.sessions.get(server);
     if (!userInfo || userInfo.role !== "presenter") return;
 
-    // Find the target user
     let targetUser: UserInfo | null = null;
     for (const user of this.sessions.values()) {
       if (user.id === data.targetUserId) {
@@ -339,10 +330,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     if (question) {
       this.setCurrentQuestion(question);
       this.advanceQueue();
-      this.broadcastQuestion(
-        targetUser?.id || null,
-        targetUser?.name || null,
-      );
+      this.broadcastQuestion(targetUser?.id || null, targetUser?.name || null);
     }
   }
 
@@ -353,7 +341,6 @@ export class BrunchPresenter extends DurableObject<Env> {
     this.advanceQueue();
     this.broadcastQueueUpdate();
 
-    // Automatically try to get the next question
     await this.handleGetQuestion(server);
   }
 
@@ -362,7 +349,6 @@ export class BrunchPresenter extends DurableObject<Env> {
       .filter((user) => user.role === "viewer" && !user.isLurking)
       .map((user) => user.id);
 
-    // Keep existing order for users still in queue, add new ones at end
     const newQueue = this.viewerQueue.filter((id) =>
       activeViewers.includes(id),
     );
@@ -374,7 +360,6 @@ export class BrunchPresenter extends DurableObject<Env> {
 
     this.viewerQueue = newQueue;
 
-    // Adjust index if needed
     if (this.currentQueueIndex >= this.viewerQueue.length) {
       this.currentQueueIndex = 0;
     }

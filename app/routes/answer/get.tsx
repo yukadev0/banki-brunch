@@ -19,11 +19,31 @@ export async function loader({ params, context, request }: Route.LoaderArgs) {
     answer.createdByUserId,
   );
 
-  return { session, answer };
+  return {
+    user: session
+      ? {
+          id: session.user.id,
+          role: session.user.role,
+        }
+      : null,
+    answer: {
+      id: answer.id,
+      content: answer.content,
+      voteCount: answer.voteCount,
+      createdAt: answer.createdAt,
+      questionId: answer.questionId,
+      isValidated: answer.isValidated,
+      author: { name: answer.author.name },
+      createdByUserId: answer.createdByUserId,
+      vote: {
+        vote_type: answer.vote ? answer.vote.vote_type : ("unvote" as const),
+      },
+    },
+  };
 }
 
 export default function GetPage({ loaderData, params }: Route.ComponentProps) {
-  const { answer, session } = loaderData;
+  const { answer, user } = loaderData;
 
   const fetcher = useFetcher();
 
@@ -75,7 +95,7 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
     voteAnswer(answer.id, Number(params.questionId), "downvote", fetcher);
   }, [answer.id, params.questionId, fetcher]);
 
-  const deleteAnswerCallback = useCallback(() => {
+  const onDeleteAnswer = useCallback(() => {
     deleteAnswer(answer.id, fetcher);
   }, [answer.id, fetcher]);
 
@@ -117,9 +137,8 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
             onDownvoteClick={onDownvote}
           />
 
-          {session &&
-            (session.user.id === answer.createdByUserId ||
-              session.user.role === "admin") && (
+          {user &&
+            (user.id === answer.createdByUserId || user.role === "admin") && (
               <div className="flex gap-4">
                 <Link
                   to={`/question/${params.questionId}/answer/${answer.id}/edit`}
@@ -128,7 +147,7 @@ export default function GetPage({ loaderData, params }: Route.ComponentProps) {
                   Edit
                 </Link>
                 <button
-                  onClick={deleteAnswerCallback}
+                  onClick={onDeleteAnswer}
                   className="cursor-pointer text-sm text-red-400 hover:text-red-300 transition"
                 >
                   Delete Answer

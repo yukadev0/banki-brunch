@@ -1,10 +1,8 @@
-import { useCallback } from "react";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import { getSession } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
-import type { TagsSelectArgs } from "~/repositories/tag/types";
-import { deleteTag } from "../api/tag/helpers";
 import type { Route } from "./+types/getAll";
+import { TagItem } from "./components/TagItem";
 
 export function meta() {
   return [{ title: "Tags" }];
@@ -14,30 +12,12 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const session = await getSession(context, request);
 
   const tags = await TagsRepository.getAll(context.db);
-  return { tags, session };
-}
 
-function TagItem({ tag }: { tag: TagsSelectArgs }) {
-  const fetcher = useFetcher();
-
-  const deleteTagCallback = useCallback(() => {
-    deleteTag(tag.name, fetcher);
-  }, [tag.name]);
-
-  return (
-    <span>
-      <button
-        onClick={deleteTagCallback}
-        className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
-      >
-        {tag.name}
-      </button>
-    </span>
-  );
+  return { tags: tags.map((tag) => tag.name), role: session?.user.role };
 }
 
 export default function GetAllPage({ loaderData }: Route.ComponentProps) {
-  const { tags, session } = loaderData;
+  const { tags, role } = loaderData;
 
   return (
     <div className="min-h-screen flex flex-col gap-16 items-center justify-center">
@@ -51,12 +31,12 @@ export default function GetAllPage({ loaderData }: Route.ComponentProps) {
       <h1 className="text-4xl font-semibold text-center">Tags</h1>
 
       <div className="flex gap-2 flex-wrap text-sm">
-        {tags.map((tag: TagsSelectArgs) => (
-          <TagItem key={tag.id} tag={tag} />
+        {tags.map((tag) => (
+          <TagItem key={tag} tag={tag} />
         ))}
       </div>
 
-      {session?.user.role === "admin" && (
+      {role && role === "admin" && (
         <Link
           to="/tag/create"
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"

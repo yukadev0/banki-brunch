@@ -9,7 +9,12 @@ export const TagsRepository = {
   },
 
   async getByName(db: DrizzleD1Database<any>, name: string) {
-    return await db.select().from(tagsSchema).where(eq(tagsSchema.name, name));
+    const [tag] = await db
+      .select()
+      .from(tagsSchema)
+      .where(eq(tagsSchema.name, name));
+
+    return tag ?? null;
   },
 
   async create(db: DrizzleD1Database<any>, data: TagsInsertArgs) {

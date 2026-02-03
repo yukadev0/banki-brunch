@@ -7,7 +7,12 @@ export function meta() {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const users = await UsersRepository.getAll(context.db);
+  const users = (await UsersRepository.getAll(context.db)).map((user) => ({
+    id: user.id,
+    name: user.name,
+    image: user.image,
+    createdAt: user.createdAt,
+  }));
   return { users };
 }
 

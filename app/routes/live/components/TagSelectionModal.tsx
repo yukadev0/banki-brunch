@@ -2,14 +2,9 @@ import clsx from "clsx";
 import { useState } from "react";
 import { HiCheck, HiX } from "react-icons/hi";
 
-interface Tag {
-  id: number;
-  name: string;
-}
-
 interface Props {
   isOpen: boolean;
-  availableTags: Tag[];
+  availableTags: string[];
   selectedTags: string[];
   onConfirm: (tags: string[]) => void;
   onClose: () => void;
@@ -26,7 +21,8 @@ export default function TagSelectionModal({
   title = "Select Your Preferred Tags",
   description = "Choose the topics you're interested in. Questions will be prioritized based on your selections.",
 }: Props) {
-  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
+  const [selectedTags, setSelectedTags] =
+    useState<string[]>(initialSelectedTags);
 
   if (!isOpen) return null;
 
@@ -68,11 +64,11 @@ export default function TagSelectionModal({
           ) : (
             <div className="flex flex-wrap gap-2">
               {availableTags.map((tag) => {
-                const isSelected = selectedTags.includes(tag.name);
+                const isSelected = selectedTags.includes(tag);
                 return (
                   <button
-                    key={tag.id}
-                    onClick={() => toggleTag(tag.name)}
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
                     className={clsx(
                       "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
                       isSelected
@@ -81,7 +77,7 @@ export default function TagSelectionModal({
                     )}
                   >
                     {isSelected && <HiCheck className="w-4 h-4" />}
-                    {tag.name}
+                    {tag}
                   </button>
                 );
               })}

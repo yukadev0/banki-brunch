@@ -21,7 +21,15 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   const allTags = await TagsRepository.getAll(context.db);
 
-  return { question, allTags };
+  return {
+    question: {
+      id: question.id,
+      tags: question.tags,
+      title: question.title,
+      content: question.content,
+    },
+    allTags: allTags.map((tag) => tag.name),
+  };
 }
 
 export default function EditPage({ loaderData }: Route.ComponentProps) {
@@ -77,11 +85,11 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
           <div>
             <h3 className="text-sm font-semibold text-gray-300 mb-2">Tags</h3>
             <div className="flex flex-wrap gap-2 mb-3">
-              {allTags.map((tag: { name: string }) => {
-                const active = tags.includes(tag.name);
+              {allTags.map((tag) => {
+                const active = tags.includes(tag);
                 return (
                   <label
-                    key={tag.name}
+                    key={tag}
                     className={clsx(
                       "flex items-center gap-2 px-3 py-1 text-xs rounded-full cursor-pointer select-none",
                       active
@@ -92,12 +100,12 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
                     <input
                       type="checkbox"
                       name="tags"
-                      value={tag.name}
+                      value={tag}
                       checked={active}
-                      onChange={() => toggleTag(tag.name)}
+                      onChange={() => toggleTag(tag)}
                       className="hidden"
                     />
-                    {tag.name}
+                    {tag}
                   </label>
                 );
               })}

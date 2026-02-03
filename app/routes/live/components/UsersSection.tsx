@@ -1,7 +1,10 @@
 import clsx from "clsx";
-import { FaCrown, FaArrowRight } from "react-icons/fa";
+import { FaArrowRight, FaCrown } from "react-icons/fa";
 import { HiTag } from "react-icons/hi";
-import type { QueueUpdateMessage, UserInfo } from "~/types/brunch-presenter.types";
+import type {
+  QueueUpdateMessage,
+  UserInfo,
+} from "~/types/brunch-presenter.types";
 
 interface UsersSectionProps {
   activeUsers: UserInfo[];
@@ -63,8 +66,12 @@ function User({
         {/* Name & Status */}
         <div className="flex-1 min-w-0">
           <div className="flex gap-2 items-center">
-            {role === "presenter" && <FaCrown className="text-blue-400 text-xs" />}
-            {isNextInQueue && <FaArrowRight className="text-blue-400 text-xs" />}
+            {role === "presenter" && (
+              <FaCrown className="text-blue-400 text-xs" />
+            )}
+            {isNextInQueue && (
+              <FaArrowRight className="text-blue-400 text-xs" />
+            )}
             <p
               className={clsx(
                 "text-sm font-medium truncate",
@@ -132,13 +139,10 @@ export default function UsersSection({
     return queueData.queue[queueData.currentIndex] === userId;
   };
 
-  // Sort users: presenters first, then by queue position
   const sortedUsers = [...activeUsers].sort((a, b) => {
-    // Presenters first
     if (a.role === "presenter" && b.role !== "presenter") return -1;
     if (a.role !== "presenter" && b.role === "presenter") return 1;
 
-    // Then by queue position (non-lurking viewers)
     const aPos = getQueuePosition(a.id);
     const bPos = getQueuePosition(b.id);
     if (aPos !== null && bPos === null) return -1;

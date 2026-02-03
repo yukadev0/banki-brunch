@@ -15,7 +15,13 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   await requireOwnership(context, request, answer.createdByUserId);
 
-  return { answer };
+  return {
+    answer: {
+      id: answer.id,
+      content: answer.content,
+      questionId: answer.questionId,
+    },
+  };
 }
 
 export default function EditPage({ loaderData }: Route.ComponentProps) {
@@ -26,7 +32,7 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
 
   const [content, setContent] = useState(answer.content);
 
-  const updateAnswerCallback = useCallback(() => {
+  const onUpdateAnswer = useCallback(() => {
     updateAnswer(content, answer.id, answer.questionId, fetcher);
   }, [content, answer.id, answer.questionId]);
 
@@ -66,7 +72,7 @@ export default function EditPage({ loaderData }: Route.ComponentProps) {
         )}
 
         <button
-          onClick={updateAnswerCallback}
+          onClick={onUpdateAnswer}
           className="self-center text-sm px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
         >
           Save

@@ -16,60 +16,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const allTags = context.db
     .select()
     .from(tagsSchema)
-    .then((tags) => tags);
+    .then((tags) => tags.map((tag) => tag.name));
 
-  //   const aiResponse = await context.ai.run("@cf/meta/llama-3-8b-instruct", {
-  //     prompt: `CRITICAL: Return ONLY a valid JSON object. NO markdown, NO explanations, NO code blocks, NO extra text before or after.
-
-  // Format must be exactly:
-  // {"title":"Brief technical interview question","content":"Detailed question with code examples about JavaScript/TypeScript/React/Node.js"}
-
-  // Rules:
-  // - ONLY the JSON object
-  // - NO markdown formatting (\`\`\`json)
-  // - NO introductory text like "Here is..."
-  // - NO trailing text after the JSON
-  // - Question should be for mid-level web developers`,
-  //   });
-
-  let generatedQuestion = { title: "", content: "" };
-  try {
-    // let responseText = aiResponse.response || "";
-    let responseText = "";
-
-    // Remove markdown code blocks
-    responseText = responseText.replace(/```json\s*/g, "");
-    responseText = responseText.replace(/```\s*/g, "");
-
-    // Try to parse as JSON first
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.title && parsed.content) {
-          generatedQuestion = {
-            title: String(parsed.title).trim(),
-            content: String(parsed.content).trim(),
-          };
-        }
-      } catch {
-        // If JSON parse fails, try regex extraction
-        const titleMatch = responseText.match(/"title"\s*:\s*"([^"]+)"/);
-        const contentMatch = responseText.match(/"content"\s*:\s*"([^"]+)"/);
-
-        if (titleMatch) {
-          generatedQuestion.title = titleMatch[1];
-        }
-        if (contentMatch) {
-          generatedQuestion.content = contentMatch[1];
-        }
-      }
-    }
-  } catch {
-    // If parsing fails, leave fields empty
-  }
-
-  return { allTags, generatedQuestion };
+  return { allTags };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -106,10 +55,10 @@ export default function CreatePage({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { allTags, generatedQuestion } = loaderData;
+  const { allTags } = loaderData;
 
-  const [titleInput, setTitleInput] = useState(generatedQuestion.title);
-  const [contentInput, setContentInput] = useState(generatedQuestion.content);
+  const [titleInput, setTitleInput] = useState("");
+  const [contentInput, setContentInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const navigation = useNavigation();
