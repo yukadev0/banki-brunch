@@ -119,7 +119,7 @@ export default function EditPage({
           />
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-300">Tags</h3>
+            <h3 className="text-sm font-semibold text-gray-300 mb-2">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {allTags.map((tag) => {
                 const active = tags.includes(tag);

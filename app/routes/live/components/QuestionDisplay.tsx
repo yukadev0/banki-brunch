@@ -1,6 +1,7 @@
-import { FaArrowRightLong, FaUser } from "react-icons/fa6";
+import { FaArrowRightLong, FaLightbulb, FaUser } from "react-icons/fa6";
 import type {
   ClientQuestionInfo,
+  Hint,
   PollUpdateMessage,
 } from "~/types/brunch-presenter.types";
 import Option from "./Option";
@@ -14,6 +15,7 @@ interface Props {
   onStartPoll: () => void;
   onCastVote: (option: string) => void;
   onEndPoll: () => void;
+  activeHints: Hint[];
 }
 
 export default function QuestionDisplay({
@@ -25,6 +27,7 @@ export default function QuestionDisplay({
   onStartPoll,
   onCastVote,
   onEndPoll,
+  activeHints,
 }: Props) {
   const { content, title } = question;
 
@@ -100,6 +103,33 @@ export default function QuestionDisplay({
                 option={option}
                 pollData={pollData}
               />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeHints.length > 0 && (
+        <div className="bg-linear-to-r from-amber-900/30 to-orange-900/30 rounded-xl p-6 border border-amber-700/50">
+          <div className="flex items-center gap-2 mb-4">
+            <FaLightbulb className="w-5 h-5 text-amber-400" />
+            <h3 className="text-lg font-semibold text-white">Hints</h3>
+          </div>
+
+          <div className="space-y-3">
+            {activeHints.map((hint, index) => (
+              <div
+                key={hint.id}
+                className="bg-gray-900/50 rounded-lg p-4 border border-amber-600/30"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="shrink-0 w-8 h-8 flex items-center justify-center bg-amber-600/20 text-amber-400 rounded-full text-sm font-semibold">
+                    {index + 1}
+                  </span>
+                  <p className="text-gray-300 leading-relaxed flex-1">
+                    {hint.content}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </div>

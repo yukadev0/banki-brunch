@@ -2,14 +2,18 @@ import { DurableObject } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import { QuestionsRepository } from "~/repositories/question/repository";
 import type {
+  AddCustomHintMessage,
   CastVoteMessage,
   ClientMessage,
   ClientQuestionInfo,
+  DeleteHintMessage,
   GetRandomQuestionForUserMessage,
+  Hint,
   IdentifyMessage,
   RequestTagChangeMessage,
   ServerQuestionInfo,
   SetTagPreferencesMessage,
+  ToggleHintMessage,
   UserInfo,
 } from "../app/types/brunch-presenter.types";
 
@@ -22,6 +26,8 @@ export class BrunchPresenter extends DurableObject<Env> {
   private viewerQueue: string[] = [];
   private currentQueueIndex: number = 0;
   private askedQuestionIds: Set<number> = new Set();
+  private hints: Hint[] = [];
+  private readonly MAX_HINTS = 3;
 
   async fetch(request: Request) {
     const webSocketPair = new WebSocketPair();
@@ -90,6 +96,21 @@ export class BrunchPresenter extends DurableObject<Env> {
         case "reset_questions":
           this.handleResetQuestions(server);
           break;
+        case "generate_hint":
+          await this.handleGenerateHint(server);
+          break;
+        case "add_custom_hint":
+          this.handleAddCustomHint(server, data as AddCustomHintMessage);
+          break;
+        case "delete_hint":
+          this.handleDeleteHint(server, data as DeleteHintMessage);
+          break;
+        case "toggle_hint":
+          this.handleToggleHint(server, data as ToggleHintMessage);
+          break;
+        case "show_selected_hints":
+          this.handleShowSelectedHints(server);
+          break;
         default:
           console.warn("Unknown message type:", (data as ClientMessage).type);
       }
@@ -150,6 +171,20 @@ export class BrunchPresenter extends DurableObject<Env> {
         userVote: null,
       });
     }
+
+    if (userInfo.role === "presenter") {
+      this.sendToClient(server, {
+        type: "hints_list",
+        hints: this.hints,
+        canGenerateMore: this.hints.length < this.MAX_HINTS,
+      });
+    }
+
+    const activeHints = this.hints.filter((h) => h.isVisible);
+    this.sendToClient(server, {
+      type: "active_hints",
+      hints: activeHints,
+    });
   }
 
   private handleToggleLurking(server: WebSocket) {
@@ -168,7 +203,25 @@ export class BrunchPresenter extends DurableObject<Env> {
     const userInfo = this.sessions.get(server);
     if (!userInfo) return;
 
-    userInfo.role = userInfo.role === "viewer" ? "presenter" : "viewer";
+    if (userInfo.role === "viewer") {
+      const existingPresenter = this.getCurrentPresenter();
+      if (existingPresenter) {
+        this.sendToClient(server, {
+          type: "role_change_rejected",
+          reason: "presenter_exists",
+          currentPresenterId: existingPresenter.id,
+          currentPresenterName: existingPresenter.name,
+        });
+        return;
+      }
+    }
+
+    const newRole = userInfo.role === "viewer" ? "presenter" : "viewer";
+    userInfo.role = newRole;
+
+    if (newRole === "presenter") {
+      this.broadcastHintsList();
+    }
 
     this.sessions.set(server, userInfo);
     this.updateViewerQueue();
@@ -190,6 +243,8 @@ export class BrunchPresenter extends DurableObject<Env> {
       if (question) {
         this.setCurrentQuestion(question);
         this.broadcastQuestion(null, null);
+      } else {
+        this.handleNoMatchingQuestion(server);
       }
       return;
     }
@@ -227,13 +282,22 @@ export class BrunchPresenter extends DurableObject<Env> {
     }
   }
 
-  private handleNoMatchingQuestion(server: WebSocket, userInfo: UserInfo) {
-    this.sendToClient(server, {
-      type: "no_matching_question",
-      forUserId: userInfo.id,
-      forUserName: userInfo.name,
-      requestedTags: userInfo.preferredTags,
-    });
+  private handleNoMatchingQuestion(
+    server: WebSocket,
+    userInfo: UserInfo | null = null,
+  ) {
+    if (userInfo) {
+      this.sendToClient(server, {
+        type: "no_matching_question",
+        forUserId: userInfo.id,
+        forUserName: userInfo.name,
+        requestedTags: userInfo.preferredTags,
+      });
+    } else {
+      this.sendToClient(server, {
+        type: "no_matching_question",
+      });
+    }
   }
 
   private setCurrentQuestion(question: {
@@ -247,6 +311,9 @@ export class BrunchPresenter extends DurableObject<Env> {
       title: question.title,
     };
     this.askedQuestionIds.add(question.id);
+    this.hints = [];
+    this.broadcastHintsList();
+    this.broadcastActiveHints();
   }
 
   private broadcastQuestion(
@@ -453,6 +520,12 @@ export class BrunchPresenter extends DurableObject<Env> {
 
   private handleClose(server: WebSocket, event: CloseEvent) {
     this.sessions.delete(server);
+
+    const userInfo = this.sessions.get(server);
+    if (userInfo?.role === "presenter") {
+      this.resetPresenterState();
+    }
+
     this.updateViewerQueue();
     this.broadcastUserList();
   }
@@ -460,8 +533,26 @@ export class BrunchPresenter extends DurableObject<Env> {
   private handleError(server: WebSocket, error: Event) {
     console.error("WebSocket error in DO:", error);
     this.sessions.delete(server);
+
+    const userInfo = this.sessions.get(server);
+    if (userInfo?.role === "presenter") {
+      this.resetPresenterState();
+    }
+
     this.updateViewerQueue();
     this.broadcastUserList();
+  }
+
+  private resetPresenterState() {
+    this.currentQuestion = null;
+    this.askedQuestionIds.clear();
+    this.hints = [];
+    this.resetPoll();
+
+    this.broadcast({ type: "question", question: null });
+    this.broadcastHintsList();
+    this.broadcastActiveHints();
+    this.broadcastPollUpdate();
   }
 
   private broadcast(message: object) {
@@ -475,6 +566,105 @@ export class BrunchPresenter extends DurableObject<Env> {
     this.broadcast({
       type: "users",
       users: users,
+    });
+  }
+
+  private async handleGenerateHint(server: WebSocket) {
+    if (!this.isPresenter(server)) return;
+    if (!this.currentQuestion) return;
+    if (this.hints.length >= this.MAX_HINTS) return;
+
+    try {
+      const ai = this.env.question_ai;
+      const response = await ai.run("@cf/mistral/mistral-7b-instruct-v0.1", {
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant that provides hints for technical interview questions. Provide concise, helpful hints that guide the candidate toward the answer without giving it away completely. Keep hints under 100 words.",
+          },
+          {
+            role: "user",
+            content: `Question Title: ${this.currentQuestion.title}\n\nQuestion: ${this.currentQuestion.content}\n\nProvide a helpful hint to solve this question. The hint should guide thinking but not give the full answer.`,
+          },
+        ],
+      });
+
+      const hintContent = response.response || "Unable to generate hint";
+
+      const newHint: Hint = {
+        id: crypto.randomUUID(),
+        content: hintContent,
+        isVisible: false,
+        createdBy: "ai",
+      };
+
+      this.hints.push(newHint);
+      this.broadcastHintsList();
+    } catch (error) {
+      console.error("Error generating hint:", error);
+    }
+  }
+
+  private handleAddCustomHint(server: WebSocket, data: AddCustomHintMessage) {
+    if (this.hints.length >= this.MAX_HINTS) return;
+    if (!this.isPresenter(server)) return;
+
+    const content = data.content.trim();
+    if (!content) return;
+
+    const newHint: Hint = {
+      id: crypto.randomUUID(),
+      content: content,
+      isVisible: false,
+      createdBy: "manual",
+    };
+
+    this.hints.push(newHint);
+    this.broadcastHintsList();
+  }
+
+  private handleDeleteHint(server: WebSocket, data: DeleteHintMessage) {
+    if (!this.isPresenter(server)) return;
+
+    this.hints = this.hints.filter((h) => h.id !== data.hintId);
+    this.broadcastHintsList();
+    this.broadcastActiveHints();
+  }
+
+  private handleToggleHint(server: WebSocket, data: ToggleHintMessage) {
+    if (!this.isPresenter(server)) return;
+
+    const hint = this.hints.find((h) => h.id === data.hintId);
+    if (hint) {
+      hint.isVisible = !hint.isVisible;
+      this.broadcastHintsList();
+      this.broadcastActiveHints();
+    }
+  }
+
+  private handleShowSelectedHints(server: WebSocket) {
+    if (!this.isPresenter(server)) return;
+    this.broadcastActiveHints();
+  }
+
+  private broadcastHintsList() {
+    for (const [session, userInfo] of this.sessions) {
+      if (userInfo.role === "presenter") {
+        this.sendToClient(session, {
+          type: "hints_list",
+          hints: this.hints,
+          canGenerateMore: this.hints.length < this.MAX_HINTS,
+        });
+      }
+    }
+  }
+
+  private broadcastActiveHints() {
+    const activeHints = this.hints.filter((h) => h.isVisible);
+    this.broadcast({
+      type: "active_hints",
+      hints: activeHints,
     });
   }
 
@@ -503,6 +693,15 @@ export class BrunchPresenter extends DurableObject<Env> {
   private getUserById(id: string) {
     for (const user of this.sessions.values()) {
       if (user.id === id) return user;
+    }
+    return null;
+  }
+
+  private getCurrentPresenter(): UserInfo | null {
+    for (const userInfo of this.sessions.values()) {
+      if (userInfo.role === "presenter") {
+        return userInfo;
+      }
     }
     return null;
   }

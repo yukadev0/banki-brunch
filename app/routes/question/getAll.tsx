@@ -16,7 +16,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   let questions = await QuestionsRepository.getAll(context.db);
 
   if (session?.user.role !== "admin") {
-    questions = questions.filter((q) => q.validated !== null);
+    questions = questions.filter(
+      (q) => q.validated !== null || q.createdByUserId === session?.user.id,
+    );
   }
 
   const tags = await TagsRepository.getAll(context.db);

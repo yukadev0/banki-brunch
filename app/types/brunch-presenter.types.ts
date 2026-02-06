@@ -102,6 +102,13 @@ export interface PollUpdateMessage {
   userVote: string | null;
 }
 
+export interface RoleChangeRejectedMessage {
+  type: "role_change_rejected";
+  reason: "presenter_exists";
+  currentPresenterId: string;
+  currentPresenterName: string;
+}
+
 export type ServerMessage =
   | UsersMessage
   | QuestionMessage
@@ -109,7 +116,10 @@ export type ServerMessage =
   | PollUpdateMessage
   | NoMatchingQuestionMessage
   | TagChangeRequestedMessage
-  | QueueUpdateMessage;
+  | QueueUpdateMessage
+  | HintsListMessage
+  | ActiveHintsMessage
+  | RoleChangeRejectedMessage;
 
 export interface QueueUpdateMessage {
   type: "queue_update";
@@ -119,6 +129,47 @@ export interface QueueUpdateMessage {
 
 export interface ResetQuestionsMessage {
   type: "reset_questions";
+}
+
+export interface Hint {
+  id: string;
+  content: string;
+  isVisible: boolean;
+  createdBy: "ai" | "manual";
+}
+
+export interface GenerateHintMessage {
+  type: "generate_hint";
+}
+
+export interface AddCustomHintMessage {
+  type: "add_custom_hint";
+  content: string;
+}
+
+export interface DeleteHintMessage {
+  type: "delete_hint";
+  hintId: string;
+}
+
+export interface ToggleHintMessage {
+  type: "toggle_hint";
+  hintId: string;
+}
+
+export interface ShowSelectedHintsMessage {
+  type: "show_selected_hints";
+}
+
+export interface HintsListMessage {
+  type: "hints_list";
+  hints: Hint[];
+  canGenerateMore: boolean;
+}
+
+export interface ActiveHintsMessage {
+  type: "active_hints";
+  hints: Hint[];
 }
 
 export type ClientMessage =
@@ -133,4 +184,9 @@ export type ClientMessage =
   | RequestTagChangeMessage
   | GetRandomQuestionForUserMessage
   | SkipUserMessage
-  | ResetQuestionsMessage;
+  | ResetQuestionsMessage
+  | GenerateHintMessage
+  | AddCustomHintMessage
+  | DeleteHintMessage
+  | ToggleHintMessage
+  | ShowSelectedHintsMessage;

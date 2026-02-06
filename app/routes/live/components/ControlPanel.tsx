@@ -44,7 +44,7 @@ export default function ControlPanel({
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 flex-1">
       <h3 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">
         Your Controls
       </h3>

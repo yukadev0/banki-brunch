@@ -1,5 +1,6 @@
 import type {
   ClientQuestionInfo,
+  Hint,
   PollUpdateMessage,
 } from "~/types/brunch-presenter.types";
 import QuestionDisplay from "./QuestionDisplay";
@@ -14,6 +15,7 @@ interface Props {
   onStartPoll: () => void;
   onCastVote: (option: string) => void;
   onEndPoll: () => void;
+  activeHints: Hint[];
 }
 
 export default function QuestionSection({
@@ -25,6 +27,7 @@ export default function QuestionSection({
   onStartPoll,
   onCastVote,
   onEndPoll,
+  activeHints,
 }: Props) {
   return (
     <div className="bg-gray-800 rounded-lg p-4 shadow-lg border border-gray-700 min-h-100 flex flex-col">
@@ -43,6 +46,7 @@ export default function QuestionSection({
           onStartPoll={onStartPoll}
           onCastVote={onCastVote}
           onEndPoll={onEndPoll}
+          activeHints={activeHints}
         />
       )}
     </div>

@@ -18,6 +18,45 @@ export default function NoMatchingQuestionModal({
   onResetQuestions,
   onRequestTagChange,
 }: Props) {
+  if (data.forUserId === undefined) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-800 rounded-xl border border-gray-700 max-w-md w-full shadow-2xl">
+          <div className="p-6 border-b border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500/20 rounded-full">
+                <HiExclamation className="w-6 h-6 text-amber-500" />
+              </div>
+              <h2 className="text-lg font-bold text-white">
+                No Matching Question
+              </h2>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <p className="text-sm text-gray-300 mb-4">No questions found:</p>
+            <p className="text-sm text-gray-400">What would you like to do?</p>
+          </div>
+
+          <div className="p-6 border-t border-gray-700 space-y-3">
+            <button
+              onClick={onResetQuestions}
+              className="w-full px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              Reset Asked Questions
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-400 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 rounded-xl border border-gray-700 max-w-md w-full shadow-2xl">

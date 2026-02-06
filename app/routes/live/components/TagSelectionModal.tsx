@@ -4,7 +4,6 @@ import { HiCheck, HiX } from "react-icons/hi";
 
 interface Props {
   title: string;
-  isOpen: boolean;
   description: string;
   selectedTags: string[];
   availableTags: string[];
@@ -14,7 +13,6 @@ interface Props {
 }
 
 export default function TagSelectionModal({
-  isOpen,
   onClose,
   onConfirm,
   availableTags,
@@ -26,12 +24,8 @@ export default function TagSelectionModal({
     useState<string[]>(initialSelectedTags);
 
   useEffect(() => {
-    if (isOpen) {
-      setSelectedTags(initialSelectedTags);
-    }
-  }, [isOpen, initialSelectedTags]);
-
-  if (!isOpen) return null;
+    setSelectedTags(initialSelectedTags);
+  }, [initialSelectedTags]);
 
   const toggleTag = (tagName: string) => {
     setSelectedTags((prev) =>
