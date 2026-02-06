@@ -133,7 +133,7 @@ export default function QuestionDisplay({
                   <span className="shrink-0 w-8 h-8 flex items-center justify-center bg-amber-600/20 text-amber-400 rounded-full text-sm font-semibold">
                     {index + 1}
                   </span>
-                  <p className="text-gray-300 leading-relaxed flex-1 break-all">
+                  <p className="text-gray-300 leading-relaxed flex-1 wrap-anywhere">
                     {hint.content}
                   </p>
                 </div>

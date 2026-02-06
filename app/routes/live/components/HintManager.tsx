@@ -152,7 +152,7 @@ export default function HintManager({
                   value={customContent}
                   onChange={(e) => setCustomContent(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (!e.shiftKey && e.key === "Enter") {
                       handleAddCustomHint();
                     }
                   }}
@@ -253,7 +253,7 @@ export default function HintManager({
                         </button>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-300 leading-relaxed break-all">
+                    <p className="text-sm text-gray-300 leading-relaxed wrap-anywhere">
                       {hint.content}
                     </p>
                   </div>
