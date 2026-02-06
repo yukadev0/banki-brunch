@@ -47,7 +47,12 @@ export default function HintManager({
   const handleAddCustomHint = () => {
     const content = customContent.trim();
     if (content && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "add_custom_hint", content }));
+      socket.send(
+        JSON.stringify({
+          type: "add_custom_hint",
+          content: content.slice(0, 500),
+        }),
+      );
       setCustomContent("");
       setIsAddingCustom(false);
     }

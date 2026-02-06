@@ -629,7 +629,7 @@ export class BrunchPresenter extends DurableObject<Env> {
     if (this.hints.length >= this.MAX_HINTS) return;
     if (!this.isPresenter(server)) return;
 
-    const content = data.content.trim();
+    const content = data.content.trim().slice(0, 500);
     if (!content) return;
 
     const newHint: Hint = {
