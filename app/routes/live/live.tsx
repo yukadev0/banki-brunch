@@ -208,6 +208,12 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   if (!socket || !self || !isConnected) {
     return (
       <div className="min-h-screen flex items-center justify-center">
+        <Link
+          to="/"
+          className="absolute top-4 left-4 text-sm text-blue-400 hover:underline"
+        >
+          Home
+        </Link>
         <h3 className="text-xl">Connecting...</h3>
       </div>
     );
