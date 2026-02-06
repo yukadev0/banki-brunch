@@ -99,7 +99,7 @@ export default function HintManager({
 
       <div
         className={clsx(
-          "flex flex-col gap-3 duration-200 ease-in-out overflow-hidden",
+          "flex flex-col gap-3 transition-[max-height,margin,opacity] overflow-hidden",
           isExpanded
             ? "max-h-500 opacity-100 mt-3 pointer-events-auto select-auto"
             : "max-h-0 opacity-0 pointer-events-none select-none",
@@ -167,7 +167,7 @@ export default function HintManager({
                     }
                   }}
                   placeholder="Enter a helpful hint for the question..."
-                  className="no-scrollbar w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y"
+                  className="no-scrollbar w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 transition-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y"
                   rows={4}
                   maxLength={500}
                   autoFocus
@@ -211,7 +211,7 @@ export default function HintManager({
                 hints.map((hint, index) => (
                   <div
                     key={hint.id}
-                    className={`p-4 rounded-lg border transition-all ${
+                    className={`p-4 rounded-lg border transition-colors ${
                       hint.isVisible
                         ? "bg-blue-900/20 border-blue-500/50"
                         : "bg-gray-700/30 border-gray-600"

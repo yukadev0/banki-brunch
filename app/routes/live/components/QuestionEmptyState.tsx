@@ -18,7 +18,7 @@ export default function QuestionEmptyState({
         </div>
         <button
           onClick={onGetQuestion}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium transition duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
         >
           Get Question
         </button>

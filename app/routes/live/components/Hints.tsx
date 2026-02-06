@@ -34,7 +34,7 @@ export default function Hints({ activeHints, maxHints }: Props) {
 
       <div
         className={clsx(
-          "space-y-3 duration-200",
+          "flex flex-col gap-3 transition-[max-height,margin,opacity] overflow-hidden",
           isExpanded
             ? "max-h-500 opacity-100 mt-3 pointer-events-auto select-auto"
             : "max-h-0 opacity-0 pointer-events-none select-none",

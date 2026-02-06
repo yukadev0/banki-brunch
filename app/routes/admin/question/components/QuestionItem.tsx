@@ -28,7 +28,7 @@ export function QuestionItem({ question }: Props) {
   const validated = question.validated !== null;
 
   return (
-    <tr className="text-sm hover:bg-gray-700 transition duration-200 ease-in-out">
+    <tr className="text-sm hover:bg-gray-700 transition">
       <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-300">
         {question.title}
       </td>
@@ -45,7 +45,7 @@ export function QuestionItem({ question }: Props) {
           <button
             type="submit"
             className={clsx(
-              "flex items-center justify-center cursor-pointer appearance-none border focus:ring duration-300 shrink-0 w-6 h-6 rounded before:block before:clip-close before:origin-bottom-left before:scale-0 before:transition before:bg-green-400 before:w-3 before:h-3",
+              "flex items-center justify-center cursor-pointer appearance-none border focus:ring transition shrink-0 w-6 h-6 rounded before:block before:clip-close before:origin-bottom-left before:scale-0 before:transition before:bg-green-400 before:w-3 before:h-3",
               validated && "before:scale-100",
             )}
           />
@@ -54,7 +54,7 @@ export function QuestionItem({ question }: Props) {
       <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-300">
         <Link
           to={`/question/${question.id}/edit`}
-          className="text-indigo-400 hover:text-indigo-500 mr-2 transition duration-150 ease-in-out"
+          className="text-indigo-400 hover:text-indigo-500 mr-2 transition"
         >
           Edit
         </Link>
@@ -64,7 +64,7 @@ export function QuestionItem({ question }: Props) {
           <input type="hidden" name="id" value={question.id} />
           <button
             type="submit"
-            className="text-red-400 hover:text-red-500 transition duration-150 ease-in-out cursor-pointer"
+            className="text-red-400 hover:text-red-500 transition cursor-pointer"
           >
             Delete
           </button>

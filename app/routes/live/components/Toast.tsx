@@ -63,7 +63,7 @@ function ToastItem({
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg backdrop-blur-sm max-w-md transform transition-all duration-300 ${bgMap[toast.type]} ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg backdrop-blur-sm max-w-md transition duration-300 ${bgMap[toast.type]} ${
         isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
       }`}
     >

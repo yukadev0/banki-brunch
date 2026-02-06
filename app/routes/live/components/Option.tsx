@@ -20,7 +20,7 @@ export default function Option({ option, pollData, onCastVote }: Props) {
   return (
     <button
       onClick={() => onCastVote(option)}
-      className={`relative overflow-hidden p-4 rounded-lg border-2 transition-all text-left ${
+      className={`relative overflow-hidden p-4 rounded-lg border-2 transition-colors text-left ${
         isSelected
           ? "border-blue-500 bg-blue-500/10"
           : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
@@ -34,7 +34,7 @@ export default function Option({ option, pollData, onCastVote }: Props) {
         <div className="text-sm text-gray-400">{count} votes</div>
       </div>
       <div
-        className="absolute bottom-0 left-0 h-1 bg-blue-500/30 transition-all"
+        className="absolute bottom-0 left-0 h-1 bg-blue-500/30 transition-[width] duration-300"
         style={{ width: `${percentage}%` }}
       />
     </button>
