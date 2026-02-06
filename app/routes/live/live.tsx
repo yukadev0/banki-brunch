@@ -16,6 +16,7 @@ import type { Route } from "./+types/live";
 import ControlPanel from "./components/ControlPanel";
 import HeaderSection from "./components/HeaderSection";
 import HintManager from "./components/HintManager";
+import Hints from "./components/Hints";
 import NoMatchingQuestionSheet from "./components/NoMatchingQuestionSheet";
 import QuestionSection from "./components/QuestionSection";
 import TagSelectionDrawer from "./components/TagSelectionDrawer";
@@ -317,6 +318,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             onOpenTagModal={() => setShowTagModal(true)}
           />
         </div>
+
+        <Hints activeHints={activeHints} />
 
         {isPresenter && (
           <HintManager

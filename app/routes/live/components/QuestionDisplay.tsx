@@ -1,5 +1,4 @@
-import clsx from "clsx";
-import { FaArrowRightLong, FaLightbulb, FaUser } from "react-icons/fa6";
+import { FaArrowRightLong, FaUser } from "react-icons/fa6";
 import type {
   ClientQuestionInfo,
   Hint,
@@ -33,8 +32,6 @@ export default function QuestionDisplay({
   const { content, title } = question;
 
   const isPollActive = pollData !== null;
-
-  const hasHint = activeHints.length > 0;
 
   return (
     <div className="flex-1 flex flex-col gap-4">
@@ -83,12 +80,7 @@ export default function QuestionDisplay({
         <h1 className="text-3xl font-bold text-white leading-tight">{title}</h1>
       </div>
 
-      <div
-        className={clsx(
-          "flex-1 bg-gray-900/50 rounded-xl p-6 border border-gray-700/50",
-          !hasHint && "mb-6",
-        )}
-      >
+      <div className="flex-1 bg-gray-900/50 rounded-xl p-6 border border-gray-700/50 mb-6">
         <p className="text-lg text-gray-300 leading-relaxed whitespace-pre-wrap">
           {content}
         </p>
@@ -111,33 +103,6 @@ export default function QuestionDisplay({
                 option={option}
                 pollData={pollData}
               />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {hasHint && (
-        <div className="bg-linear-to-r from-amber-900/30 to-orange-900/30 rounded-xl p-6 border border-amber-700/50">
-          <div className="flex items-center gap-2 mb-4">
-            <FaLightbulb className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg font-semibold text-white">Hints</h3>
-          </div>
-
-          <div className="space-y-3">
-            {activeHints.map((hint, index) => (
-              <div
-                key={hint.id}
-                className="bg-gray-900/50 rounded-lg p-4 border border-amber-600/30"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-8 h-8 flex items-center justify-center bg-amber-600/20 text-amber-400 rounded-full text-sm font-semibold">
-                    {index + 1}
-                  </span>
-                  <p className="text-gray-300 leading-relaxed flex-1 wrap-anywhere">
-                    {hint.content}
-                  </p>
-                </div>
-              </div>
             ))}
           </div>
         </div>

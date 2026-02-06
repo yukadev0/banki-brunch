@@ -91,7 +91,7 @@ export default function HintManager({
 
       <div
         className={clsx(
-          "flex flex-col gap-3 transition-[heaght, opacity] duration-200 ease-in-out overflow-hidden",
+          "flex flex-col gap-3 duration-200 ease-in-out overflow-hidden",
           isExpanded ? "max-h-500 opacity-100 mt-3" : "max-h-0 opacity-0",
         )}
       >
