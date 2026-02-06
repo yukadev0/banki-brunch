@@ -119,7 +119,9 @@ export type ServerMessage =
   | QueueUpdateMessage
   | HintsListMessage
   | ActiveHintsMessage
-  | RoleChangeRejectedMessage;
+  | RoleChangeRejectedMessage
+  | HintGeneratingMessage
+  | HintErrorMessage;
 
 export interface QueueUpdateMessage {
   type: "queue_update";
@@ -170,6 +172,15 @@ export interface HintsListMessage {
 export interface ActiveHintsMessage {
   type: "active_hints";
   hints: Hint[];
+}
+
+export interface HintGeneratingMessage {
+  type: "hint_generating";
+}
+
+export interface HintErrorMessage {
+  type: "hint_error";
+  error: string;
 }
 
 export type ClientMessage =

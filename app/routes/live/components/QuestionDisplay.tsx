@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { FaArrowRightLong, FaLightbulb, FaUser } from "react-icons/fa6";
 import type {
   ClientQuestionInfo,
@@ -33,6 +34,8 @@ export default function QuestionDisplay({
 
   const isPollActive = pollData !== null;
 
+  const hasHint = activeHints.length > 0;
+
   return (
     <div className="flex-1 flex flex-col gap-4">
       <div className="flex flex-col items-start justify-between gap-4">
@@ -60,7 +63,7 @@ export default function QuestionDisplay({
               ) : (
                 <button
                   onClick={onStartPoll}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 >
                   <span>Start Poll</span>
                 </button>
@@ -68,7 +71,7 @@ export default function QuestionDisplay({
 
               <button
                 onClick={onGetQuestion}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-600"
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-600"
               >
                 <span>Next</span>
                 <FaArrowRightLong className="text-xs" />
@@ -80,7 +83,12 @@ export default function QuestionDisplay({
         <h1 className="text-3xl font-bold text-white leading-tight">{title}</h1>
       </div>
 
-      <div className="flex-1 bg-gray-900/50 rounded-xl p-6 border border-gray-700/50 mb-6">
+      <div
+        className={clsx(
+          "flex-1 bg-gray-900/50 rounded-xl p-6 border border-gray-700/50",
+          !hasHint && "mb-6",
+        )}
+      >
         <p className="text-lg text-gray-300 leading-relaxed whitespace-pre-wrap">
           {content}
         </p>
@@ -108,7 +116,7 @@ export default function QuestionDisplay({
         </div>
       )}
 
-      {activeHints.length > 0 && (
+      {hasHint && (
         <div className="bg-linear-to-r from-amber-900/30 to-orange-900/30 rounded-xl p-6 border border-amber-700/50">
           <div className="flex items-center gap-2 mb-4">
             <FaLightbulb className="w-5 h-5 text-amber-400" />
@@ -125,7 +133,7 @@ export default function QuestionDisplay({
                   <span className="shrink-0 w-8 h-8 flex items-center justify-center bg-amber-600/20 text-amber-400 rounded-full text-sm font-semibold">
                     {index + 1}
                   </span>
-                  <p className="text-gray-300 leading-relaxed flex-1">
+                  <p className="text-gray-300 leading-relaxed flex-1 break-all">
                     {hint.content}
                   </p>
                 </div>

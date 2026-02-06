@@ -15,11 +15,11 @@ import type {
 import type { Route } from "./+types/live";
 import ControlPanel from "./components/ControlPanel";
 import HeaderSection from "./components/HeaderSection";
-import HintPanel from "./components/HintPanel";
-import NoMatchingQuestionModal from "./components/NoMatchingQuestionModal";
+import HintManager from "./components/HintManager";
+import NoMatchingQuestionSheet from "./components/NoMatchingQuestionSheet";
 import QuestionSection from "./components/QuestionSection";
-import RoleChangeRejectedModal from "./components/RoleChangeRejectedModal";
-import TagSelectionModal from "./components/TagSelectionModal";
+import TagSelectionDrawer from "./components/TagSelectionDrawer";
+import { ToastContainer, useToast } from "./components/Toast";
 import UsersSection from "./components/UsersSection";
 
 const STORAGE_KEY = "banki-brunch-preferred-tags";
@@ -73,14 +73,14 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [noMatchingQuestion, setNoMatchingQuestion] =
     useState<NoMatchingQuestionMessage | null>(null);
   const [showTagModal, setShowTagModal] = useState(false);
-  const [showRoleChangeRejectedModal, setShowRoleChangeRejectedModal] =
-    useState({ show: false, currentPresenterName: "" });
   const [showTagChangeRequest, setShowTagChangeRequest] = useState(false);
   const [preferredTags, setPreferredTags] = useState<string[]>([]);
   const [hasShownInitialModal, setHasShownInitialModal] = useState(false);
   const [hints, setHints] = useState<Hint[]>([]);
   const [activeHints, setActiveHints] = useState<Hint[]>([]);
   const [canGenerateMoreHints, setCanGenerateMoreHints] = useState(true);
+  const [isGeneratingHint, setIsGeneratingHint] = useState(false);
+  const { toasts, addToast, removeToast } = useToast();
   const navigate = useNavigate();
 
   const { user, availableTags } = loaderData;
@@ -158,6 +158,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
           case "hints_list":
             setHints(data.hints);
             setCanGenerateMoreHints(data.canGenerateMore);
+            setIsGeneratingHint(false);
             break;
 
           case "active_hints":
@@ -165,10 +166,20 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             break;
 
           case "role_change_rejected":
-            setShowRoleChangeRejectedModal({
-              show: true,
-              currentPresenterName: data.currentPresenterName,
-            });
+            addToast(
+              `Cannot become presenter. ${data.currentPresenterName} is already the presenter.`,
+              "warning",
+              6000,
+            );
+            break;
+
+          case "hint_generating":
+            setIsGeneratingHint(true);
+            break;
+
+          case "hint_error":
+            setIsGeneratingHint(false);
+            addToast(`Failed to generate hint: ${data.error}`, "error", 8000);
             break;
 
           default:
@@ -202,14 +213,16 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     );
   }
 
+  const isPresenter = self.role === "presenter";
+
   const handleGetQuestion = () => {
-    if (self.role === "presenter") {
+    if (isPresenter) {
       socket.send(JSON.stringify({ type: "get_question" }));
     }
   };
 
   const handleStartPoll = () => {
-    if (self.role === "presenter") {
+    if (isPresenter) {
       socket.send(JSON.stringify({ type: "start_poll" }));
     }
   };
@@ -219,7 +232,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   };
 
   const handleEndPoll = () => {
-    if (self.role === "presenter") {
+    if (isPresenter) {
       socket.send(JSON.stringify({ type: "end_poll" }));
     }
   };
@@ -236,13 +249,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   };
 
   const handleRequestTagChange = (targetUserId: string) => {
-    if (self.role === "presenter" && socket) {
+    if (isPresenter && socket) {
       socket.send(JSON.stringify({ type: "request_tag_change", targetUserId }));
     }
   };
 
   const handleGetRandomForUser = (targetUserId: string) => {
-    if (self.role === "presenter" && socket) {
+    if (isPresenter && socket) {
       socket.send(
         JSON.stringify({ type: "get_random_question_for_user", targetUserId }),
       );
@@ -251,7 +264,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   };
 
   const handleSkipUser = () => {
-    if (self.role === "presenter" && socket) {
+    if (isPresenter && socket) {
       socket.send(JSON.stringify({ type: "skip_user" }));
       setNoMatchingQuestion(null);
     }
@@ -266,20 +279,20 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
         Home
       </Link>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto flex flex-col gap-4">
         <HeaderSection name={user.name} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_240px] gap-2 mt-8">
           <UsersSection
             activeUsers={activeUsers}
             selfId={self.id}
-            isPresenter={self.role === "presenter"}
+            isPresenter={isPresenter}
             queueData={queueData}
             onRequestTagChange={handleRequestTagChange}
           />
 
           <QuestionSection
-            isPresenter={self.role === "presenter"}
+            isPresenter={isPresenter}
             question={currentQuestion}
             questionForUser={questionForUser}
             onGetQuestion={handleGetQuestion}
@@ -290,63 +303,49 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             activeHints={activeHints}
           />
 
-          <div className="flex flex-col gap-2">
-            <ControlPanel
-              user={self}
-              socket={socket}
-              isConnected={isConnected}
-              preferredTags={preferredTags}
-              onOpenTagModal={() => setShowTagModal(true)}
-            />
-
-            {self.role === "presenter" && (
-              <HintPanel
-                hints={hints}
-                canGenerateMore={canGenerateMoreHints}
-                socket={socket}
-                hasQuestion={currentQuestion !== null}
-              />
-            )}
-          </div>
+          <ControlPanel
+            user={self}
+            socket={socket}
+            isConnected={isConnected}
+            preferredTags={preferredTags}
+            onOpenTagModal={() => setShowTagModal(true)}
+          />
         </div>
+
+        {isPresenter && (
+          <HintManager
+            hints={hints}
+            canGenerateMore={canGenerateMoreHints}
+            socket={socket}
+            hasQuestion={currentQuestion !== null}
+            isGenerating={isGeneratingHint}
+          />
+        )}
       </div>
 
-      {showTagModal && (
-        <TagSelectionModal
-          availableTags={availableTags}
-          selectedTags={preferredTags}
-          onConfirm={handleTagsConfirm}
-          onClose={() => {
-            setShowTagModal(false);
-            setShowTagChangeRequest(false);
-          }}
-          title={
-            showTagChangeRequest
-              ? "Presenter Requests Tag Change"
-              : "Select Your Preferred Tags"
-          }
-          description={
-            showTagChangeRequest
-              ? "The presenter is asking you to update your tag preferences for the next question."
-              : "Choose the topics you're interested in. Questions will be prioritized based on your selections."
-          }
-        />
-      )}
+      <TagSelectionDrawer
+        isOpen={showTagModal}
+        availableTags={availableTags}
+        selectedTags={preferredTags}
+        onConfirm={handleTagsConfirm}
+        onClose={() => {
+          setShowTagModal(false);
+          setShowTagChangeRequest(false);
+        }}
+        title={
+          showTagChangeRequest
+            ? "Presenter Requests Tag Change"
+            : "Select Your Preferred Tags"
+        }
+        description={
+          showTagChangeRequest
+            ? "The presenter is asking you to update your tag preferences for the next question."
+            : "Choose the topics you're interested in. Questions will be prioritized based on your selections."
+        }
+      />
 
-      {showRoleChangeRejectedModal.show && (
-        <RoleChangeRejectedModal
-          onClose={() => {
-            setShowRoleChangeRejectedModal({
-              ...showRoleChangeRejectedModal,
-              show: false,
-            });
-          }}
-          presenterName={showRoleChangeRejectedModal.currentPresenterName}
-        />
-      )}
-
-      {noMatchingQuestion && self.role === "presenter" && (
-        <NoMatchingQuestionModal
+      {noMatchingQuestion && isPresenter && (
+        <NoMatchingQuestionSheet
           data={noMatchingQuestion}
           onResetQuestions={() => {
             socket.send(JSON.stringify({ type: "reset_questions" }));
@@ -363,6 +362,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
           onClose={() => setNoMatchingQuestion(null)}
         />
       )}
+
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

@@ -574,6 +574,10 @@ export class BrunchPresenter extends DurableObject<Env> {
     if (!this.currentQuestion) return;
     if (this.hints.length >= this.MAX_HINTS) return;
 
+    this.sendToClient(server, {
+      type: "hint_generating",
+    });
+
     try {
       const ai = this.env.question_ai;
       const response = await ai.run("@cf/mistral/mistral-7b-instruct-v0.1", {
@@ -590,6 +594,14 @@ export class BrunchPresenter extends DurableObject<Env> {
         ],
       });
 
+      if (this.hints.length >= this.MAX_HINTS) {
+        this.sendToClient(server, {
+          type: "hint_error",
+          error: "You have reached the maximum number of hints.",
+        });
+        return;
+      }
+
       const hintContent = response.response || "Unable to generate hint";
 
       const newHint: Hint = {
@@ -603,6 +615,13 @@ export class BrunchPresenter extends DurableObject<Env> {
       this.broadcastHintsList();
     } catch (error) {
       console.error("Error generating hint:", error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to generate hint";
+      this.sendToClient(server, {
+        type: "hint_error",
+        error: errorMessage,
+      });
     }
   }
 

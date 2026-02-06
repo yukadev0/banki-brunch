@@ -3,16 +3,17 @@ import { useEffect, useState } from "react";
 import { HiCheck, HiX } from "react-icons/hi";
 
 interface Props {
+  isOpen: boolean;
   title: string;
   description: string;
   selectedTags: string[];
   availableTags: string[];
-
   onClose: () => void;
   onConfirm: (tags: string[]) => void;
 }
 
-export default function TagSelectionModal({
+export default function TagSelectionDrawer({
+  isOpen,
   onClose,
   onConfirm,
   availableTags,
@@ -25,7 +26,7 @@ export default function TagSelectionModal({
 
   useEffect(() => {
     setSelectedTags(initialSelectedTags);
-  }, [initialSelectedTags]);
+  }, [initialSelectedTags, isOpen]);
 
   const toggleTag = (tagName: string) => {
     setSelectedTags((prev) =>
@@ -36,22 +37,35 @@ export default function TagSelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl border border-gray-700 max-w-md w-full shadow-2xl">
-        <div className="p-6 border-b border-gray-700">
-          <div className="flex items-center justify-between">
+    <div className={isOpen ? "pointer-events-auto" : "pointer-events-none"}>
+      <div
+        className={clsx(
+          "fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity",
+          isOpen ? "opacity-100" : "opacity-0",
+        )}
+        onClick={onClose}
+      />
+
+      <div
+        className={clsx(
+          "fixed inset-y-0 right-0 w-full max-w-md bg-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col",
+          isOpen ? "translate-x-0" : "translate-x-full",
+        )}
+      >
+        <div className="p-6 border-b border-gray-700 flex items-start justify-between">
+          <div>
             <h2 className="text-xl font-bold text-white">{title}</h2>
-            <button
-              onClick={onClose}
-              className="p-1 text-gray-400 hover:text-white transition-colors"
-            >
-              <HiX className="w-5 h-5" />
-            </button>
+            <p className="mt-1 text-sm text-gray-400">{description}</p>
           </div>
-          <p className="mt-2 text-sm text-gray-400">{description}</p>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-700"
+          >
+            <HiX className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {availableTags.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No tags available</p>
           ) : (
@@ -76,31 +90,24 @@ export default function TagSelectionModal({
               })}
             </div>
           )}
-
-          {selectedTags.length > 0 && (
-            <div className="mt-4 p-3 bg-gray-900/50 rounded-lg">
-              <p className="text-xs text-gray-400 mb-2">Selected:</p>
-              <p className="text-sm text-blue-400">{selectedTags.join(", ")}</p>
-            </div>
-          )}
         </div>
 
-        <div className="p-6 border-t border-gray-700 flex gap-3">
-          <button
-            onClick={() => {
-              onConfirm([]);
-            }}
-            className="flex-1 px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-          >
-            Skip
-          </button>
+        <div className="p-6 border-t border-gray-700 space-y-3">
           <button
             onClick={() => {
               onConfirm(selectedTags);
             }}
-            className="flex-1 px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            className="w-full px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
           >
             Confirm {selectedTags.length > 0 && `(${selectedTags.length})`}
+          </button>
+          <button
+            onClick={() => {
+              onConfirm([]);
+            }}
+            className="w-full px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+          >
+            Skip
           </button>
         </div>
       </div>
