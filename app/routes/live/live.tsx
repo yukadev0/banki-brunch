@@ -79,10 +79,10 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [hasShownInitialModal, setHasShownInitialModal] = useState(false);
   const [hints, setHints] = useState<Hint[]>([]);
   const [activeHints, setActiveHints] = useState<Hint[]>([]);
-  const [canGenerateMoreHints, setCanGenerateMoreHints] = useState(true);
   const [isGeneratingHint, setIsGeneratingHint] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
   const navigate = useNavigate();
+  const MAX_HINTS = 3;
 
   const { user, availableTags } = loaderData;
 
@@ -158,7 +158,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
           case "hints_list":
             setHints(data.hints);
-            setCanGenerateMoreHints(data.canGenerateMore);
             setIsGeneratingHint(false);
             break;
 
@@ -319,12 +318,12 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
           />
         </div>
 
-        <Hints activeHints={activeHints} />
+        <Hints activeHints={activeHints} maxHints={MAX_HINTS} />
 
         {isPresenter && (
           <HintManager
+            maxHints={MAX_HINTS}
             hints={hints}
-            canGenerateMore={canGenerateMoreHints}
             socket={socket}
             hasQuestion={currentQuestion !== null}
             isGenerating={isGeneratingHint}

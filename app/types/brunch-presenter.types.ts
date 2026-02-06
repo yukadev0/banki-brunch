@@ -109,20 +109,6 @@ export interface RoleChangeRejectedMessage {
   currentPresenterName: string;
 }
 
-export type ServerMessage =
-  | UsersMessage
-  | QuestionMessage
-  | DuplicateSessionMessage
-  | PollUpdateMessage
-  | NoMatchingQuestionMessage
-  | TagChangeRequestedMessage
-  | QueueUpdateMessage
-  | HintsListMessage
-  | ActiveHintsMessage
-  | RoleChangeRejectedMessage
-  | HintGeneratingMessage
-  | HintErrorMessage;
-
 export interface QueueUpdateMessage {
   type: "queue_update";
   queue: string[];
@@ -166,7 +152,6 @@ export interface ShowSelectedHintsMessage {
 export interface HintsListMessage {
   type: "hints_list";
   hints: Hint[];
-  canGenerateMore: boolean;
 }
 
 export interface ActiveHintsMessage {
@@ -182,6 +167,20 @@ export interface HintErrorMessage {
   type: "hint_error";
   error: string;
 }
+
+export type ServerMessage =
+  | UsersMessage
+  | QuestionMessage
+  | DuplicateSessionMessage
+  | PollUpdateMessage
+  | NoMatchingQuestionMessage
+  | TagChangeRequestedMessage
+  | QueueUpdateMessage
+  | HintsListMessage
+  | ActiveHintsMessage
+  | RoleChangeRejectedMessage
+  | HintGeneratingMessage
+  | HintErrorMessage;
 
 export type ClientMessage =
   | IdentifyMessage

@@ -15,18 +15,18 @@ import type { Hint } from "~/types/brunch-presenter.types";
 
 interface Props {
   hints: Hint[];
-  canGenerateMore: boolean;
   socket: WebSocket;
   hasQuestion: boolean;
   isGenerating: boolean;
+  maxHints: number;
 }
 
 export default function HintManager({
   hints,
-  canGenerateMore,
   socket,
   hasQuestion,
   isGenerating,
+  maxHints,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -75,6 +75,8 @@ export default function HintManager({
     setCustomContent("");
   };
 
+  const canGenerateMore = hints.length < maxHints;
+
   return (
     <div className="bg-gray-800 rounded-lg shadow-lg border p-4 border-gray-700">
       <button
@@ -84,20 +86,23 @@ export default function HintManager({
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-white">Presenter Hints</h3>
           <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded-full">
-            {hints.length}/3
+            {hints.length}/{maxHints}
           </span>
         </div>
-        {isExpanded ? (
-          <FaChevronUp className="w-5 h-5 text-gray-400" />
-        ) : (
-          <FaChevronDown className="w-5 h-5 text-gray-400" />
-        )}
+        <FaChevronDown
+          className={clsx(
+            "w-5 h-5 text-gray-400 transition-transform",
+            isExpanded && "rotate-180",
+          )}
+        />
       </button>
 
       <div
         className={clsx(
           "flex flex-col gap-3 duration-200 ease-in-out overflow-hidden",
-          isExpanded ? "max-h-500 opacity-100 mt-3" : "max-h-0 opacity-0",
+          isExpanded
+            ? "max-h-500 opacity-100 mt-3 pointer-events-auto select-auto"
+            : "max-h-0 opacity-0 pointer-events-none select-none",
         )}
       >
         {!hasQuestion ? (

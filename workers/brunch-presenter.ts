@@ -176,7 +176,6 @@ export class BrunchPresenter extends DurableObject<Env> {
       this.sendToClient(server, {
         type: "hints_list",
         hints: this.hints,
-        canGenerateMore: this.hints.length < this.MAX_HINTS,
       });
     }
 
@@ -594,14 +593,6 @@ export class BrunchPresenter extends DurableObject<Env> {
         ],
       });
 
-      if (this.hints.length >= this.MAX_HINTS) {
-        this.sendToClient(server, {
-          type: "hint_error",
-          error: "You have reached the maximum number of hints.",
-        });
-        return;
-      }
-
       const hintContent = response.response || "Unable to generate hint";
 
       const newHint: Hint = {
@@ -610,9 +601,7 @@ export class BrunchPresenter extends DurableObject<Env> {
         isVisible: false,
         createdBy: "ai",
       };
-
-      this.hints.push(newHint);
-      this.broadcastHintsList();
+      this.handleAddHint(server, newHint);
     } catch (error) {
       console.error("Error generating hint:", error);
 
@@ -638,8 +627,21 @@ export class BrunchPresenter extends DurableObject<Env> {
       isVisible: false,
       createdBy: "manual",
     };
+    this.handleAddHint(server, newHint);
+  }
 
-    this.hints.push(newHint);
+  private handleAddHint(server: WebSocket, hint: Hint) {
+    if (!this.isPresenter(server)) return;
+
+    if (this.hints.length >= this.MAX_HINTS) {
+      this.sendToClient(server, {
+        type: "hint_error",
+        error: "You have reached the maximum number of hints.",
+      });
+      return;
+    }
+
+    this.hints.push(hint);
     this.broadcastHintsList();
   }
 
@@ -673,7 +675,6 @@ export class BrunchPresenter extends DurableObject<Env> {
         this.sendToClient(session, {
           type: "hints_list",
           hints: this.hints,
-          canGenerateMore: this.hints.length < this.MAX_HINTS,
         });
       }
     }

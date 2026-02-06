@@ -1,13 +1,14 @@
 import clsx from "clsx";
 import { useState } from "react";
-import { FaChevronDown, FaChevronUp, FaLightbulb } from "react-icons/fa6";
+import { FaChevronDown, FaLightbulb } from "react-icons/fa6";
 import type { Hint } from "~/types/brunch-presenter.types";
 
 type Props = {
+  maxHints: number;
   activeHints: Hint[];
 };
 
-export default function Hints({ activeHints }: Props) {
+export default function Hints({ activeHints, maxHints }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -19,18 +20,24 @@ export default function Hints({ activeHints }: Props) {
         <div className="flex items-center gap-3">
           <FaLightbulb className="w-5 h-5 text-blue-600" />
           <h3 className="text-lg font-semibold text-white">Hints</h3>
+          <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded-full">
+            {activeHints.length}/{maxHints}
+          </span>
         </div>
-        {isExpanded ? (
-          <FaChevronUp className="w-5 h-5 text-gray-400" />
-        ) : (
-          <FaChevronDown className="w-5 h-5 text-gray-400" />
-        )}
+        <FaChevronDown
+          className={clsx(
+            "w-5 h-5 text-gray-400 transition-transform",
+            isExpanded && "rotate-180",
+          )}
+        />
       </button>
 
       <div
         className={clsx(
           "space-y-3 duration-200",
-          isExpanded ? "max-h-500 opacity-100 mt-3" : "max-h-0 opacity-0",
+          isExpanded
+            ? "max-h-500 opacity-100 mt-3 pointer-events-auto select-auto"
+            : "max-h-0 opacity-0 pointer-events-none select-none",
         )}
       >
         {activeHints.length > 0 ? (
