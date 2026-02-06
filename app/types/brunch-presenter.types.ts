@@ -48,10 +48,6 @@ export interface GetRandomQuestionForUserMessage {
   targetUserId: string;
 }
 
-export interface DuplicateSessionMessage {
-  type: "duplicate_session";
-}
-
 export interface IdentifyMessage {
   type: "identify";
   id: string;
@@ -171,7 +167,6 @@ export interface HintErrorMessage {
 export type ServerMessage =
   | UsersMessage
   | QuestionMessage
-  | DuplicateSessionMessage
   | PollUpdateMessage
   | NoMatchingQuestionMessage
   | TagChangeRequestedMessage

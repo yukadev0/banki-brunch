@@ -120,12 +120,13 @@ export class BrunchPresenter extends DurableObject<Env> {
   }
 
   private handleIdentify(server: WebSocket, data: IdentifyMessage) {
-    if (this.getUserById(data.id)) {
-      this.sendToClient(server, {
-        type: "duplicate_session",
-      });
-      server.close(1008, "Duplicate session detected");
-      return;
+    const existingSession = this.getSessionByUserId(data.id);
+
+    if (existingSession) {
+      try {
+        existingSession.close(1000, "Reconnected");
+      } catch {}
+      this.sessions.delete(existingSession);
     }
 
     const userInfo: UserInfo = {

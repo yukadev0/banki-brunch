@@ -124,10 +124,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             setSelf(data.users.find((u) => u.id === user.id) || null);
             break;
 
-          case "duplicate_session":
-            navigate("/");
-            break;
-
           case "question":
             setCurrentQuestion(data.question || null);
             setQuestionForUser(
