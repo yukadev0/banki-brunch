@@ -1,8 +1,8 @@
-import type { PollUpdateMessage } from "workers/durableObjects/brunchRoom/types";
+import type { PollInfo } from "workers/durableObjects/brunchRoom/types";
 
 type Props = {
   option: string;
-  pollData: PollUpdateMessage;
+  pollData: PollInfo;
   pollEnded: boolean;
   onCastVote: (option: string) => void;
 };

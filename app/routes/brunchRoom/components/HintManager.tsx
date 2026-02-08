@@ -11,10 +11,10 @@ import {
   FaTrash,
   FaUser,
 } from "react-icons/fa6";
-import type { Hint } from "workers/durableObjects/brunchRoom/types";
+import type { HintInfo } from "workers/durableObjects/brunchRoom/types";
 
 type Props = {
-  hints: Hint[];
+  hints: HintInfo[];
   socket: WebSocket;
   hasQuestion: boolean;
   isGenerating: boolean;

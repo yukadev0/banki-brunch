@@ -480,8 +480,7 @@ export class BrunchRoom extends DurableObject<Env> {
     const queueState = this.sessionManager.getQueueState();
     this.broadcast({
       type: "queue_update",
-      queue: queueState.queue,
-      currentIndex: queueState.currentIndex,
+      queue: queueState,
     });
   }
 

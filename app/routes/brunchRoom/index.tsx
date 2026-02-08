@@ -101,45 +101,33 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
 
         switch (data.type) {
           case "users_snapshot":
-            {
-              userRegistry.setUsers(data.users);
-            }
+            userRegistry.setUsers(data.users);
             break;
 
           case "queue_update":
-            {
-              queueManager.setQueueData(data);
-            }
+            queueManager.setQueueData(data.queue);
             break;
 
           case "no_matching_question":
-            {
-              setShowNoMatchingQuestionModal(true);
-            }
+            setShowNoMatchingQuestionModal(true);
             break;
 
           case "tag_change_requested":
-            {
-              setShowTagChangeRequest(true);
-              setShowTagModal(true);
-            }
+            setShowTagChangeRequest(true);
+            setShowTagModal(true);
             break;
 
           case "question":
           case "targeted_question":
-            {
-              pollManager.reset();
-              hintsManager.setHints([]);
+            pollManager.reset();
+            hintsManager.setHints([]);
 
-              questionManager.handleMessage(data);
-            }
+            questionManager.handleMessage(data);
             break;
 
           case "poll_ended":
           case "poll_update":
-            {
-              pollManager.handleMessage(data);
-            }
+            pollManager.handleMessage(data);
             break;
 
           case "hints_list":
@@ -147,20 +135,16 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
           case "active_hints":
           case "hint_generated":
           case "hint_generating":
-            {
-              hintsManager.handleMessage(data);
-            }
+            hintsManager.handleMessage(data);
             break;
 
           case "role_change_rejected":
-            {
-              if (data.reason === "presenter_exists") {
-                addToast(
-                  `Cannot become presenter. There's already a presenter here.`,
-                  "warning",
-                  5000,
-                );
-              }
+            if (data.reason === "presenter_exists") {
+              addToast(
+                `Cannot become presenter. There's already a presenter here.`,
+                "warning",
+                5000,
+              );
             }
             break;
 

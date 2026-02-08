@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type {
-  PollUpdateMessage,
+  PollInfo,
   ServerMessage,
 } from "workers/durableObjects/brunchRoom/types";
 
@@ -8,7 +8,7 @@ export type PollManager = ReturnType<typeof usePoll>;
 
 export default function usePoll() {
   const [pollEnded, setPollEnded] = useState(false);
-  const [pollData, setPollData] = useState<PollUpdateMessage | null>(null);
+  const [pollData, setPollData] = useState<PollInfo | null>(null);
 
   function reset() {
     setPollData(null);
@@ -21,7 +21,7 @@ export default function usePoll() {
         setPollEnded(true);
         break;
       case "poll_update":
-        setPollData(data);
+        setPollData(data.poll);
         break;
     }
   }

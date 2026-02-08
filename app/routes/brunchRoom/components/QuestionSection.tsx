@@ -1,6 +1,6 @@
 import type {
   ClientQuestionInfo,
-  PollUpdateMessage,
+  PollInfo,
 } from "workers/durableObjects/brunchRoom/types";
 import QuestionDisplay from "./QuestionDisplay";
 import QuestionEmptyState from "./QuestionEmptyState";
@@ -9,7 +9,7 @@ type Props = {
   isPresenter: boolean;
   question: ClientQuestionInfo | null;
   onGetQuestion: () => void;
-  pollData: PollUpdateMessage | null;
+  pollData: PollInfo | null;
   pollEnded: boolean;
   onStartPoll: () => void;
   onCastVote: (option: string) => void;

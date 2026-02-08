@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type {
-  Hint,
+  HintInfo,
   ServerMessage,
 } from "workers/durableObjects/brunchRoom/types";
 
@@ -9,9 +9,9 @@ export type HintsManager = ReturnType<typeof useHints>;
 export default function useHints(onError: (message: string) => void) {
   const MAX_HINTS = 3;
 
-  const [hints, setHints] = useState<Hint[]>([]);
+  const [hints, setHints] = useState<HintInfo[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeHints, setActiveHints] = useState<Hint[]>([]);
+  const [activeHints, setActiveHints] = useState<HintInfo[]>([]);
 
   function handleMessage(data: ServerMessage) {
     switch (data.type) {

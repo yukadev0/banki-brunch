@@ -1,7 +1,7 @@
 import { FaArrowRightLong } from "react-icons/fa6";
 import type {
   ClientQuestionInfo,
-  PollUpdateMessage,
+  PollInfo,
 } from "workers/durableObjects/brunchRoom/types";
 import PollOption from "./PollOption";
 
@@ -9,7 +9,7 @@ type Props = {
   question: ClientQuestionInfo;
   isPresenter: boolean;
   onGetQuestion: () => void;
-  pollData: PollUpdateMessage | null;
+  pollData: PollInfo | null;
   pollEnded: boolean;
   onStartPoll: () => void;
   onCastVote: (option: string) => void;

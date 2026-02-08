@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { FaArrowRight, FaCrown } from "react-icons/fa";
 import { HiTag } from "react-icons/hi";
 import type {
-  QueueUpdateMessage,
+  QueueInfo,
   UserInfo,
 } from "workers/durableObjects/brunchRoom/types";
 
@@ -20,7 +20,7 @@ type UsersSectionProps = {
   isPresenter: boolean;
   selfId: string | null;
   activeUsers: UserInfo[];
-  queueData: QueueUpdateMessage | null;
+  queueData: QueueInfo | null;
 
   isNextInQueue: (userId: string) => boolean;
   onRequestTagChange: (userId: string) => void;

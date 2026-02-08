@@ -48,10 +48,12 @@ export class PollManager {
 
     return {
       type: "poll_update",
-      votes: votes,
-      options: this.pollOptions,
-      totalVotes: this.pollVotes.size,
-      userVote: userId ? this.pollVotes.get(userId) || null : null,
+      poll: {
+        votes: votes,
+        options: this.pollOptions,
+        totalVotes: this.pollVotes.size,
+        userVote: userId ? this.pollVotes.get(userId) || null : null,
+      },
     };
   }
 }

@@ -1,8 +1,8 @@
-import type { Hint, ServerQuestionInfo } from "./types";
+import type { HintInfo, ServerQuestionInfo } from "./types";
 
 export class HintManager {
   private ai: Ai<AiModels>;
-  private _hints: Hint[] = [];
+  private _hints: HintInfo[] = [];
   private readonly MAX_HINTS = 3;
 
   constructor(ai: Ai<AiModels>) {
@@ -25,7 +25,7 @@ export class HintManager {
     this._hints = [];
   }
 
-  addHint(hint: Hint) {
+  addHint(hint: HintInfo) {
     if (!this.canAddHint()) {
       return false;
     }
@@ -79,7 +79,7 @@ export class HintManager {
 
       const hintContent = response.response || "Unable to generate hint";
 
-      const newHint: Hint = {
+      const newHint: HintInfo = {
         id: crypto.randomUUID(),
         content: hintContent,
         isVisible: false,
@@ -106,7 +106,7 @@ export class HintManager {
       return { success: false, error: "Hint content cannot be empty" };
     }
 
-    const newHint: Hint = {
+    const newHint: HintInfo = {
       id: crypto.randomUUID(),
       content: trimmedContent.slice(0, 500),
       isVisible: false,

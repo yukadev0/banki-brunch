@@ -106,7 +106,7 @@ export class SessionManager {
   getQueueState() {
     return {
       queue: this.viewerQueue,
-      currentIndex: this.currentQueueIndex,
+      currentQueueIndex: this.currentQueueIndex,
     };
   }
 
