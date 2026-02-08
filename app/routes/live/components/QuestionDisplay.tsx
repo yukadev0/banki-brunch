@@ -3,7 +3,7 @@ import type {
   ClientQuestionInfo,
   Hint,
   PollUpdateMessage,
-} from "~/types/brunch-presenter.types";
+} from "workers/durableObjects/brunchRoom/types";
 import Option from "./Option";
 
 interface Props {

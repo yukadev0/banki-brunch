@@ -6,7 +6,7 @@ import {
   HiTag,
   HiVolumeUp,
 } from "react-icons/hi";
-import type { UserInfo } from "~/types/brunch-presenter.types";
+import type { UserInfo } from "workers/durableObjects/brunchRoom/types";
 
 interface Props {
   user: UserInfo | null;

@@ -14,12 +14,12 @@
   "durable_objects": {
     "bindings": [
       {
-        "name": "brunch_presenter",
-        "class_name": "BrunchPresenter",
+        "name": "brunch_room",
+        "class_name": "BrunchRoom",
       },
     ],
   },
-  "migrations": [{ "new_sqlite_classes": ["BrunchPresenter"], "tag": "v2" }],
+  "migrations": [{ "new_sqlite_classes": ["BrunchRoom"], "tag": "v3" }],
   "d1_databases": [
     {
       "binding": "banki_brunch_db",

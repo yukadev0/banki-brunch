@@ -1,4 +1,4 @@
-import type { PollUpdateMessage } from "~/types/brunch-presenter.types";
+import type { PollUpdateMessage } from "workers/durableObjects/brunchRoom/types";
 
 interface Props {
   option: string;

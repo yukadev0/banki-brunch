@@ -6,7 +6,7 @@ import {
   HiUser,
   HiXMark,
 } from "react-icons/hi2";
-import type { NoMatchingQuestionMessage } from "~/types/brunch-presenter.types";
+import type { NoMatchingQuestionMessage } from "workers/durableObjects/brunchRoom/types";
 
 interface Props {
   data: NoMatchingQuestionMessage;

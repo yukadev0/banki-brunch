@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { requireSession } from "~/lib/auth.helper";
-import { TagsRepository } from "~/repositories/tag/repository";
+import { Link } from "react-router";
 import type {
   ClientQuestionInfo,
   Hint,
@@ -11,7 +9,9 @@ import type {
   QueueUpdateMessage,
   ServerMessage,
   UserInfo,
-} from "~/types/brunch-presenter.types";
+} from "workers/durableObjects/brunchRoom/types";
+import { requireSession } from "~/lib/auth.helper";
+import { TagsRepository } from "~/repositories/tag/repository";
 import type { Route } from "./+types/live";
 import ControlPanel from "./components/ControlPanel";
 import HeaderSection from "./components/HeaderSection";
@@ -81,7 +81,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   const [activeHints, setActiveHints] = useState<Hint[]>([]);
   const [isGeneratingHint, setIsGeneratingHint] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
-  const navigate = useNavigate();
   const MAX_HINTS = 3;
 
   const { user, availableTags } = loaderData;

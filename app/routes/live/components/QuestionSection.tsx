@@ -2,7 +2,7 @@ import type {
   ClientQuestionInfo,
   Hint,
   PollUpdateMessage,
-} from "~/types/brunch-presenter.types";
+} from "workers/durableObjects/brunchRoom/types";
 import QuestionDisplay from "./QuestionDisplay";
 import QuestionEmptyState from "./QuestionEmptyState";
 

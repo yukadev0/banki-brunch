@@ -11,7 +11,7 @@ import {
   FaTrash,
   FaUser,
 } from "react-icons/fa6";
-import type { Hint } from "~/types/brunch-presenter.types";
+import type { Hint } from "workers/durableObjects/brunchRoom/types";
 
 interface Props {
   hints: Hint[];
@@ -33,20 +33,19 @@ export default function HintManager({
   const [customContent, setCustomContent] = useState("");
 
   useEffect(() => {
-    requestAnimationFrame(() => {
-      setIsExpanded(true);
-    });
+    setIsExpanded(true);
   }, []);
 
   const handleGenerateHint = () => {
-    if (socket.readyState === WebSocket.OPEN) {
+    if (socket.readyState === WebSocket.OPEN && hints.length < maxHints) {
       socket.send(JSON.stringify({ type: "generate_hint" }));
     }
   };
 
   const handleAddCustomHint = () => {
-    const content = customContent.trim();
-    if (content && socket.readyState === WebSocket.OPEN) {
+    if (socket.readyState === WebSocket.OPEN && hints.length < maxHints) {
+      const content = customContent.trim();
+      if (!content) return;
       socket.send(
         JSON.stringify({
           type: "add_custom_hint",

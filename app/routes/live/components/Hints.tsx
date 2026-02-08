@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { useState } from "react";
 import { FaChevronDown, FaLightbulb } from "react-icons/fa6";
-import type { Hint } from "~/types/brunch-presenter.types";
+import type { Hint } from "workers/durableObjects/brunchRoom/types";
 
 type Props = {
   maxHints: number;

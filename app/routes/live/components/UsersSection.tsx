@@ -4,7 +4,7 @@ import { HiTag } from "react-icons/hi";
 import type {
   QueueUpdateMessage,
   UserInfo,
-} from "~/types/brunch-presenter.types";
+} from "workers/durableObjects/brunchRoom/types";
 
 interface UsersSectionProps {
   activeUsers: UserInfo[];
