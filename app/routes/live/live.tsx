@@ -2,11 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import type {
   ClientQuestionInfo,
-  Hint,
   IdentifyMessage,
-  NoMatchingQuestionMessage,
   PollUpdateMessage,
-  QueueUpdateMessage,
   ServerMessage,
 } from "workers/durableObjects/brunchRoom/types";
 import { requireSession } from "~/lib/auth.helper";
@@ -21,6 +18,8 @@ import QuestionSection from "./components/QuestionSection";
 import TagSelectionDrawer from "./components/TagSelectionDrawer";
 import { ToastContainer, useToast } from "./components/Toast";
 import UsersSection from "./components/UsersSection";
+import { useHints } from "./hooks/useHints";
+import useQueue from "./hooks/useQueue";
 import useUserRegistry from "./hooks/useUserRegistry";
 
 const STORAGE_KEY = "banki-brunch-preferred-tags";
@@ -66,20 +65,16 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     useState<ClientQuestionInfo | null>(null);
 
   const [pollData, setPollData] = useState<PollUpdateMessage | null>(null);
+  const userRegistry = useUserRegistry(user.id);
+  const queueManager = useQueue(userRegistry.users);
+  const hintsManager = useHints((message) => addToast(message, "error", 5000));
 
-  const [queueData, setQueueData] = useState<QueueUpdateMessage | null>(null);
-  const userRegistry = useUserRegistry(user.id, queueData);
-
-  const [noMatchingQuestion, setNoMatchingQuestion] =
-    useState<NoMatchingQuestionMessage | null>(null);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showTagChangeRequest, setShowTagChangeRequest] = useState(false);
-  const [preferredTags, setPreferredTags] = useState<string[]>([]);
-  const [hints, setHints] = useState<Hint[]>([]);
-  const [activeHints, setActiveHints] = useState<Hint[]>([]);
-  const [isGeneratingHint, setIsGeneratingHint] = useState(false);
+  const [showNoMatchingQuestionModal, setShowNoMatchingQuestionModal] =
+    useState(false);
+
   const { toasts, addToast, removeToast } = useToast();
-  const MAX_HINTS = 3;
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -87,7 +82,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
     ws.addEventListener("open", () => {
       const storedTags = getStoredTags();
-      setPreferredTags(storedTags);
       if (storedTags.length === 0) {
         setShowTagModal(true);
       }
@@ -115,9 +109,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
           case "question":
             {
-              setCurrentQuestion(data.question);
               setPollData(null);
-              setNoMatchingQuestion(null);
+              setCurrentQuestion(data.question);
             }
             break;
 
@@ -132,13 +125,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
           case "queue_update":
             {
-              setQueueData(data);
+              queueManager.setQueueData(data);
             }
             break;
 
           case "no_matching_question":
             {
-              setNoMatchingQuestion(data);
+              setShowNoMatchingQuestionModal(true);
             }
             break;
 
@@ -150,15 +143,12 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             break;
 
           case "hints_list":
-            {
-              setHints(data.hints);
-              setIsGeneratingHint(false);
-            }
-            break;
-
           case "active_hints":
+          case "hint_generating":
+          case "hint_generated":
+          case "hint_error":
             {
-              setActiveHints(data.hints);
+              hintsManager.handleMessage(data);
             }
             break;
 
@@ -172,19 +162,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
                   5000,
                 );
               }
-            }
-            break;
-
-          case "hint_generating":
-            {
-              setIsGeneratingHint(true);
-            }
-            break;
-
-          case "hint_error":
-            {
-              setIsGeneratingHint(false);
-              addToast(`Failed to generate hint: ${data.error}`, "error", 8000);
             }
             break;
 
@@ -248,7 +225,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   };
 
   const handleTagsConfirm = (tags: string[]) => {
-    setPreferredTags(tags);
     setStoredTags(tags);
     setShowTagModal(false);
     setShowTagChangeRequest(false);
@@ -269,14 +245,14 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       socket.send(
         JSON.stringify({ type: "get_random_question_for_user", targetUserId }),
       );
-      setNoMatchingQuestion(null);
+      setShowNoMatchingQuestionModal(false);
     }
   };
 
   const handleSkipUser = () => {
     if (isPresenter && socket) {
       socket.send(JSON.stringify({ type: "skip_user" }));
-      setNoMatchingQuestion(null);
+      setShowNoMatchingQuestionModal(false);
     }
   };
 
@@ -294,10 +270,12 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_240px] gap-2 mt-8">
           <UsersSection
+            getQueuePosition={queueManager.getQueuePosition}
+            isNextInQueue={queueManager.isNextInQueue}
             activeUsers={userRegistry.users}
             selfId={self?.id}
             isPresenter={isPresenter}
-            queueData={queueData}
+            queueData={queueManager.queueData}
             onRequestTagChange={handleRequestTagChange}
           />
 
@@ -314,20 +292,23 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
           <ControlPanel
             user={self}
             socket={socket}
-            preferredTags={preferredTags}
+            preferredTags={userRegistry.getSelf()?.preferredTags ?? []}
             onOpenTagModal={() => setShowTagModal(true)}
           />
         </div>
 
-        <Hints activeHints={activeHints} maxHints={MAX_HINTS} />
+        <Hints
+          maxHints={hintsManager.MAX_HINTS}
+          activeHints={hintsManager.activeHints}
+        />
 
         {isPresenter && (
           <HintManager
-            maxHints={MAX_HINTS}
-            hints={hints}
             socket={socket}
+            hints={hintsManager.hints}
+            maxHints={hintsManager.MAX_HINTS}
             hasQuestion={currentQuestion !== null}
-            isGenerating={isGeneratingHint}
+            isGenerating={hintsManager.isGenerating}
           />
         )}
       </div>
@@ -335,7 +316,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       <TagSelectionDrawer
         isOpen={showTagModal}
         availableTags={availableTags}
-        selectedTags={preferredTags}
+        selectedTags={userRegistry.getSelf()?.preferredTags ?? []}
         onConfirm={handleTagsConfirm}
         onClose={() => {
           setShowTagModal(false);
@@ -353,28 +334,28 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
         }
       />
 
-      {noMatchingQuestion && isPresenter && (
+      {showNoMatchingQuestionModal && isPresenter && (
         <NoMatchingQuestionSheet
-          data={noMatchingQuestion}
+          queueManager={queueManager}
           onResetQuestions={() => {
             socket.send(JSON.stringify({ type: "reset_questions" }));
-            setNoMatchingQuestion(null);
+            setShowNoMatchingQuestionModal(false);
           }}
           onRequestTagChange={() => {
-            const user = userRegistry.getNextInQueue();
+            const user = queueManager.getNextInQueue();
             if (user) {
               handleRequestTagChange(user.id);
             }
-            setNoMatchingQuestion(null);
+            setShowNoMatchingQuestionModal(false);
           }}
           onGetRandom={() => {
-            const user = userRegistry.getNextInQueue();
+            const user = queueManager.getNextInQueue();
             if (user) {
               handleGetRandomForUser(user.id);
             }
           }}
           onSkip={handleSkipUser}
-          onClose={() => setNoMatchingQuestion(null)}
+          onClose={() => setShowNoMatchingQuestionModal(false)}
         />
       )}
 

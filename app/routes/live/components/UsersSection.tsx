@@ -6,22 +6,26 @@ import type {
   UserInfo,
 } from "workers/durableObjects/brunchRoom/types";
 
-interface UsersSectionProps {
-  activeUsers: UserInfo[];
-  selfId: string | null;
-  isPresenter: boolean;
-  queueData: QueueUpdateMessage | null;
-  onRequestTagChange: (userId: string) => void;
-}
-
-interface UserProps {
+type UserProps = {
   user: UserInfo;
   isSelf: boolean;
   isPresenter: boolean;
   isNextInQueue: boolean;
-  queuePosition: number | null;
+  queuePosition: number;
+
   onRequestTagChange: (userId: string) => void;
-}
+};
+
+type UsersSectionProps = {
+  isPresenter: boolean;
+  selfId: string | null;
+  activeUsers: UserInfo[];
+  queueData: QueueUpdateMessage | null;
+
+  isNextInQueue: (userId: string) => boolean;
+  onRequestTagChange: (userId: string) => void;
+  getQueuePosition: (userId: string) => number;
+};
 
 function User({
   user,
@@ -55,7 +59,7 @@ function User({
               {name.charAt(0).toUpperCase()}
             </div>
           )}
-          {queuePosition !== null && (
+          {queuePosition !== -1 && (
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center text-[10px] text-white font-bold">
               {queuePosition + 1}
             </div>
@@ -118,23 +122,14 @@ function User({
 }
 
 export default function UsersSection({
-  activeUsers,
   selfId,
-  isPresenter,
   queueData,
+  activeUsers,
+  isPresenter,
+  isNextInQueue,
+  getQueuePosition,
   onRequestTagChange,
 }: UsersSectionProps) {
-  const getQueuePosition = (userId: string) => {
-    if (!queueData) return null;
-    const index = queueData.queue.indexOf(userId);
-    return index >= 0 ? index : null;
-  };
-
-  const isNextInQueue = (userId: string) => {
-    if (!queueData || queueData.queue.length === 0) return false;
-    return queueData.queue[queueData.currentIndex] === userId;
-  };
-
   const sortedUsers = [...activeUsers].sort((a, b) => {
     if (a.role === "presenter" && b.role !== "presenter") return -1;
     if (a.role !== "presenter" && b.role === "presenter") return 1;

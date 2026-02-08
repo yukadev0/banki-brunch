@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { HiCheck, HiX } from "react-icons/hi";
 
-interface Props {
+type Props = {
   isOpen: boolean;
   title: string;
   description: string;
@@ -10,7 +10,7 @@ interface Props {
   availableTags: string[];
   onClose: () => void;
   onConfirm: (tags: string[]) => void;
-}
+};
 
 export default function TagSelectionDrawer({
   isOpen,

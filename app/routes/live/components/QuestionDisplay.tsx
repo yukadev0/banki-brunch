@@ -5,7 +5,7 @@ import type {
 } from "workers/durableObjects/brunchRoom/types";
 import Option from "./Option";
 
-interface Props {
+type Props = {
   question: ClientQuestionInfo;
   isPresenter: boolean;
   onGetQuestion: () => void;
@@ -13,7 +13,7 @@ interface Props {
   onStartPoll: () => void;
   onCastVote: (option: string) => void;
   onEndPoll: () => void;
-}
+};
 
 export default function QuestionDisplay({
   question,

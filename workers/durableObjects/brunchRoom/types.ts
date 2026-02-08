@@ -158,40 +158,45 @@ export type HintGeneratingMessage = {
   type: "hint_generating";
 };
 
+export type HintGeneratedMessage = {
+  type: "hint_generated";
+};
+
 export type HintErrorMessage = {
   type: "hint_error";
   error: string;
 };
 
 export type ServerMessage =
-  | UserSnapshotMessage
   | QuestionMessage
-  | TargetedQuestionMessage
+  | HintsListMessage
+  | HintErrorMessage
   | PollUpdateMessage
+  | QueueUpdateMessage
+  | ActiveHintsMessage
+  | UserSnapshotMessage
+  | HintGeneratedMessage
+  | HintGeneratingMessage
+  | TargetedQuestionMessage
   | NoMatchingQuestionMessage
   | TagChangeRequestedMessage
-  | QueueUpdateMessage
-  | HintsListMessage
-  | ActiveHintsMessage
-  | RoleChangeRejectedMessage
-  | HintGeneratingMessage
-  | HintErrorMessage;
+  | RoleChangeRejectedMessage;
 
 export type ClientMessage =
+  | EndPollMessage
   | IdentifyMessage
+  | SkipUserMessage
+  | CastVoteMessage
+  | StartPollMessage
   | ChangeRoleMessage
   | GetQestionMessage
-  | ToggleLurkingMessage
-  | StartPollMessage
-  | CastVoteMessage
-  | EndPollMessage
-  | SetTagPreferencesMessage
-  | RequestTagChangeMessage
-  | GetRandomQuestionForUserMessage
-  | SkipUserMessage
-  | ResetQuestionsMessage
-  | GenerateHintMessage
-  | AddCustomHintMessage
   | DeleteHintMessage
   | ToggleHintMessage
-  | ShowSelectedHintsMessage;
+  | GenerateHintMessage
+  | ToggleLurkingMessage
+  | AddCustomHintMessage
+  | ResetQuestionsMessage
+  | RequestTagChangeMessage
+  | SetTagPreferencesMessage
+  | ShowSelectedHintsMessage
+  | GetRandomQuestionForUserMessage;

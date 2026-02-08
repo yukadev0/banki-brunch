@@ -5,7 +5,7 @@ import type {
 import QuestionDisplay from "./QuestionDisplay";
 import QuestionEmptyState from "./QuestionEmptyState";
 
-interface Props {
+type Props = {
   isPresenter: boolean;
   question: ClientQuestionInfo | null;
   onGetQuestion: () => void;
@@ -13,7 +13,7 @@ interface Props {
   onStartPoll: () => void;
   onCastVote: (option: string) => void;
   onEndPoll: () => void;
-}
+};
 
 export default function QuestionSection({
   question,

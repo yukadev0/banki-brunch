@@ -6,17 +6,17 @@ import {
   HiX,
 } from "react-icons/hi";
 
-interface Toast {
+type Toast = {
   id: string;
   message: string;
   type: "info" | "success" | "warning" | "error";
   duration?: number;
-}
+};
 
-interface ToastContainerProps {
+type ToastContainerProps = {
   toasts: Toast[];
   onRemove: (id: string) => void;
-}
+};
 
 export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
   return (
@@ -42,7 +42,7 @@ function ToastItem({
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => onRemove(toast.id), 300);
-    }, toast.duration || 5000);
+    }, toast.duration);
 
     return () => clearTimeout(timer);
   }, [toast, onRemove]);
@@ -86,11 +86,7 @@ export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const MAX_TOASTS = 4;
 
-  const addToast = (
-    message: string,
-    type: Toast["type"] = "info",
-    duration?: number,
-  ) => {
+  const addToast = (message: string, type: Toast["type"], duration: number) => {
     const id = crypto.randomUUID();
     setToasts((prev) =>
       prev.length >= MAX_TOASTS

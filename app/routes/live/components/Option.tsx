@@ -1,10 +1,10 @@
 import type { PollUpdateMessage } from "workers/durableObjects/brunchRoom/types";
 
-interface Props {
+type Props = {
   option: string;
   pollData: PollUpdateMessage;
   onCastVote: (option: string) => void;
-}
+};
 
 export default function Option({ option, pollData, onCastVote }: Props) {
   const count = pollData.votes[option] || 0;

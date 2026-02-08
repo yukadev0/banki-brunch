@@ -8,12 +8,12 @@ import {
 } from "react-icons/hi";
 import type { UserInfo } from "workers/durableObjects/brunchRoom/types";
 
-interface Props {
+type Props = {
   user: UserInfo | null;
   socket: WebSocket | null;
   preferredTags: string[];
   onOpenTagModal: () => void;
-}
+};
 
 export default function ControlPanel({
   user,

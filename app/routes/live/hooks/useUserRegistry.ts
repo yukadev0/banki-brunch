@@ -1,13 +1,7 @@
 import { useState } from "react";
-import type {
-  QueueUpdateMessage,
-  UserInfo,
-} from "workers/durableObjects/brunchRoom/types";
+import type { UserInfo } from "workers/durableObjects/brunchRoom/types";
 
-export default function useUserRegistry(
-  selfId: string,
-  queueData: QueueUpdateMessage | null,
-) {
+export default function useUserRegistry(selfId: string) {
   const [users, setUsers] = useState<UserInfo[]>([]);
 
   function getSelf() {
@@ -38,24 +32,6 @@ export default function useUserRegistry(
     return users.some((user) => user.id === id);
   }
 
-  function getQueuePosition(userId: string) {
-    if (!queueData) return null;
-    const index = queueData.queue.indexOf(userId);
-    return index >= 0 ? index : null;
-  }
-
-  function isNextInQueue(userId: string) {
-    if (!queueData || queueData.queue.length === 0) return false;
-    return queueData.queue[queueData.currentIndex] === userId;
-  }
-
-  function getNextInQueue() {
-    if (!queueData || queueData.queue.length === 0) return null;
-    return users.find(
-      (user) => user.id === queueData.queue[queueData.currentIndex],
-    );
-  }
-
   return {
     getSelf,
     users,
@@ -65,9 +41,6 @@ export default function useUserRegistry(
     getCount,
     getLurkers,
     getPresenter,
-    isNextInQueue,
-    getNextInQueue,
     getActiveViewers,
-    getQueuePosition,
   };
 }

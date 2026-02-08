@@ -13,13 +13,13 @@ import {
 } from "react-icons/fa6";
 import type { Hint } from "workers/durableObjects/brunchRoom/types";
 
-interface Props {
+type Props = {
   hints: Hint[];
   socket: WebSocket;
   hasQuestion: boolean;
   isGenerating: boolean;
   maxHints: number;
-}
+};
 
 export default function HintManager({
   hints,

@@ -1,7 +1,7 @@
-interface Props {
+type Props = {
   isPresenter: boolean;
   onGetQuestion: () => void;
-}
+};
 
 export default function QuestionEmptyState({
   isPresenter,

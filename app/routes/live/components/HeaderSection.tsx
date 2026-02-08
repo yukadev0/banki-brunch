@@ -1,6 +1,6 @@
-interface Props {
+type Props = {
   name: string;
-}
+};
 
 export default function HeaderSection({ name }: Props) {
   return (

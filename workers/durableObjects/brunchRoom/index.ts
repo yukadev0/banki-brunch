@@ -376,6 +376,7 @@ export class BrunchRoom extends DurableObject<Env> {
 
     if (result.success) {
       this.notifyHintListToPresenter();
+      this.sendToClient(server, { type: "hint_generated" });
     } else {
       this.sendToClient(server, {
         type: "hint_error",

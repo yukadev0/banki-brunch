@@ -1,11 +1,11 @@
 import clsx from "clsx";
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 
-interface Props {
+type Props = {
   allTags: string[];
   selectedTags: string[];
   setSelectedTags: Dispatch<SetStateAction<string[]>>;
-}
+};
 
 export default function Tags({
   allTags,

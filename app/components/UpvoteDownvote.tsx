@@ -1,12 +1,12 @@
 import clsx from "clsx";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 
-interface UpvoteDownvoteProps {
+type UpvoteDownvoteProps = {
   display: number;
   onUpvoteClick: () => void;
   onDownvoteClick: () => void;
   state: "unvote" | "upvote" | "downvote";
-}
+};
 
 export default function UpvoteDownvote({
   state,
