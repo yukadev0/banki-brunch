@@ -13,6 +13,11 @@ export default function useHints(onError: (message: string) => void) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeHints, setActiveHints] = useState<HintInfo[]>([]);
 
+  function reset() {
+    setHints([]);
+    setActiveHints([]);
+  }
+
   function handleMessage(data: ServerMessage) {
     switch (data.type) {
       case "hints_list":
@@ -36,6 +41,7 @@ export default function useHints(onError: (message: string) => void) {
 
   return {
     hints,
+    reset,
     setHints,
     MAX_HINTS,
     activeHints,

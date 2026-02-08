@@ -1,4 +1,4 @@
-import { FaArrowRightLong } from "react-icons/fa6";
+import { FaArrowRightLong, FaUser } from "react-icons/fa6";
 import type {
   ClientQuestionInfo,
   PollInfo,
@@ -7,6 +7,7 @@ import PollOption from "./PollOption";
 
 type Props = {
   question: ClientQuestionInfo;
+  targetUserName: string | null;
   isPresenter: boolean;
   onGetQuestion: () => void;
   pollData: PollInfo | null;
@@ -18,6 +19,7 @@ type Props = {
 
 export default function QuestionDisplay({
   question,
+  targetUserName,
   isPresenter,
   onGetQuestion,
   onStartPoll,
@@ -38,6 +40,12 @@ export default function QuestionDisplay({
             <span className="px-3 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 rounded-full">
               Current Question
             </span>
+            {targetUserName && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-green-400 bg-green-400/10 rounded-full">
+                <FaUser className="w-3 h-3" />
+                For {targetUserName}
+              </span>
+            )}
           </div>
           {isPresenter && (
             <div className="flex items-center gap-2">

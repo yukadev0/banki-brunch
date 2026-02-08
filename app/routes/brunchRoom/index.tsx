@@ -120,7 +120,7 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
           case "question":
           case "targeted_question":
             pollManager.reset();
-            hintsManager.setHints([]);
+            hintsManager.reset();
 
             questionManager.handleMessage(data);
             break;
@@ -248,6 +248,10 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
     }
   };
 
+  const targetUserName = questionManager.forUserId
+    ? userRegistry.getById(questionManager.forUserId)?.name
+    : null;
+
   return (
     <div className="min-h-screen py-6">
       <Link
@@ -272,6 +276,7 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
           />
 
           <QuestionSection
+            targetUserName={targetUserName || null}
             isPresenter={isPresenter}
             question={questionManager.currentQuestion}
             onGetQuestion={handleGetQuestion}

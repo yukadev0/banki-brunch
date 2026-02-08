@@ -8,6 +8,7 @@ import QuestionEmptyState from "./QuestionEmptyState";
 type Props = {
   isPresenter: boolean;
   question: ClientQuestionInfo | null;
+  targetUserName: string | null;
   onGetQuestion: () => void;
   pollData: PollInfo | null;
   pollEnded: boolean;
@@ -25,6 +26,7 @@ export default function QuestionSection({
   onStartPoll,
   onCastVote,
   onEndPoll,
+  targetUserName,
 }: Props) {
   return (
     <div className="flex flex-col gap-2">
@@ -36,6 +38,7 @@ export default function QuestionSection({
           />
         ) : (
           <QuestionDisplay
+            targetUserName={targetUserName}
             pollData={pollData}
             pollEnded={pollEnded}
             question={question}
