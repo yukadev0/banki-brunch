@@ -191,6 +191,7 @@ export class BrunchRoom extends DurableObject<Env> {
     this.sessionManager.setUserInfo(server, userInfo);
     if (userInfo.role !== "presenter") {
       this.sessionManager.updateViewerQueue();
+      this.broadcastQueueUpdate();
     }
     this.broadcastUserList();
   }
@@ -233,8 +234,6 @@ export class BrunchRoom extends DurableObject<Env> {
       if (question) {
         this.questionService.currentQuestion = question;
         this.hintManager.clearHints();
-        this.notifyHintListToPresenter();
-        this.broadcastActiveHints();
         this.broadcastQuestion(null, null);
       } else {
         this.sendToClient(server, { type: "no_matching_question" });
@@ -362,7 +361,7 @@ export class BrunchRoom extends DurableObject<Env> {
   private handleEndPoll(server: WebSocket) {
     if (!this.sessionManager.isPresenter(server)) return;
     this.pollManager.endPoll();
-    this.broadcastPollUpdate();
+    this.broadcast({ type: "poll_ended" });
   }
 
   private async handleGenerateHint(server: WebSocket) {
@@ -403,9 +402,14 @@ export class BrunchRoom extends DurableObject<Env> {
   private handleDeleteHint(server: WebSocket, data: DeleteHintMessage) {
     if (!this.sessionManager.isPresenter(server)) return;
 
+    const activeHintCount = this.hintManager.getActiveHints().length;
+
     this.hintManager.deleteHint(data.hintId);
     this.notifyHintListToPresenter();
-    this.broadcastActiveHints();
+
+    if (activeHintCount > 0) {
+      this.broadcastActiveHints();
+    }
   }
 
   private handleToggleHint(server: WebSocket, data: ToggleHintMessage) {
@@ -452,7 +456,6 @@ export class BrunchRoom extends DurableObject<Env> {
     this.hintManager.clearHints();
     this.pollManager.resetPoll();
 
-    // this.broadcast({ type: "question", question: null });
     this.notifyHintListToPresenter();
     this.broadcastActiveHints();
     this.broadcastPollUpdate();

@@ -52,7 +52,6 @@ export default function ControlPanel({
           onClick={onOpenTagModal}
           className={clsx(
             "w-full px-4 py-3 cursor-pointer rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
             preferredTags.length > 0
               ? "bg-indigo-500 hover:bg-indigo-600 text-white"
               : "bg-gray-700 hover:bg-gray-600 text-gray-300",
@@ -86,7 +85,6 @@ export default function ControlPanel({
           }
           className={clsx(
             "w-full px-4 py-3 cursor-pointer rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
             user.isLurking
               ? "bg-emerald-500 hover:bg-emerald-600 text-white"
               : "bg-amber-500 hover:bg-amber-600 text-white",
@@ -114,7 +112,6 @@ export default function ControlPanel({
           }
           className={clsx(
             "w-full px-4 py-3 cursor-pointer rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
             user.role === "presenter"
               ? "bg-purple-500 hover:bg-purple-600 text-white"
               : "bg-blue-500 hover:bg-blue-600 text-white",

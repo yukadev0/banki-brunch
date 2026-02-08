@@ -4,7 +4,9 @@ import type {
   ServerMessage,
 } from "workers/durableObjects/brunchRoom/types";
 
-export function useHints(onError: (message: string) => void) {
+export type HintsManager = ReturnType<typeof useHints>;
+
+export default function useHints(onError: (message: string) => void) {
   const MAX_HINTS = 3;
 
   const [hints, setHints] = useState<Hint[]>([]);
@@ -34,6 +36,7 @@ export function useHints(onError: (message: string) => void) {
 
   return {
     hints,
+    setHints,
     MAX_HINTS,
     activeHints,
     isGenerating,

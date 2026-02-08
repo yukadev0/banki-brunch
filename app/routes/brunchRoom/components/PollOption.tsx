@@ -3,10 +3,16 @@ import type { PollUpdateMessage } from "workers/durableObjects/brunchRoom/types"
 type Props = {
   option: string;
   pollData: PollUpdateMessage;
+  pollEnded: boolean;
   onCastVote: (option: string) => void;
 };
 
-export default function Option({ option, pollData, onCastVote }: Props) {
+export default function PollOption({
+  option,
+  pollData,
+  onCastVote,
+  pollEnded,
+}: Props) {
   const count = pollData.votes[option] || 0;
   const isSelected = pollData.userVote === option;
 
@@ -19,8 +25,9 @@ export default function Option({ option, pollData, onCastVote }: Props) {
 
   return (
     <button
+      disabled={pollEnded}
       onClick={() => onCastVote(option)}
-      className={`relative overflow-hidden p-4 rounded-lg border-2 transition-colors text-left ${
+      className={`relative overflow-hidden p-4 rounded-lg border-2 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50 ${
         isSelected
           ? "border-blue-500 bg-blue-500/10"
           : "border-gray-600 hover:border-gray-500 bg-gray-800/50"

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { UserInfo } from "workers/durableObjects/brunchRoom/types";
 
+export type UserRegistry = ReturnType<typeof useUserRegistry>;
+
 export default function useUserRegistry(selfId: string) {
   const [users, setUsers] = useState<UserInfo[]>([]);
 
@@ -33,8 +35,8 @@ export default function useUserRegistry(selfId: string) {
   }
 
   return {
-    getSelf,
     users,
+    getSelf,
     getById,
     hasUser,
     setUsers,

@@ -10,6 +10,7 @@ type Props = {
   question: ClientQuestionInfo | null;
   onGetQuestion: () => void;
   pollData: PollUpdateMessage | null;
+  pollEnded: boolean;
   onStartPoll: () => void;
   onCastVote: (option: string) => void;
   onEndPoll: () => void;
@@ -18,8 +19,9 @@ type Props = {
 export default function QuestionSection({
   question,
   onGetQuestion,
-  isPresenter,
   pollData,
+  pollEnded,
+  isPresenter,
   onStartPoll,
   onCastVote,
   onEndPoll,
@@ -34,10 +36,11 @@ export default function QuestionSection({
           />
         ) : (
           <QuestionDisplay
+            pollData={pollData}
+            pollEnded={pollEnded}
             question={question}
             isPresenter={isPresenter}
             onGetQuestion={onGetQuestion}
-            pollData={pollData}
             onStartPoll={onStartPoll}
             onCastVote={onCastVote}
             onEndPoll={onEndPoll}

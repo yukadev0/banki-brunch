@@ -63,10 +63,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </Link>
 
         <Link
-          to="/live"
+          to="/brunchRoom"
           className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-lg transition transform shadow-md"
         >
-          Live
+          Brunch Room
         </Link>
 
         {user && user.role === "admin" && (

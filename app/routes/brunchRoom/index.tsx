@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import type {
-  ClientQuestionInfo,
   IdentifyMessage,
-  PollUpdateMessage,
   ServerMessage,
 } from "workers/durableObjects/brunchRoom/types";
 import { requireSession } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
-import type { Route } from "./+types/live";
+import type { Route } from "./+types";
 import ControlPanel from "./components/ControlPanel";
 import HeaderSection from "./components/HeaderSection";
 import HintManager from "./components/HintManager";
@@ -18,7 +16,9 @@ import QuestionSection from "./components/QuestionSection";
 import TagSelectionDrawer from "./components/TagSelectionDrawer";
 import { ToastContainer, useToast } from "./components/Toast";
 import UsersSection from "./components/UsersSection";
-import { useHints } from "./hooks/useHints";
+import useHints from "./hooks/useHints";
+import usePoll from "./hooks/usePoll";
+import useQuestion from "./hooks/useQuestion";
 import useQueue from "./hooks/useQueue";
 import useUserRegistry from "./hooks/useUserRegistry";
 
@@ -57,14 +57,13 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   };
 }
 
-export default function LivePage({ loaderData }: Route.ComponentProps) {
+export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
   const { user, availableTags } = loaderData;
 
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [currentQuestion, setCurrentQuestion] =
-    useState<ClientQuestionInfo | null>(null);
 
-  const [pollData, setPollData] = useState<PollUpdateMessage | null>(null);
+  const pollManager = usePoll();
+  const questionManager = useQuestion();
   const userRegistry = useUserRegistry(user.id);
   const queueManager = useQueue(userRegistry.users);
   const hintsManager = useHints((message) => addToast(message, "error", 5000));
@@ -107,22 +106,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             }
             break;
 
-          case "question":
-            {
-              setPollData(null);
-              setCurrentQuestion(data.question);
-            }
-            break;
-
-          case "targeted_question":
-            break;
-
-          case "poll_update":
-            {
-              setPollData(data);
-            }
-            break;
-
           case "queue_update":
             {
               queueManager.setQueueData(data);
@@ -142,11 +125,28 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             }
             break;
 
+          case "question":
+          case "targeted_question":
+            {
+              pollManager.reset();
+              hintsManager.setHints([]);
+
+              questionManager.handleMessage(data);
+            }
+            break;
+
+          case "poll_ended":
+          case "poll_update":
+            {
+              pollManager.handleMessage(data);
+            }
+            break;
+
           case "hints_list":
-          case "active_hints":
-          case "hint_generating":
-          case "hint_generated":
           case "hint_error":
+          case "active_hints":
+          case "hint_generated":
+          case "hint_generating":
             {
               hintsManager.handleMessage(data);
             }
@@ -154,10 +154,9 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
           case "role_change_rejected":
             {
-              const presenter = userRegistry.getPresenter();
-              if (data.reason === "presenter_exists" && presenter) {
+              if (data.reason === "presenter_exists") {
                 addToast(
-                  `Cannot become presenter. ${presenter.name} is already the presenter.`,
+                  `Cannot become presenter. There's already a presenter here.`,
                   "warning",
                   5000,
                 );
@@ -171,6 +170,10 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       } catch (err) {
         console.error("Error parsing message:", err);
       }
+    });
+
+    ws.addEventListener("close", () => {
+      setSocket(null);
     });
 
     ws.addEventListener("error", (error) => {
@@ -215,11 +218,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
   };
 
   const handleCastVote = (option: string) => {
-    socket.send(JSON.stringify({ type: "cast_vote", option }));
+    if (!pollManager.pollEnded) {
+      socket.send(JSON.stringify({ type: "cast_vote", option }));
+    }
   };
 
   const handleEndPoll = () => {
-    if (isPresenter) {
+    if (isPresenter && !pollManager.pollEnded) {
       socket.send(JSON.stringify({ type: "end_poll" }));
     }
   };
@@ -234,16 +239,19 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     }
   };
 
-  const handleRequestTagChange = (targetUserId: string) => {
+  const handleRequestTagChange = (userId: string) => {
     if (isPresenter && socket) {
-      socket.send(JSON.stringify({ type: "request_tag_change", targetUserId }));
+      socket.send(JSON.stringify({ type: "request_tag_change", userId }));
     }
   };
 
-  const handleGetRandomForUser = (targetUserId: string) => {
+  const handleGetRandomForUser = (userId: string) => {
     if (isPresenter && socket) {
       socket.send(
-        JSON.stringify({ type: "get_random_question_for_user", targetUserId }),
+        JSON.stringify({
+          type: "get_random_question_for_user",
+          userId,
+        }),
       );
       setShowNoMatchingQuestionModal(false);
     }
@@ -281,9 +289,10 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
           <QuestionSection
             isPresenter={isPresenter}
-            question={currentQuestion}
+            question={questionManager.currentQuestion}
             onGetQuestion={handleGetQuestion}
-            pollData={pollData}
+            pollData={pollManager.pollData}
+            pollEnded={pollManager.pollEnded}
             onStartPoll={handleStartPoll}
             onCastVote={handleCastVote}
             onEndPoll={handleEndPoll}
@@ -307,7 +316,7 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             socket={socket}
             hints={hintsManager.hints}
             maxHints={hintsManager.MAX_HINTS}
-            hasQuestion={currentQuestion !== null}
+            hasQuestion={questionManager.currentQuestion !== null}
             isGenerating={hintsManager.isGenerating}
           />
         )}

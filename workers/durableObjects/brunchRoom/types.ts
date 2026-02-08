@@ -86,6 +86,10 @@ export type EndPollMessage = {
   type: "end_poll";
 };
 
+export type PollEndedMessage = {
+  type: "poll_ended";
+};
+
 export type CastVoteMessage = {
   type: "cast_vote";
   option: string;
@@ -171,6 +175,7 @@ export type ServerMessage =
   | QuestionMessage
   | HintsListMessage
   | HintErrorMessage
+  | PollEndedMessage
   | PollUpdateMessage
   | QueueUpdateMessage
   | ActiveHintsMessage

@@ -3,13 +3,14 @@ import type {
   ClientQuestionInfo,
   PollUpdateMessage,
 } from "workers/durableObjects/brunchRoom/types";
-import Option from "./Option";
+import PollOption from "./PollOption";
 
 type Props = {
   question: ClientQuestionInfo;
   isPresenter: boolean;
   onGetQuestion: () => void;
   pollData: PollUpdateMessage | null;
+  pollEnded: boolean;
   onStartPoll: () => void;
   onCastVote: (option: string) => void;
   onEndPoll: () => void;
@@ -19,10 +20,11 @@ export default function QuestionDisplay({
   question,
   isPresenter,
   onGetQuestion,
-  pollData,
   onStartPoll,
   onCastVote,
   onEndPoll,
+  pollData,
+  pollEnded,
 }: Props) {
   const { content, title } = question;
 
@@ -41,8 +43,9 @@ export default function QuestionDisplay({
             <div className="flex items-center gap-2">
               {isPollActive ? (
                 <button
+                  disabled={pollEnded}
                   onClick={onEndPoll}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>End Poll</span>
                 </button>
@@ -86,8 +89,9 @@ export default function QuestionDisplay({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {pollData.options.map((option) => (
-              <Option
+              <PollOption
                 key={option}
+                pollEnded={pollEnded}
                 onCastVote={onCastVote}
                 option={option}
                 pollData={pollData}
