@@ -8,7 +8,6 @@ import type {
   PollUpdateMessage,
   QueueUpdateMessage,
   ServerMessage,
-  UserInfo,
 } from "workers/durableObjects/brunchRoom/types";
 import { requireSession } from "~/lib/auth.helper";
 import { TagsRepository } from "~/repositories/tag/repository";
@@ -22,10 +21,11 @@ import QuestionSection from "./components/QuestionSection";
 import TagSelectionDrawer from "./components/TagSelectionDrawer";
 import { ToastContainer, useToast } from "./components/Toast";
 import UsersSection from "./components/UsersSection";
+import useUserRegistry from "./hooks/useUserRegistry";
 
 const STORAGE_KEY = "banki-brunch-preferred-tags";
 
-function getStoredTags(): string[] {
+function getStoredTags() {
   if (typeof window === "undefined") return [];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -35,13 +35,13 @@ function getStoredTags(): string[] {
   }
 }
 
-function setStoredTags(tags: string[]): void {
+function setStoredTags(tags: string[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tags));
 }
 
 export function meta() {
-  return [{ title: "Live room" }];
+  return [{ title: "Brunch Room" }];
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
@@ -59,58 +59,47 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 }
 
 export default function LivePage({ loaderData }: Route.ComponentProps) {
+  const { user, availableTags } = loaderData;
+
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [activeUsers, setActiveUsers] = useState<UserInfo[]>([]);
-  const [self, setSelf] = useState<UserInfo | null>(null);
   const [currentQuestion, setCurrentQuestion] =
     useState<ClientQuestionInfo | null>(null);
-  const [questionForUser, setQuestionForUser] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+
   const [pollData, setPollData] = useState<PollUpdateMessage | null>(null);
+
   const [queueData, setQueueData] = useState<QueueUpdateMessage | null>(null);
+  const userRegistry = useUserRegistry(user.id, queueData);
+
   const [noMatchingQuestion, setNoMatchingQuestion] =
     useState<NoMatchingQuestionMessage | null>(null);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showTagChangeRequest, setShowTagChangeRequest] = useState(false);
   const [preferredTags, setPreferredTags] = useState<string[]>([]);
-  const [hasShownInitialModal, setHasShownInitialModal] = useState(false);
   const [hints, setHints] = useState<Hint[]>([]);
   const [activeHints, setActiveHints] = useState<Hint[]>([]);
   const [isGeneratingHint, setIsGeneratingHint] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
   const MAX_HINTS = 3;
 
-  const { user, availableTags } = loaderData;
-
-  useEffect(() => {
-    const stored = getStoredTags();
-    setPreferredTags(stored);
-  }, []);
-
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const ws = new WebSocket(`${protocol}://${window.location.host}/websocket`);
 
     ws.addEventListener("open", () => {
-      setIsConnected(true);
-
       const storedTags = getStoredTags();
+      setPreferredTags(storedTags);
+      if (storedTags.length === 0) {
+        setShowTagModal(true);
+      }
+
       const data: IdentifyMessage = {
         type: "identify",
         id: user.id,
         name: user.name,
-        image: user.image,
+        image: user.image || null,
         preferredTags: storedTags,
       };
       ws.send(JSON.stringify(data));
-
-      if (storedTags.length === 0 && !hasShownInitialModal) {
-        setShowTagModal(true);
-        setHasShownInitialModal(true);
-      }
     });
 
     ws.addEventListener("message", (event) => {
@@ -118,63 +107,85 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
         const data = JSON.parse(event.data) as ServerMessage;
 
         switch (data.type) {
-          case "users":
-            setActiveUsers(data.users || []);
-            setSelf(data.users.find((u) => u.id === user.id) || null);
+          case "users_snapshot":
+            {
+              userRegistry.setUsers(data.users);
+            }
             break;
 
           case "question":
-            setCurrentQuestion(data.question || null);
-            setQuestionForUser(
-              data.forUserId && data.forUserName
-                ? { id: data.forUserId, name: data.forUserName }
-                : null,
-            );
-            setPollData(null);
-            setNoMatchingQuestion(null);
+            {
+              setCurrentQuestion(data.question);
+              setPollData(null);
+              setNoMatchingQuestion(null);
+            }
+            break;
+
+          case "targeted_question":
             break;
 
           case "poll_update":
-            setPollData(data);
+            {
+              setPollData(data);
+            }
             break;
 
           case "queue_update":
-            setQueueData(data);
+            {
+              setQueueData(data);
+            }
             break;
 
           case "no_matching_question":
-            setNoMatchingQuestion(data);
+            {
+              setNoMatchingQuestion(data);
+            }
             break;
 
           case "tag_change_requested":
-            setShowTagChangeRequest(true);
-            setShowTagModal(true);
+            {
+              setShowTagChangeRequest(true);
+              setShowTagModal(true);
+            }
             break;
 
           case "hints_list":
-            setHints(data.hints);
-            setIsGeneratingHint(false);
+            {
+              setHints(data.hints);
+              setIsGeneratingHint(false);
+            }
             break;
 
           case "active_hints":
-            setActiveHints(data.hints);
+            {
+              setActiveHints(data.hints);
+            }
             break;
 
           case "role_change_rejected":
-            addToast(
-              `Cannot become presenter. ${data.currentPresenterName} is already the presenter.`,
-              "warning",
-              6000,
-            );
+            {
+              const presenter = userRegistry.getPresenter();
+              if (data.reason === "presenter_exists" && presenter) {
+                addToast(
+                  `Cannot become presenter. ${presenter.name} is already the presenter.`,
+                  "warning",
+                  5000,
+                );
+              }
+            }
             break;
 
           case "hint_generating":
-            setIsGeneratingHint(true);
+            {
+              setIsGeneratingHint(true);
+            }
             break;
 
           case "hint_error":
-            setIsGeneratingHint(false);
-            addToast(`Failed to generate hint: ${data.error}`, "error", 8000);
+            {
+              setIsGeneratingHint(false);
+              addToast(`Failed to generate hint: ${data.error}`, "error", 8000);
+            }
             break;
 
           default:
@@ -183,10 +194,6 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
       } catch (err) {
         console.error("Error parsing message:", err);
       }
-    });
-
-    ws.addEventListener("close", () => {
-      setIsConnected(false);
     });
 
     ws.addEventListener("error", (error) => {
@@ -200,7 +207,9 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     };
   }, []);
 
-  if (!socket || !self || !isConnected) {
+  const self = userRegistry.getSelf();
+
+  if (!socket || !self) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Link
@@ -249,13 +258,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     }
   };
 
-  const handleRequestTagChange = (targetUserId: string | undefined) => {
+  const handleRequestTagChange = (targetUserId: string) => {
     if (isPresenter && socket) {
       socket.send(JSON.stringify({ type: "request_tag_change", targetUserId }));
     }
   };
 
-  const handleGetRandomForUser = (targetUserId: string | undefined) => {
+  const handleGetRandomForUser = (targetUserId: string) => {
     if (isPresenter && socket) {
       socket.send(
         JSON.stringify({ type: "get_random_question_for_user", targetUserId }),
@@ -285,8 +294,8 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_240px] gap-2 mt-8">
           <UsersSection
-            activeUsers={activeUsers}
-            selfId={self.id}
+            activeUsers={userRegistry.users}
+            selfId={self?.id}
             isPresenter={isPresenter}
             queueData={queueData}
             onRequestTagChange={handleRequestTagChange}
@@ -295,19 +304,16 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
           <QuestionSection
             isPresenter={isPresenter}
             question={currentQuestion}
-            questionForUser={questionForUser}
             onGetQuestion={handleGetQuestion}
             pollData={pollData}
             onStartPoll={handleStartPoll}
             onCastVote={handleCastVote}
             onEndPoll={handleEndPoll}
-            activeHints={activeHints}
           />
 
           <ControlPanel
             user={self}
             socket={socket}
-            isConnected={isConnected}
             preferredTags={preferredTags}
             onOpenTagModal={() => setShowTagModal(true)}
           />
@@ -355,10 +361,18 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             setNoMatchingQuestion(null);
           }}
           onRequestTagChange={() => {
-            handleRequestTagChange(noMatchingQuestion.for?.id);
+            const user = userRegistry.getNextInQueue();
+            if (user) {
+              handleRequestTagChange(user.id);
+            }
             setNoMatchingQuestion(null);
           }}
-          onGetRandom={() => handleGetRandomForUser(noMatchingQuestion.for?.id)}
+          onGetRandom={() => {
+            const user = userRegistry.getNextInQueue();
+            if (user) {
+              handleGetRandomForUser(user.id);
+            }
+          }}
           onSkip={handleSkipUser}
           onClose={() => setNoMatchingQuestion(null)}
         />

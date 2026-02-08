@@ -1,174 +1,172 @@
-export interface UserInfo {
+export type UserInfo = {
   id: string;
   name: string;
   isLurking: boolean;
-  role: "viewer" | "presenter";
-  image?: string | null | undefined;
+  image: string | null;
   preferredTags: string[];
-}
+  role: "viewer" | "presenter";
+};
 
-export interface ServerQuestionInfo {
-  id: number;
-  title: string;
-  content: string;
-}
-
-export type ClientQuestionInfo = Omit<ServerQuestionInfo, "id">;
-
-export interface UsersMessage {
-  type: "users";
-  users: UserInfo[];
-}
-
-export interface QuestionMessage {
-  type: "question";
-  question: ClientQuestionInfo | null;
-  forUserId?: string;
-  forUserName?: string;
-}
-
-export interface NoMatchingQuestionMessage {
-  type: "no_matching_question";
-  for?: {
-    id: string;
-    name: string;
-    tags: string[];
-  };
-}
-
-export interface RequestTagChangeMessage {
-  type: "request_tag_change";
-  targetUserId: string;
-}
-
-export interface TagChangeRequestedMessage {
-  type: "tag_change_requested";
-}
-
-export interface GetRandomQuestionForUserMessage {
-  type: "get_random_question_for_user";
-  targetUserId: string;
-}
-
-export interface IdentifyMessage {
+export type IdentifyMessage = {
   type: "identify";
   id: string;
   name: string;
-  image?: string | null | undefined;
+  image: string | null;
   preferredTags?: string[];
-}
+};
 
-export interface ToggleLurkingMessage {
+export type UserSnapshotMessage = {
+  type: "users_snapshot";
+  users: UserInfo[];
+};
+
+export type ServerQuestionInfo = {
+  id: number;
+  title: string;
+  content: string;
+};
+
+export type ClientQuestionInfo = Omit<ServerQuestionInfo, "id">;
+
+export type QuestionMessage = {
+  type: "question";
+  question: ClientQuestionInfo;
+};
+
+export type TargetedQuestionMessage = {
+  type: "targeted_question";
+  userId: string;
+  question: ClientQuestionInfo;
+};
+
+export type NoMatchingQuestionMessage = {
+  type: "no_matching_question";
+};
+
+export type RequestTagChangeMessage = {
+  type: "request_tag_change";
+  userId: string;
+};
+
+export type TagChangeRequestedMessage = {
+  type: "tag_change_requested";
+};
+
+export type GetRandomQuestionForUserMessage = {
+  type: "get_random_question_for_user";
+  userId: string;
+};
+
+export type ToggleLurkingMessage = {
   type: "toggle_lurking";
-}
+};
 
-export interface ChangeRoleMessage {
+export type ChangeRoleMessage = {
   type: "change_role";
-}
+};
 
-export interface GetQestionMessage {
+export type GetQestionMessage = {
   type: "get_question";
-}
+};
 
-export interface SetTagPreferencesMessage {
+export type SetTagPreferencesMessage = {
   type: "set_tag_preferences";
   tags: string[];
-}
+};
 
-export interface SkipUserMessage {
+export type SkipUserMessage = {
   type: "skip_user";
-}
+};
 
-export interface StartPollMessage {
+export type StartPollMessage = {
   type: "start_poll";
-}
+};
 
-export interface CastVoteMessage {
+export type EndPollMessage = {
+  type: "end_poll";
+};
+
+export type CastVoteMessage = {
   type: "cast_vote";
   option: string;
-}
+};
 
-export interface EndPollMessage {
-  type: "end_poll";
-}
-
-export interface PollUpdateMessage {
+export type PollUpdateMessage = {
   type: "poll_update";
   options: string[];
-  votes: Record<string, number>;
   totalVotes: number;
   userVote: string | null;
-}
+  votes: Record<string, number>;
+};
 
-export interface RoleChangeRejectedMessage {
+export type RoleChangeRejectedMessage = {
   type: "role_change_rejected";
   reason: "presenter_exists";
-  currentPresenterId: string;
-  currentPresenterName: string;
-}
+};
 
-export interface QueueUpdateMessage {
+export type QueueUpdateMessage = {
   type: "queue_update";
   queue: string[];
   currentIndex: number;
-}
+};
 
-export interface ResetQuestionsMessage {
+export type ResetQuestionsMessage = {
   type: "reset_questions";
-}
+};
 
-export interface Hint {
+export type Hint = {
   id: string;
   content: string;
   isVisible: boolean;
   createdBy: "ai" | "manual";
-}
+};
 
-export interface GenerateHintMessage {
+export type GenerateHintMessage = {
   type: "generate_hint";
-}
+};
 
-export interface AddCustomHintMessage {
+export type AddCustomHintMessage = {
   type: "add_custom_hint";
   content: string;
-}
+};
 
-export interface DeleteHintMessage {
+export type DeleteHintMessage = {
   type: "delete_hint";
   hintId: string;
-}
+};
 
-export interface ToggleHintMessage {
+export type ToggleHintMessage = {
   type: "toggle_hint";
   hintId: string;
-}
+};
 
-export interface ShowSelectedHintsMessage {
+export type ShowSelectedHintsMessage = {
   type: "show_selected_hints";
-}
+};
 
-export interface HintsListMessage {
+export type HintsListMessage = {
   type: "hints_list";
   hints: Hint[];
-}
+};
 
-export interface ActiveHintsMessage {
+export type ActiveHintsMessage = {
   type: "active_hints";
   hints: Hint[];
-}
+};
 
-export interface HintGeneratingMessage {
+export type HintGeneratingMessage = {
   type: "hint_generating";
-}
+};
 
-export interface HintErrorMessage {
+export type HintErrorMessage = {
   type: "hint_error";
   error: string;
-}
+};
 
 export type ServerMessage =
-  | UsersMessage
+  | UserSnapshotMessage
   | QuestionMessage
+  | TargetedQuestionMessage
   | PollUpdateMessage
   | NoMatchingQuestionMessage
   | TagChangeRequestedMessage

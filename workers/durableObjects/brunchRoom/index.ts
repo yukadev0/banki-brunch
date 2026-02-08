@@ -156,7 +156,9 @@ export class BrunchRoom extends DurableObject<Env> {
         }
       : null;
 
-    this.sendToClient(server, { type: "question", question: clientQuestion });
+    if (clientQuestion) {
+      this.sendToClient(server, { type: "question", question: clientQuestion });
+    }
 
     if (this.sessionManager.hasQueue()) {
       this.broadcastQueueUpdate();
@@ -203,8 +205,6 @@ export class BrunchRoom extends DurableObject<Env> {
         this.sendToClient(server, {
           type: "role_change_rejected",
           reason: "presenter_exists",
-          currentPresenterId: presenter.userInfo.id,
-          currentPresenterName: presenter.userInfo.name,
         });
         return;
       }
@@ -237,7 +237,7 @@ export class BrunchRoom extends DurableObject<Env> {
         this.broadcastActiveHints();
         this.broadcastQuestion(null, null);
       } else {
-        this.handleNoMatchingQuestion(server);
+        this.sendToClient(server, { type: "no_matching_question" });
       }
       return;
     }
@@ -255,24 +255,6 @@ export class BrunchRoom extends DurableObject<Env> {
       this.broadcastQueueUpdate();
       this.broadcastQuestion(nextViewer.id, nextViewer.name);
     } else {
-      this.handleNoMatchingQuestion(server, nextViewer);
-    }
-  }
-
-  private handleNoMatchingQuestion(
-    server: WebSocket,
-    userInfo: UserInfo | null = null,
-  ) {
-    if (userInfo) {
-      this.sendToClient(server, {
-        type: "no_matching_question",
-        for: {
-          id: userInfo.id,
-          name: userInfo.name,
-          tags: userInfo.preferredTags,
-        },
-      });
-    } else {
       this.sendToClient(server, { type: "no_matching_question" });
     }
   }
@@ -289,12 +271,18 @@ export class BrunchRoom extends DurableObject<Env> {
       title: currentQuestion.title,
     };
 
-    this.broadcast({
-      type: "question",
-      question: clientQuestion,
-      forUserId: forUserId || undefined,
-      forUserName: forUserName || undefined,
-    });
+    if (forUserId && forUserName) {
+      this.broadcast({
+        type: "targeted_question",
+        userId: forUserId,
+        question: clientQuestion,
+      });
+    } else {
+      this.broadcast({
+        type: "question",
+        question: clientQuestion,
+      });
+    }
   }
 
   private handleSetTagPreferences(
@@ -315,7 +303,7 @@ export class BrunchRoom extends DurableObject<Env> {
   ) {
     if (!this.sessionManager.isPresenter(server)) return;
 
-    const socket = this.sessionManager.getSessionByUserId(data.targetUserId);
+    const socket = this.sessionManager.getSessionByUserId(data.userId);
     if (socket) {
       this.sendToClient(socket, { type: "tag_change_requested" });
     }
@@ -330,7 +318,7 @@ export class BrunchRoom extends DurableObject<Env> {
     const question = await this.questionService.getRandomExcluding();
 
     if (question) {
-      const targetUser = this.sessionManager.getUserById(data.targetUserId);
+      const targetUser = this.sessionManager.getUserById(data.userId);
 
       this.questionService.currentQuestion = question;
       this.hintManager.clearHints();
@@ -463,7 +451,7 @@ export class BrunchRoom extends DurableObject<Env> {
     this.hintManager.clearHints();
     this.pollManager.resetPoll();
 
-    this.broadcast({ type: "question", question: null });
+    // this.broadcast({ type: "question", question: null });
     this.notifyHintListToPresenter();
     this.broadcastActiveHints();
     this.broadcastPollUpdate();
@@ -479,7 +467,7 @@ export class BrunchRoom extends DurableObject<Env> {
   private broadcastUserList() {
     const users = this.sessionManager.getAllUsers();
     this.broadcast({
-      type: "users",
+      type: "users_snapshot",
       users: users,
     });
   }

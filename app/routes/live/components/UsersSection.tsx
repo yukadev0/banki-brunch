@@ -124,13 +124,13 @@ export default function UsersSection({
   queueData,
   onRequestTagChange,
 }: UsersSectionProps) {
-  const getQueuePosition = (userId: string): number | null => {
+  const getQueuePosition = (userId: string) => {
     if (!queueData) return null;
     const index = queueData.queue.indexOf(userId);
     return index >= 0 ? index : null;
   };
 
-  const isNextInQueue = (userId: string): boolean => {
+  const isNextInQueue = (userId: string) => {
     if (!queueData || queueData.queue.length === 0) return false;
     return queueData.queue[queueData.currentIndex] === userId;
   };

@@ -1,33 +1,28 @@
-import { FaArrowRightLong, FaUser } from "react-icons/fa6";
+import { FaArrowRightLong } from "react-icons/fa6";
 import type {
   ClientQuestionInfo,
-  Hint,
   PollUpdateMessage,
 } from "workers/durableObjects/brunchRoom/types";
 import Option from "./Option";
 
 interface Props {
   question: ClientQuestionInfo;
-  questionForUser: { id: string; name: string } | null;
   isPresenter: boolean;
   onGetQuestion: () => void;
   pollData: PollUpdateMessage | null;
   onStartPoll: () => void;
   onCastVote: (option: string) => void;
   onEndPoll: () => void;
-  activeHints: Hint[];
 }
 
 export default function QuestionDisplay({
   question,
-  questionForUser,
   isPresenter,
   onGetQuestion,
   pollData,
   onStartPoll,
   onCastVote,
   onEndPoll,
-  activeHints,
 }: Props) {
   const { content, title } = question;
 
@@ -41,12 +36,6 @@ export default function QuestionDisplay({
             <span className="px-3 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 rounded-full">
               Current Question
             </span>
-            {questionForUser && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-green-400 bg-green-400/10 rounded-full">
-                <FaUser className="w-3 h-3" />
-                For {questionForUser.name}
-              </span>
-            )}
           </div>
           {isPresenter && (
             <div className="flex items-center gap-2">

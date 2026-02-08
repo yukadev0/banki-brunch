@@ -11,7 +11,6 @@ import type { UserInfo } from "workers/durableObjects/brunchRoom/types";
 interface Props {
   user: UserInfo | null;
   socket: WebSocket | null;
-  isConnected: boolean;
   preferredTags: string[];
   onOpenTagModal: () => void;
 }
@@ -19,7 +18,6 @@ interface Props {
 export default function ControlPanel({
   user,
   socket,
-  isConnected,
   preferredTags,
   onOpenTagModal,
 }: Props) {
@@ -52,7 +50,6 @@ export default function ControlPanel({
       <div className="space-y-3">
         <button
           onClick={onOpenTagModal}
-          disabled={!isConnected}
           className={clsx(
             "w-full px-4 py-3 cursor-pointer rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2",
             "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -84,7 +81,6 @@ export default function ControlPanel({
 
         <button
           onClick={handleToggleLurking}
-          disabled={!isConnected}
           title={
             user.isLurking ? "Switch to active mode" : "Switch to lurking mode"
           }
@@ -111,7 +107,6 @@ export default function ControlPanel({
 
         <button
           onClick={handleChangeRole}
-          disabled={!isConnected}
           title={
             user.role === "presenter"
               ? "Switch to viewer mode"
@@ -137,20 +132,6 @@ export default function ControlPanel({
             </>
           )}
         </button>
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-700">
-        <div className="flex items-center gap-2 text-sm">
-          <div
-            className={clsx(
-              "w-2 h-2 rounded-full",
-              isConnected ? "bg-green-500" : "bg-red-500",
-            )}
-          />
-          <span className="text-gray-400">
-            {isConnected ? "Connected" : "Disconnected"}
-          </span>
-        </div>
       </div>
     </div>
   );

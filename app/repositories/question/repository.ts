@@ -8,7 +8,7 @@ import {
   questionVotesSchema,
 } from "~/db/schemas/question";
 import { tagsSchema } from "~/db/schemas/tag";
-import type { QuestionInsertArgs, QuestionVotesSelectArgs } from "./types";
+import type { QuestionInsertArgs } from "./types";
 
 export const QuestionsRepository = {
   async getAll(db: DrizzleD1Database<any>) {
@@ -149,7 +149,7 @@ export const QuestionsRepository = {
     db: DrizzleD1Database<any>,
     questionId: number,
     userId: string,
-  ): Promise<QuestionVotesSelectArgs | undefined> {
+  ) {
     const [vote] = await db
       .select()
       .from(questionVotesSchema)
