@@ -249,13 +249,13 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
     }
   };
 
-  const handleRequestTagChange = (targetUserId: string) => {
+  const handleRequestTagChange = (targetUserId: string | undefined) => {
     if (isPresenter && socket) {
       socket.send(JSON.stringify({ type: "request_tag_change", targetUserId }));
     }
   };
 
-  const handleGetRandomForUser = (targetUserId: string) => {
+  const handleGetRandomForUser = (targetUserId: string | undefined) => {
     if (isPresenter && socket) {
       socket.send(
         JSON.stringify({ type: "get_random_question_for_user", targetUserId }),
@@ -355,12 +355,10 @@ export default function LivePage({ loaderData }: Route.ComponentProps) {
             setNoMatchingQuestion(null);
           }}
           onRequestTagChange={() => {
-            handleRequestTagChange(noMatchingQuestion.forUserId);
+            handleRequestTagChange(noMatchingQuestion.for?.id);
             setNoMatchingQuestion(null);
           }}
-          onGetRandom={() =>
-            handleGetRandomForUser(noMatchingQuestion.forUserId)
-          }
+          onGetRandom={() => handleGetRandomForUser(noMatchingQuestion.for?.id)}
           onSkip={handleSkipUser}
           onClose={() => setNoMatchingQuestion(null)}
         />

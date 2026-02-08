@@ -28,14 +28,6 @@ export class QuestionService {
     this.askedQuestionIds.add(question.id);
   }
 
-  hasAskedQuestion(id: number) {
-    return this.askedQuestionIds.has(id);
-  }
-
-  getAskedQuestionIds() {
-    return Array.from(this.askedQuestionIds);
-  }
-
   resetAskedQuestions() {
     this.askedQuestionIds.clear();
   }

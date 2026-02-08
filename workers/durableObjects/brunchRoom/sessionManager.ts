@@ -36,9 +36,9 @@ export class SessionManager {
   }
 
   getCurrentPresenter() {
-    for (const userInfo of this._sessions.values()) {
+    for (const [session, userInfo] of this._sessions) {
       if (userInfo.role === "presenter") {
-        return userInfo;
+        return { session, userInfo };
       }
     }
     return null;

@@ -29,9 +29,11 @@ export interface QuestionMessage {
 
 export interface NoMatchingQuestionMessage {
   type: "no_matching_question";
-  forUserId: string;
-  forUserName: string;
-  requestedTags: string[];
+  for?: {
+    id: string;
+    name: string;
+    tags: string[];
+  };
 }
 
 export interface RequestTagChangeMessage {

@@ -5,6 +5,10 @@ export class PollManager {
   private pollVotes: Map<string, string> = new Map();
   private pollOptions: string[] = ["A", "B", "C", "D"];
 
+  isActive() {
+    return this.isPollActive;
+  }
+
   startPoll() {
     this.resetPoll();
     this.isPollActive = true;
@@ -31,11 +35,7 @@ export class PollManager {
     return true;
   }
 
-  isActive() {
-    return this.isPollActive;
-  }
-
-  getPollUpdate(userId: string | null): PollUpdateMessage {
+  getPollUpdate(userId: string): PollUpdateMessage {
     const votes: Record<string, number> = {};
     for (const option of this.pollOptions) {
       votes[option] = 0;
@@ -53,15 +53,5 @@ export class PollManager {
       totalVotes: this.pollVotes.size,
       userVote: userId ? this.pollVotes.get(userId) || null : null,
     };
-  }
-
-  getAllPollUpdates(sessions: Map<WebSocket, { id: string }>) {
-    const updates = new Map<WebSocket, PollUpdateMessage>();
-
-    for (const [session, userInfo] of sessions) {
-      updates.set(session, this.getPollUpdate(userInfo.id));
-    }
-
-    return updates;
   }
 }

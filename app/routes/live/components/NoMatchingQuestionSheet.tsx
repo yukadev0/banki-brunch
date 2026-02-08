@@ -25,7 +25,7 @@ export default function NoMatchingQuestionSheet({
   onResetQuestions,
   onRequestTagChange,
 }: Props) {
-  const hasUser = data.forUserId !== undefined;
+  const hasUser = data.for !== undefined;
 
   return (
     <>
@@ -51,7 +51,7 @@ export default function NoMatchingQuestionSheet({
               {hasUser && (
                 <p className="text-sm text-gray-400 flex items-center gap-1">
                   <HiUser className="w-4 h-4" />
-                  For {data.forUserName}
+                  For {data.for?.name}
                 </p>
               )}
             </div>
@@ -65,13 +65,13 @@ export default function NoMatchingQuestionSheet({
         </div>
 
         <div className="px-6 py-4 overflow-y-auto max-h-[40vh]">
-          {hasUser && data.requestedTags && data.requestedTags.length > 0 && (
+          {hasUser && data.for?.tags && data.for?.tags.length > 0 && (
             <>
               <p className="text-sm text-gray-300 mb-3">
                 No questions found matching the requested tags:
               </p>
               <div className="flex flex-wrap gap-2 mb-4">
-                {data.requestedTags.map((tag) => (
+                {data.for?.tags.map((tag) => (
                   <span
                     key={tag}
                     className="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-full"
@@ -92,7 +92,7 @@ export default function NoMatchingQuestionSheet({
               className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
             >
               <HiTag className="w-4 h-4" />
-              Ask {data.forUserName} to Change Tags
+              Ask {data.for?.name} to Change Tags
             </button>
           )}
 
@@ -102,7 +102,7 @@ export default function NoMatchingQuestionSheet({
               className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
             >
               <HiArrowPath className="w-4 h-4" />
-              Get Random Question {hasUser && `for ${data.forUserName}`}
+              Get Random Question {hasUser && `for ${data.for?.name}`}
             </button>
           )}
 

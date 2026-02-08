@@ -13,6 +13,7 @@ import type {
   GetRandomQuestionForUserMessage,
   IdentifyMessage,
   RequestTagChangeMessage,
+  ServerMessage,
   SetTagPreferencesMessage,
   ToggleHintMessage,
   UserInfo,
@@ -126,13 +127,13 @@ export class BrunchRoom extends DurableObject<Env> {
   }
 
   private handleIdentify(server: WebSocket, data: IdentifyMessage) {
-    const existingSession = this.sessionManager.getSessionByUserId(data.id);
+    const session = this.sessionManager.getSessionByUserId(data.id);
 
-    if (existingSession) {
+    if (session) {
       try {
-        existingSession.close(1000, "Reconnected");
+        session.close(1000, "Reconnected");
       } catch {}
-      this.sessionManager.deleteSession(existingSession);
+      this.sessionManager.deleteSession(session);
     }
 
     const userInfo: UserInfo = {
@@ -197,13 +198,13 @@ export class BrunchRoom extends DurableObject<Env> {
     if (!userInfo) return;
 
     if (userInfo.role === "viewer") {
-      const existingPresenter = this.sessionManager.getCurrentPresenter();
-      if (existingPresenter) {
+      const presenter = this.sessionManager.getCurrentPresenter();
+      if (presenter) {
         this.sendToClient(server, {
           type: "role_change_rejected",
           reason: "presenter_exists",
-          currentPresenterId: existingPresenter.id,
-          currentPresenterName: existingPresenter.name,
+          currentPresenterId: presenter.userInfo.id,
+          currentPresenterName: presenter.userInfo.name,
         });
         return;
       }
@@ -213,7 +214,7 @@ export class BrunchRoom extends DurableObject<Env> {
     userInfo.role = newRole;
 
     if (newRole === "presenter") {
-      this.broadcastHintsList();
+      this.notifyHintListToPresenter();
     }
 
     this.sessionManager.setUserInfo(server, userInfo);
@@ -232,7 +233,7 @@ export class BrunchRoom extends DurableObject<Env> {
       if (question) {
         this.questionService.currentQuestion = question;
         this.hintManager.clearHints();
-        this.broadcastHintsList();
+        this.notifyHintListToPresenter();
         this.broadcastActiveHints();
         this.broadcastQuestion(null, null);
       } else {
@@ -248,7 +249,7 @@ export class BrunchRoom extends DurableObject<Env> {
     if (question) {
       this.questionService.currentQuestion = question;
       this.hintManager.clearHints();
-      this.broadcastHintsList();
+      this.notifyHintListToPresenter();
       this.broadcastActiveHints();
       this.sessionManager.advanceQueue();
       this.broadcastQueueUpdate();
@@ -265,14 +266,14 @@ export class BrunchRoom extends DurableObject<Env> {
     if (userInfo) {
       this.sendToClient(server, {
         type: "no_matching_question",
-        forUserId: userInfo.id,
-        forUserName: userInfo.name,
-        requestedTags: userInfo.preferredTags,
+        for: {
+          id: userInfo.id,
+          name: userInfo.name,
+          tags: userInfo.preferredTags,
+        },
       });
     } else {
-      this.sendToClient(server, {
-        type: "no_matching_question",
-      });
+      this.sendToClient(server, { type: "no_matching_question" });
     }
   }
 
@@ -333,7 +334,7 @@ export class BrunchRoom extends DurableObject<Env> {
 
       this.questionService.currentQuestion = question;
       this.hintManager.clearHints();
-      this.broadcastHintsList();
+      this.notifyHintListToPresenter();
       this.broadcastActiveHints();
       this.sessionManager.advanceQueue();
       this.broadcastQueueUpdate();
@@ -386,7 +387,7 @@ export class BrunchRoom extends DurableObject<Env> {
     );
 
     if (result.success) {
-      this.broadcastHintsList();
+      this.notifyHintListToPresenter();
     } else {
       this.sendToClient(server, {
         type: "hint_error",
@@ -401,7 +402,7 @@ export class BrunchRoom extends DurableObject<Env> {
     const result = this.hintManager.addCustomHint(data.content);
 
     if (result.success) {
-      this.broadcastHintsList();
+      this.notifyHintListToPresenter();
     } else {
       this.sendToClient(server, {
         type: "hint_error",
@@ -414,7 +415,7 @@ export class BrunchRoom extends DurableObject<Env> {
     if (!this.sessionManager.isPresenter(server)) return;
 
     this.hintManager.deleteHint(data.hintId);
-    this.broadcastHintsList();
+    this.notifyHintListToPresenter();
     this.broadcastActiveHints();
   }
 
@@ -422,7 +423,7 @@ export class BrunchRoom extends DurableObject<Env> {
     if (!this.sessionManager.isPresenter(server)) return;
 
     this.hintManager.toggleHint(data.hintId);
-    this.broadcastHintsList();
+    this.notifyHintListToPresenter();
     this.broadcastActiveHints();
   }
 
@@ -463,12 +464,12 @@ export class BrunchRoom extends DurableObject<Env> {
     this.pollManager.resetPoll();
 
     this.broadcast({ type: "question", question: null });
-    this.broadcastHintsList();
+    this.notifyHintListToPresenter();
     this.broadcastActiveHints();
     this.broadcastPollUpdate();
   }
 
-  private broadcast(message: object) {
+  private broadcast(message: ServerMessage) {
     const sessions = this.sessionManager.sessions;
     sessions.forEach((_, session) => {
       this.sendToClient(session, message);
@@ -494,29 +495,20 @@ export class BrunchRoom extends DurableObject<Env> {
 
   private broadcastPollUpdate() {
     const sessions = this.sessionManager.sessions;
-    const updates = this.pollManager.getAllPollUpdates(
-      new Map(
-        Array.from(sessions.entries()).map(([socket, user]) => [
-          socket,
-          { id: user.id },
-        ]),
-      ),
-    );
 
-    updates.forEach((message, session) => {
+    for (const [session, userInfo] of sessions) {
+      const message = this.pollManager.getPollUpdate(userInfo.id);
       this.sendToClient(session, message);
-    });
+    }
   }
 
-  private broadcastHintsList() {
-    const sessions = this.sessionManager.sessions;
-    for (const [session, userInfo] of sessions) {
-      if (userInfo.role === "presenter") {
-        this.sendToClient(session, {
-          type: "hints_list",
-          hints: this.hintManager.hints,
-        });
-      }
+  private notifyHintListToPresenter() {
+    const presenter = this.sessionManager.getCurrentPresenter();
+    if (presenter) {
+      this.sendToClient(presenter.session, {
+        type: "hints_list",
+        hints: this.hintManager.hints,
+      });
     }
   }
 
@@ -527,7 +519,7 @@ export class BrunchRoom extends DurableObject<Env> {
     });
   }
 
-  private sendToClient(server: WebSocket, message: object) {
+  private sendToClient(server: WebSocket, message: ServerMessage) {
     try {
       const payload = this.createPayload(message);
       server.send(payload);
@@ -545,7 +537,7 @@ export class BrunchRoom extends DurableObject<Env> {
     }
   }
 
-  private createPayload(message: object) {
+  private createPayload(message: ServerMessage) {
     return JSON.stringify({
       ...message,
     });
