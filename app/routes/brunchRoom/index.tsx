@@ -1,9 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
-import useWebSocket from "react-use-websocket";
 import type {
-  ClientMessage,
-  Identify,
   RoleChangeRejectedReason,
   UserId,
 } from "workers/durableObjects/brunchRoom/types";
@@ -22,16 +19,6 @@ import UsersSection from "./components/UsersSection";
 import useBrunchRoomApp from "./hooks/useBrunchRoomApp";
 
 const STORAGE_KEY = "banki-brunch-preferred-tags";
-
-function getStoredTags() {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
 
 function setStoredTags(tags: string[]) {
   if (typeof window === "undefined") return;
@@ -60,16 +47,31 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
   const { user, availableTags } = loaderData;
 
   const {
+    socket,
     selfUser,
-    isPresenter,
+    readyState,
     hintManager,
     pollManager,
     userManager,
     queueManager,
     targetUserName,
+    isSelfPresenter,
     questionManager,
-    onWebSocketMessage,
-  } = useBrunchRoomApp(user.id, {
+    handleRequestEndPoll,
+    handleRequestCastVote,
+    handleRequestSkipUser,
+    handleRequestQuestion,
+    handleRequestStartPoll,
+    handleRequestTagChange,
+    handleRequestDeleteHint,
+    handleRequestChangeRole,
+    handleRequestGenerateHint,
+    handleRequestAddCustomHint,
+    handleRequestToggleLurking,
+    handleRequestResetQuestions,
+    handleRequestSetTagPreferences,
+    handleRequestToggleHintVisibility,
+  } = useBrunchRoomApp(user, {
     onNoMatchingQuestion: () => {
       setShowNoMatchingQuestionModal(true);
     },
@@ -91,26 +93,6 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
     },
   });
 
-  const [url, setUrl] = useState<string | null>(null);
-  const { sendMessage, getWebSocket, readyState } = useWebSocket(url, {
-    onMessage: onWebSocketMessage,
-    onOpen: () => {
-      const storedTags = getStoredTags();
-      if (storedTags.length === 0) {
-        setShowTagModal(true);
-      }
-
-      const data: Identify = {
-        type: "identify",
-        id: user.id,
-        name: user.name,
-        image: user.image || null,
-        preferredTags: storedTags,
-      };
-      sendMessage(JSON.stringify(data));
-    },
-  });
-
   const [showTagModal, setShowTagModal] = useState(false);
   const [showTagChangeRequest, setShowTagChangeRequest] = useState(false);
   const [showNoMatchingQuestionModal, setShowNoMatchingQuestionModal] =
@@ -118,12 +100,6 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
 
   const { toasts, addToast, removeToast } = useToast();
 
-  useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    setUrl(`${protocol}://${window.location.host}/websocket`);
-  }, []);
-
-  const socket = getWebSocket();
   if (!socket || !selfUser || readyState !== WebSocket.OPEN) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -136,108 +112,6 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
         <h3 className="text-xl">Connecting...</h3>
       </div>
     );
-  }
-
-  function sendToServer(message: ClientMessage) {
-    try {
-      sendMessage(
-        JSON.stringify({
-          ...message,
-        }),
-      );
-    } catch (err) {
-      console.error("Error sending to server:", err);
-    }
-  }
-
-  function handleGetQuestion() {
-    if (isPresenter) {
-      sendToServer({ type: "request_question" });
-    }
-  }
-
-  function handleStartPoll() {
-    if (isPresenter) {
-      sendToServer({ type: "request_start_poll" });
-    }
-  }
-
-  function handleCastVote(option: string) {
-    if (!pollManager.isEnded) {
-      sendToServer({ type: "request_cast_vote", option });
-    }
-  }
-
-  function handleEndPoll() {
-    if (isPresenter && !pollManager.isEnded) {
-      sendToServer({ type: "request_end_poll" });
-    }
-  }
-
-  function handleTagsConfirm(tags: string[]) {
-    setStoredTags(tags);
-    setShowTagModal(false);
-    setShowTagChangeRequest(false);
-
-    sendToServer({ type: "request_set_tag_preferences", tags });
-  }
-
-  function handleRequestTagChange(userId: string) {
-    if (isPresenter) {
-      sendToServer({ type: "request_tag_change", userId });
-    }
-  }
-
-  function handleSkipUser() {
-    if (isPresenter) {
-      sendToServer({ type: "request_skip_user" });
-      setShowNoMatchingQuestionModal(false);
-    }
-  }
-
-  function handleToggleLurking() {
-    sendToServer({ type: "request_toggle_lurking" });
-  }
-
-  function handleChangeRole() {
-    sendToServer({ type: "request_change_role" });
-  }
-
-  function handleGenerateHint() {
-    if (hintManager.hintCount() < hintManager.MAX_HINTS) {
-      sendToServer({ type: "request_generate_hint" });
-    }
-  }
-
-  function handleAddCustomHint(content: string) {
-    if (hintManager.hintCount() < hintManager.MAX_HINTS) {
-      content = content.trim();
-      if (content) {
-        sendToServer({
-          type: "request_add_custom_hint",
-          content: content.slice(0, 500),
-        });
-      }
-    }
-  }
-
-  function handleDeleteHint(hintId: string) {
-    if (isPresenter) {
-      sendToServer({ type: "request_delete_hint", hintId });
-    }
-  }
-
-  function handleToggleHint(hintId: string) {
-    if (isPresenter) {
-      sendToServer({ type: "request_toggle_hint_visibility", hintId });
-    }
-  }
-
-  function handleResetQuestions() {
-    if (isPresenter) {
-      sendToServer({ type: "request_reset_questions" });
-      setShowNoMatchingQuestionModal(false);
-    }
   }
 
   return (
@@ -254,36 +128,36 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_240px] gap-2 mt-8">
           <UsersSection
+            selfId={selfUser.id}
+            isPresenter={isSelfPresenter}
+            queueData={queueManager.queueData}
+            activeUsers={userManager.getUsers()}
+            onRequestTagChange={handleRequestTagChange}
             getQueuePosition={(userId: UserId) =>
               queueManager.getQueuePosition(userId)
             }
             isNextInQueue={(userId: UserId) =>
               queueManager.isNextInQueue(userId)
             }
-            activeUsers={userManager.getUsers()}
-            selfId={selfUser.id}
-            isPresenter={isPresenter}
-            queueData={queueManager.queueData}
-            onRequestTagChange={handleRequestTagChange}
           />
 
           <QuestionSection
-            targetUserName={targetUserName || null}
-            isPresenter={isPresenter}
-            question={questionManager.currentQuestion}
-            onGetQuestion={handleGetQuestion}
+            isPresenter={isSelfPresenter}
             pollData={pollManager.pollData}
             pollEnded={pollManager.isEnded}
-            onStartPoll={handleStartPoll}
-            onCastVote={handleCastVote}
-            onEndPoll={handleEndPoll}
+            onEndPoll={handleRequestEndPoll}
+            onCastVote={handleRequestCastVote}
+            onStartPoll={handleRequestStartPoll}
+            onGetQuestion={handleRequestQuestion}
+            targetUserName={targetUserName || null}
+            question={questionManager.currentQuestion}
           />
 
           <ControlPanel
             user={selfUser}
-            handleToggleLurking={handleToggleLurking}
-            handleChangeRole={handleChangeRole}
+            handleChangeRole={handleRequestChangeRole}
             onOpenTagModal={() => setShowTagModal(true)}
+            handleToggleLurking={handleRequestToggleLurking}
           />
         </div>
 
@@ -292,16 +166,16 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
           activeHints={hintManager.activeHints}
         />
 
-        {isPresenter && (
+        {isSelfPresenter && (
           <PresenterHints
-            handleAddCustomHint={handleAddCustomHint}
-            handleDeleteHint={handleDeleteHint}
-            handleGenerateHint={handleGenerateHint}
-            handleToggleHint={handleToggleHint}
             hintManager={hintManager}
             maxHints={hintManager.MAX_HINTS}
-            hasQuestion={questionManager.currentQuestion !== null}
             isGenerating={hintManager.isGenerating}
+            handleDeleteHint={handleRequestDeleteHint}
+            handleGenerateHint={handleRequestGenerateHint}
+            handleAddCustomHint={handleRequestAddCustomHint}
+            handleToggleHint={handleRequestToggleHintVisibility}
+            hasQuestion={questionManager.currentQuestion !== null}
           />
         )}
       </div>
@@ -309,12 +183,17 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
       <TagSelectionDrawer
         isOpen={showTagModal}
         availableTags={availableTags}
-        selectedTags={selfUser.preferredTags ?? []}
-        onConfirm={handleTagsConfirm}
+        onConfirm={(tags: string[]) => {
+          setStoredTags(tags);
+          setShowTagModal(false);
+          setShowTagChangeRequest(false);
+          handleRequestSetTagPreferences(tags);
+        }}
         onClose={() => {
           setShowTagModal(false);
           setShowTagChangeRequest(false);
         }}
+        selectedTags={selfUser.preferredTags ?? []}
         title={
           showTagChangeRequest
             ? "Presenter Requests Tag Change"
@@ -327,11 +206,15 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
         }
       />
 
-      {showNoMatchingQuestionModal && isPresenter && (
+      {showNoMatchingQuestionModal && isSelfPresenter && (
         <NoMatchingQuestionSheet
-          queueManager={queueManager}
           usersManager={userManager}
-          onResetQuestions={handleResetQuestions}
+          queueManager={queueManager}
+          onResetQuestions={() => {
+            handleRequestResetQuestions(() =>
+              setShowNoMatchingQuestionModal(false),
+            );
+          }}
           onRequestTagChange={() => {
             const userId = queueManager.getNextUserId();
             if (userId) {
@@ -339,8 +222,10 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
             }
             setShowNoMatchingQuestionModal(false);
           }}
-          onSkip={handleSkipUser}
           onClose={() => setShowNoMatchingQuestionModal(false)}
+          onSkipUser={() => {
+            handleRequestSkipUser(() => setShowNoMatchingQuestionModal(false));
+          }}
         />
       )}
 

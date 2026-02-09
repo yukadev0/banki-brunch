@@ -73,4 +73,37 @@ export default class HintManager {
         break;
     }
   }
+
+  public handleRequestGenerateHint = () => {
+    if (this.hintCount() < this.MAX_HINTS) {
+      this.m_brunchApp.sendToServer({ type: "request_generate_hint" });
+    }
+  };
+
+  public handleRequestAddCustomHint = (content: string) => {
+    if (this.hintCount() < this.MAX_HINTS) {
+      content = content.trim();
+      if (content) {
+        this.m_brunchApp.sendToServer({
+          type: "request_add_custom_hint",
+          content: content.slice(0, 500),
+        });
+      }
+    }
+  };
+
+  public handleRequestDeleteHint = (hintId: string) => {
+    if (this.m_brunchApp.isSelfPresenter) {
+      this.m_brunchApp.sendToServer({ type: "request_delete_hint", hintId });
+    }
+  };
+
+  public handleRequestToggleHintVisibility = (hintId: string) => {
+    if (this.m_brunchApp.isSelfPresenter) {
+      this.m_brunchApp.sendToServer({
+        type: "request_toggle_hint_visibility",
+        hintId,
+      });
+    }
+  };
 }

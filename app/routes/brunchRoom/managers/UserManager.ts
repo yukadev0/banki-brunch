@@ -72,4 +72,25 @@ export default class UserManager {
         break;
     }
   }
+
+  public handleRequestSetTagPreferences = (tags: string[]) => {
+    this.m_brunchApp.sendToServer({
+      type: "request_set_tag_preferences",
+      tags,
+    });
+  };
+
+  public handleRequestTagChange = (userId: string) => {
+    if (this.m_brunchApp.isSelfPresenter) {
+      this.m_brunchApp.sendToServer({ type: "request_tag_change", userId });
+    }
+  };
+
+  public handleRequestToggleLurking = () => {
+    this.m_brunchApp.sendToServer({ type: "request_toggle_lurking" });
+  };
+
+  public handleRequestChangeRole = () => {
+    this.m_brunchApp.sendToServer({ type: "request_change_role" });
+  };
 }

@@ -1,4 +1,6 @@
+import type { WebSocketHook } from "react-use-websocket/dist/lib/types";
 import type {
+  ClientMessage,
   RoleChangeRejectedReason,
   ServerMessage,
   UserId,
@@ -18,6 +20,7 @@ export type BrunchRoomAppOptions = {
 
 export default class BrunchRoomApp {
   private m_selfId: UserId;
+  private m_webSocketHook: WebSocketHook | null = null;
 
   private m_userManager: UserManager;
   private m_pollManager: PollManager;
@@ -39,8 +42,17 @@ export default class BrunchRoomApp {
     this.m_options = options || {};
   }
 
+  public setWebSocketHook(webSocketHook: WebSocketHook) {
+    this.m_webSocketHook = webSocketHook;
+  }
+
   public get selfId() {
     return this.m_selfId;
+  }
+
+  public get isSelfPresenter() {
+    const user = this.m_userManager.getUserInfo(this.m_selfId);
+    return !!user && user.role === "presenter";
   }
 
   public getPollManager() {
@@ -61,6 +73,15 @@ export default class BrunchRoomApp {
 
   public getQuestionManager() {
     return this.m_questionManager;
+  }
+
+  public sendToServer(message: ClientMessage) {
+    if (!this.m_webSocketHook) return;
+    try {
+      this.m_webSocketHook.sendMessage(JSON.stringify(message));
+    } catch (err) {
+      console.error("Error sending to server:", err);
+    }
   }
 
   public onWebSocketMessage = (event: MessageEvent) => {

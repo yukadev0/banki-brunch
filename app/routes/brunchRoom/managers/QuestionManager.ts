@@ -47,4 +47,18 @@ export default class QuestionManager {
         break;
     }
   }
+
+  public handleRequestQuestion = () => {
+    const app = this.m_brunchApp;
+    if (app.isSelfPresenter) {
+      app.sendToServer({ type: "request_question" });
+    }
+  };
+
+  public handleRequestResetQuestions = (onSuccess?: () => void) => {
+    if (this.m_brunchApp.isSelfPresenter) {
+      this.m_brunchApp.sendToServer({ type: "request_reset_questions" });
+      onSuccess?.();
+    }
+  };
 }

@@ -36,4 +36,22 @@ export default class PollManager {
         break;
     }
   }
+
+  public handleRequestStartPoll = () => {
+    if (this.m_brunchApp.isSelfPresenter) {
+      this.m_brunchApp.sendToServer({ type: "request_start_poll" });
+    }
+  };
+
+  public handleRequestCastVote = (option: string) => {
+    if (!this.m_isEnded) {
+      this.m_brunchApp.sendToServer({ type: "request_cast_vote", option });
+    }
+  };
+
+  public handleRequestEndPoll = () => {
+    if (this.m_brunchApp.isSelfPresenter && !this.m_isEnded) {
+      this.m_brunchApp.sendToServer({ type: "request_end_poll" });
+    }
+  };
 }

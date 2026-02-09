@@ -13,14 +13,14 @@ type Props = {
   usersManager: UserManager;
   queueManager: QueueManager;
 
-  onSkip: () => void;
   onClose: () => void;
+  onSkipUser: () => void;
   onResetQuestions: () => void;
   onRequestTagChange: () => void;
 };
 
 export default function NoMatchingQuestionSheet({
-  onSkip,
+  onSkipUser: onSkip,
   onClose,
   queueManager,
   usersManager,

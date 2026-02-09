@@ -41,4 +41,11 @@ export default class QueueManager {
   public reset() {
     this.m_queueData = null;
   }
+
+  public handleRequestSkipUser = (onSuccess?: () => void) => {
+    if (this.m_brunchApp.isSelfPresenter) {
+      this.m_brunchApp.sendToServer({ type: "request_skip_user" });
+      onSuccess?.();
+    }
+  };
 }
