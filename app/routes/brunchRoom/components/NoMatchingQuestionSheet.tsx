@@ -13,7 +13,6 @@ type Props = {
 
   onSkip: () => void;
   onClose: () => void;
-  onGetRandom: () => void;
   onResetQuestions: () => void;
   onRequestTagChange: () => void;
 };
@@ -21,7 +20,6 @@ type Props = {
 export default function NoMatchingQuestionSheet({
   onSkip,
   onClose,
-  onGetRandom,
   queueManager,
   onResetQuestions,
   onRequestTagChange,
@@ -97,16 +95,6 @@ export default function NoMatchingQuestionSheet({
             >
               <HiTag className="w-4 h-4" />
               Ask {nextUser.name} to Change Tags
-            </button>
-          )}
-
-          {hasUser && (
-            <button
-              onClick={onGetRandom}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <HiArrowPath className="w-4 h-4" />
-              Get Random Question {hasUser && `for ${nextUser.name}`}
             </button>
           )}
 

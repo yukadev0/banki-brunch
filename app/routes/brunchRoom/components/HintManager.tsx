@@ -15,18 +15,25 @@ import type { HintInfo } from "workers/durableObjects/brunchRoom/types";
 
 type Props = {
   hints: HintInfo[];
-  socket: WebSocket;
   hasQuestion: boolean;
   isGenerating: boolean;
   maxHints: number;
+
+  handleDeleteHint: (hintId: string) => void;
+  handleToggleHint: (hintId: string) => void;
+  handleGenerateHint: () => void;
+  handleAddCustomHint: (content: string) => void;
 };
 
 export default function HintManager({
   hints,
-  socket,
   hasQuestion,
   isGenerating,
   maxHints,
+  handleAddCustomHint,
+  handleDeleteHint,
+  handleGenerateHint,
+  handleToggleHint,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -36,38 +43,11 @@ export default function HintManager({
     setIsExpanded(true);
   }, []);
 
-  const handleGenerateHint = () => {
-    if (socket.readyState === WebSocket.OPEN && hints.length < maxHints) {
-      socket.send(JSON.stringify({ type: "generate_hint" }));
-    }
-  };
-
-  const handleAddCustomHint = () => {
-    if (socket.readyState === WebSocket.OPEN && hints.length < maxHints) {
-      const content = customContent.trim();
-      if (!content) return;
-      socket.send(
-        JSON.stringify({
-          type: "add_custom_hint",
-          content: content.slice(0, 500),
-        }),
-      );
-      setCustomContent("");
-      setIsAddingCustom(false);
-    }
-  };
-
-  const handleDeleteHint = (hintId: string) => {
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "delete_hint", hintId }));
-    }
-  };
-
-  const handleToggleHint = (hintId: string) => {
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "toggle_hint", hintId }));
-    }
-  };
+  function handleAddCustom() {
+    handleAddCustomHint(customContent);
+    setIsAddingCustom(false);
+    setCustomContent("");
+  }
 
   const handleCancelCustom = () => {
     setIsAddingCustom(false);
@@ -164,7 +144,7 @@ export default function HintManager({
                   onChange={(e) => setCustomContent(e.target.value)}
                   onKeyDown={(e) => {
                     if (!e.shiftKey && e.key === "Enter") {
-                      handleAddCustomHint();
+                      handleAddCustom();
                     }
                   }}
                   placeholder="Enter a helpful hint for the question..."
@@ -185,7 +165,7 @@ export default function HintManager({
                       Cancel
                     </button>
                     <button
-                      onClick={handleAddCustomHint}
+                      onClick={handleAddCustom}
                       disabled={!customContent.trim()}
                       className={clsx(
                         "cursor-pointer px-4 py-2 text-sm font-medium rounded-lg transition-colors",

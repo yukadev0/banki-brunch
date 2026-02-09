@@ -10,29 +10,20 @@ import type { UserInfo } from "workers/durableObjects/brunchRoom/types";
 
 type Props = {
   user: UserInfo | null;
-  socket: WebSocket | null;
   preferredTags: string[];
+
   onOpenTagModal: () => void;
+  handleToggleLurking: () => void;
+  handleChangeRole: () => void;
 };
 
 export default function ControlPanel({
   user,
-  socket,
   preferredTags,
   onOpenTagModal,
+  handleChangeRole,
+  handleToggleLurking,
 }: Props) {
-  const handleToggleLurking = () => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "toggle_lurking" }));
-    }
-  };
-
-  const handleChangeRole = () => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "change_role" }));
-    }
-  };
-
   if (!user) {
     return (
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">

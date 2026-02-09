@@ -1,8 +1,8 @@
-import type { PollUpdateMessage } from "./types";
+import type { PollUpdate, UserId } from "./types";
 
 export class PollManager {
   private isPollActive: boolean = false;
-  private pollVotes: Map<string, string> = new Map();
+  private pollVotes: Map<UserId, string> = new Map();
   private pollOptions: string[] = ["A", "B", "C", "D"];
 
   isActive() {
@@ -23,7 +23,7 @@ export class PollManager {
     this.isPollActive = false;
   }
 
-  castVote(userId: string, option: string) {
+  castVote(userId: UserId, option: string) {
     if (!this.isPollActive) return false;
     if (!this.pollOptions.includes(option)) return false;
 
@@ -35,7 +35,7 @@ export class PollManager {
     return true;
   }
 
-  getPollUpdate(userId: string): PollUpdateMessage {
+  getPollUpdate(userId: UserId): PollUpdate {
     const votes: Record<string, number> = {};
     for (const option of this.pollOptions) {
       votes[option] = 0;

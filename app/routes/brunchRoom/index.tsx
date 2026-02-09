@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import useWebSocket from "react-use-websocket";
 import type {
-  IdentifyMessage,
+  ClientMessage,
+  Identify,
   ServerMessage,
 } from "workers/durableObjects/brunchRoom/types";
 import { requireSession } from "~/lib/auth.helper";
@@ -60,42 +62,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
   const { user, availableTags } = loaderData;
 
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-
-  const pollManager = usePoll();
-  const questionManager = useQuestion();
-  const userRegistry = useUserRegistry(user.id);
-  const queueManager = useQueue(userRegistry.users);
-  const hintsManager = useHints((message) => addToast(message, "error", 5000));
-
-  const [showTagModal, setShowTagModal] = useState(false);
-  const [showTagChangeRequest, setShowTagChangeRequest] = useState(false);
-  const [showNoMatchingQuestionModal, setShowNoMatchingQuestionModal] =
-    useState(false);
-
-  const { toasts, addToast, removeToast } = useToast();
-
-  useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${protocol}://${window.location.host}/websocket`);
-
-    ws.addEventListener("open", () => {
-      const storedTags = getStoredTags();
-      if (storedTags.length === 0) {
-        setShowTagModal(true);
-      }
-
-      const data: IdentifyMessage = {
-        type: "identify",
-        id: user.id,
-        name: user.name,
-        image: user.image || null,
-        preferredTags: storedTags,
-      };
-      ws.send(JSON.stringify(data));
-    });
-
-    ws.addEventListener("message", (event) => {
+  const [url, setUrl] = useState<string | null>(null);
+  const { sendMessage, getWebSocket, readyState } = useWebSocket(url, {
+    onMessage: (event) => {
       try {
         const data = JSON.parse(event.data) as ServerMessage;
 
@@ -130,11 +99,11 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
             pollManager.handleMessage(data);
             break;
 
-          case "hints_list":
           case "hint_error":
-          case "active_hints":
           case "hint_generated":
           case "hint_generating":
+          case "hints_list_snapshot":
+          case "active_hints_snapshot":
             hintsManager.handleMessage(data);
             break;
 
@@ -154,26 +123,45 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
       } catch (err) {
         console.error("Error parsing message:", err);
       }
-    });
+    },
+    onOpen: () => {
+      const storedTags = getStoredTags();
+      if (storedTags.length === 0) {
+        setShowTagModal(true);
+      }
 
-    ws.addEventListener("close", () => {
-      setSocket(null);
-    });
+      const data: Identify = {
+        type: "identify",
+        id: user.id,
+        name: user.name,
+        image: user.image || null,
+        preferredTags: storedTags,
+      };
+      sendMessage(JSON.stringify(data));
+    },
+  });
 
-    ws.addEventListener("error", (error) => {
-      console.error("WebSocket error:", error);
-    });
+  const pollManager = usePoll();
+  const questionManager = useQuestion();
+  const userRegistry = useUserRegistry(user.id);
+  const queueManager = useQueue(userRegistry.users);
+  const hintsManager = useHints((message) => addToast(message, "error", 5000));
 
-    setSocket(ws);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [showTagChangeRequest, setShowTagChangeRequest] = useState(false);
+  const [showNoMatchingQuestionModal, setShowNoMatchingQuestionModal] =
+    useState(false);
 
-    return () => {
-      ws.close();
-    };
+  const { toasts, addToast, removeToast } = useToast();
+
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    setUrl(`${protocol}://${window.location.host}/websocket`);
   }, []);
 
+  const socket = getWebSocket();
   const self = userRegistry.getSelf();
-
-  if (!socket || !self) {
+  if (!socket || !self || readyState !== WebSocket.OPEN) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Link
@@ -187,66 +175,109 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
     );
   }
 
+  function sendToServer(message: ClientMessage) {
+    try {
+      sendMessage(
+        JSON.stringify({
+          ...message,
+        }),
+      );
+    } catch (err) {
+      console.error("Error sending to server:", err);
+    }
+  }
+
   const isPresenter = self.role === "presenter";
 
-  const handleGetQuestion = () => {
+  function handleGetQuestion() {
     if (isPresenter) {
-      socket.send(JSON.stringify({ type: "get_question" }));
+      sendToServer({ type: "request_question" });
     }
-  };
+  }
 
-  const handleStartPoll = () => {
+  function handleStartPoll() {
     if (isPresenter) {
-      socket.send(JSON.stringify({ type: "start_poll" }));
+      sendToServer({ type: "request_start_poll" });
     }
-  };
+  }
 
-  const handleCastVote = (option: string) => {
+  function handleCastVote(option: string) {
     if (!pollManager.pollEnded) {
-      socket.send(JSON.stringify({ type: "cast_vote", option }));
+      sendToServer({ type: "request_cast_vote", option });
     }
-  };
+  }
 
-  const handleEndPoll = () => {
+  function handleEndPoll() {
     if (isPresenter && !pollManager.pollEnded) {
-      socket.send(JSON.stringify({ type: "end_poll" }));
+      sendToServer({ type: "request_end_poll" });
     }
-  };
+  }
 
-  const handleTagsConfirm = (tags: string[]) => {
+  function handleTagsConfirm(tags: string[]) {
     setStoredTags(tags);
     setShowTagModal(false);
     setShowTagChangeRequest(false);
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "set_tag_preferences", tags }));
-    }
-  };
+    sendToServer({ type: "request_set_tag_preferences", tags });
+  }
 
-  const handleRequestTagChange = (userId: string) => {
-    if (isPresenter && socket) {
-      socket.send(JSON.stringify({ type: "request_tag_change", userId }));
+  function handleRequestTagChange(userId: string) {
+    if (isPresenter) {
+      sendToServer({ type: "request_tag_change", userId });
     }
-  };
+  }
 
-  const handleGetRandomForUser = (userId: string) => {
-    if (isPresenter && socket) {
-      socket.send(
-        JSON.stringify({
-          type: "get_random_question_for_user",
-          userId,
-        }),
-      );
+  function handleSkipUser() {
+    if (isPresenter) {
+      sendToServer({ type: "request_skip_user" });
       setShowNoMatchingQuestionModal(false);
     }
-  };
+  }
 
-  const handleSkipUser = () => {
-    if (isPresenter && socket) {
-      socket.send(JSON.stringify({ type: "skip_user" }));
+  function handleToggleLurking() {
+    sendToServer({ type: "request_toggle_lurking" });
+  }
+
+  function handleChangeRole() {
+    sendToServer({ type: "request_change_role" });
+  }
+
+  function handleGenerateHint() {
+    if (hintsManager.hints.length < hintsManager.MAX_HINTS) {
+      sendToServer({ type: "request_generate_hint" });
+    }
+  }
+
+  function handleAddCustomHint(content: string) {
+    if (hintsManager.hints.length < hintsManager.MAX_HINTS) {
+      content = content.trim();
+      if (content) {
+        sendToServer({
+          type: "request_add_custom_hint",
+          content: content.slice(0, 500),
+        });
+      }
+    }
+  }
+
+  function handleDeleteHint(hintId: string) {
+    if (isPresenter) {
+      sendToServer({ type: "request_delete_hint", hintId });
+    }
+  }
+
+  function handleToggleHint(hintId: string) {
+    if (isPresenter) {
+      sendToServer({ type: "request_toggle_hint_visibility", hintId });
+    }
+  }
+
+  function handleResetQuestions() {
+    if (isPresenter) {
+      sendToServer({ type: "request_reset_questions" });
       setShowNoMatchingQuestionModal(false);
     }
-  };
+  }
 
   const targetUserName = questionManager.forUserId
     ? userRegistry.getById(questionManager.forUserId)?.name
@@ -289,9 +320,10 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
 
           <ControlPanel
             user={self}
-            socket={socket}
-            preferredTags={userRegistry.getSelf()?.preferredTags ?? []}
+            handleToggleLurking={handleToggleLurking}
+            handleChangeRole={handleChangeRole}
             onOpenTagModal={() => setShowTagModal(true)}
+            preferredTags={userRegistry.getSelf()?.preferredTags ?? []}
           />
         </div>
 
@@ -302,7 +334,10 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
 
         {isPresenter && (
           <HintManager
-            socket={socket}
+            handleAddCustomHint={handleAddCustomHint}
+            handleDeleteHint={handleDeleteHint}
+            handleGenerateHint={handleGenerateHint}
+            handleToggleHint={handleToggleHint}
             hints={hintsManager.hints}
             maxHints={hintsManager.MAX_HINTS}
             hasQuestion={questionManager.currentQuestion !== null}
@@ -335,22 +370,13 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
       {showNoMatchingQuestionModal && isPresenter && (
         <NoMatchingQuestionSheet
           queueManager={queueManager}
-          onResetQuestions={() => {
-            socket.send(JSON.stringify({ type: "reset_questions" }));
-            setShowNoMatchingQuestionModal(false);
-          }}
+          onResetQuestions={handleResetQuestions}
           onRequestTagChange={() => {
             const user = queueManager.getNextInQueue();
             if (user) {
               handleRequestTagChange(user.id);
             }
             setShowNoMatchingQuestionModal(false);
-          }}
-          onGetRandom={() => {
-            const user = queueManager.getNextInQueue();
-            if (user) {
-              handleGetRandomForUser(user.id);
-            }
           }}
           onSkip={handleSkipUser}
           onClose={() => setShowNoMatchingQuestionModal(false)}

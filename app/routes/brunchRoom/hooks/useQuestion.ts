@@ -13,12 +13,12 @@ export default function useQuestion() {
 
   function handleMessage(data: ServerMessage) {
     switch (data.type) {
-      case "targeted_question":
-        setForUserId(data.userId);
-        setCurrentQuestion(data.question);
-        break;
       case "question":
         setForUserId(null);
+        setCurrentQuestion(data.question);
+        break;
+      case "targeted_question":
+        setForUserId(data.userId);
         setCurrentQuestion(data.question);
         break;
     }

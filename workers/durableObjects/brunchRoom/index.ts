@@ -5,17 +5,16 @@ import { PollManager } from "./pollManager";
 import { QuestionService } from "./questionService";
 import { SessionManager } from "./sessionManager";
 import type {
-  AddCustomHintMessage,
-  CastVoteMessage,
   ClientMessage,
   ClientQuestionInfo,
-  DeleteHintMessage,
-  GetRandomQuestionForUserMessage,
-  IdentifyMessage,
-  RequestTagChangeMessage,
+  Identify,
+  RequestAddCustomHint,
+  RequestCastVote,
+  RequestDeleteHint,
+  RequestSetTagPreferences,
+  RequestTagChange,
+  RequestToggleHintVisibility,
   ServerMessage,
-  SetTagPreferencesMessage,
-  ToggleHintMessage,
   UserInfo,
 } from "./types";
 
@@ -70,53 +69,47 @@ export class BrunchRoom extends DurableObject<Env> {
         case "identify":
           this.handleIdentify(server, data);
           break;
-        case "toggle_lurking":
+        case "request_toggle_lurking":
           this.handleToggleLurking(server);
           break;
-        case "change_role":
+        case "request_change_role":
           this.handleChangeRole(server);
           break;
-        case "get_question":
+        case "request_question":
           await this.handleGetQuestion(server);
           break;
-        case "start_poll":
+        case "request_start_poll":
           this.handleStartPoll(server);
           break;
-        case "cast_vote":
+        case "request_cast_vote":
           this.handleCastVote(server, data);
           break;
-        case "end_poll":
+        case "request_end_poll":
           this.handleEndPoll(server);
           break;
-        case "set_tag_preferences":
+        case "request_set_tag_preferences":
           this.handleSetTagPreferences(server, data);
           break;
         case "request_tag_change":
           this.handleRequestTagChange(server, data);
           break;
-        case "get_random_question_for_user":
-          await this.handleGetRandomQuestionForUser(server, data);
-          break;
-        case "skip_user":
+        case "request_skip_user":
           await this.handleSkipUser(server);
           break;
-        case "reset_questions":
+        case "request_reset_questions":
           this.handleResetQuestions(server);
           break;
-        case "generate_hint":
+        case "request_generate_hint":
           await this.handleGenerateHint(server);
           break;
-        case "add_custom_hint":
-          this.handleAddCustomHint(server, data as AddCustomHintMessage);
+        case "request_add_custom_hint":
+          this.handleAddCustomHint(server, data);
           break;
-        case "delete_hint":
-          this.handleDeleteHint(server, data as DeleteHintMessage);
+        case "request_delete_hint":
+          this.handleDeleteHint(server, data);
           break;
-        case "toggle_hint":
-          this.handleToggleHint(server, data as ToggleHintMessage);
-          break;
-        case "show_selected_hints":
-          this.handleShowSelectedHints(server);
+        case "request_toggle_hint_visibility":
+          this.handleToggleHint(server, data);
           break;
         default:
           console.warn("Unknown message type:", (data as ClientMessage).type);
@@ -126,7 +119,7 @@ export class BrunchRoom extends DurableObject<Env> {
     }
   }
 
-  private handleIdentify(server: WebSocket, data: IdentifyMessage) {
+  private handleIdentify(server: WebSocket, data: Identify) {
     const session = this.sessionManager.getSessionByUserId(data.id);
 
     if (session) {
@@ -171,16 +164,17 @@ export class BrunchRoom extends DurableObject<Env> {
 
     if (userInfo.role === "presenter") {
       this.sendToClient(server, {
-        type: "hints_list",
-        hints: this.hintManager.hints,
+        type: "hints_list_snapshot",
+        hints: this.hintManager.getHintsClone(),
       });
     }
 
-    const activeHints = this.hintManager.getActiveHints();
-    this.sendToClient(server, {
-      type: "active_hints",
-      hints: activeHints,
-    });
+    if (this.hintManager.getActiveHints().length > 0) {
+      this.sendToClient(server, {
+        type: "active_hints_snapshot",
+        hints: this.hintManager.getActiveHints(),
+      });
+    }
   }
 
   private handleToggleLurking(server: WebSocket) {
@@ -220,6 +214,7 @@ export class BrunchRoom extends DurableObject<Env> {
 
     this.sessionManager.setUserInfo(server, userInfo);
     this.sessionManager.updateViewerQueue();
+    this.broadcastQueueUpdate();
     this.broadcastUserList();
   }
 
@@ -286,7 +281,7 @@ export class BrunchRoom extends DurableObject<Env> {
 
   private handleSetTagPreferences(
     server: WebSocket,
-    data: SetTagPreferencesMessage,
+    data: RequestSetTagPreferences,
   ) {
     const userInfo = this.sessionManager.getUserInfo(server);
     if (!userInfo) return;
@@ -296,36 +291,12 @@ export class BrunchRoom extends DurableObject<Env> {
     this.broadcastUserList();
   }
 
-  private handleRequestTagChange(
-    server: WebSocket,
-    data: RequestTagChangeMessage,
-  ) {
+  private handleRequestTagChange(server: WebSocket, data: RequestTagChange) {
     if (!this.sessionManager.isPresenter(server)) return;
 
     const socket = this.sessionManager.getSessionByUserId(data.userId);
     if (socket) {
       this.sendToClient(socket, { type: "tag_change_requested" });
-    }
-  }
-
-  private async handleGetRandomQuestionForUser(
-    server: WebSocket,
-    data: GetRandomQuestionForUserMessage,
-  ) {
-    if (!this.sessionManager.isPresenter(server)) return;
-
-    const question = await this.questionService.getRandomExcluding();
-
-    if (question) {
-      const targetUser = this.sessionManager.getUserById(data.userId);
-
-      this.questionService.currentQuestion = question;
-      this.hintManager.clearHints();
-      this.notifyHintListToPresenter();
-      this.broadcastActiveHints();
-      this.sessionManager.advanceQueue();
-      this.broadcastQueueUpdate();
-      this.broadcastQuestion(targetUser?.id || null, targetUser?.name || null);
     }
   }
 
@@ -350,7 +321,7 @@ export class BrunchRoom extends DurableObject<Env> {
     this.broadcastPollUpdate();
   }
 
-  private handleCastVote(server: WebSocket, data: CastVoteMessage) {
+  private handleCastVote(server: WebSocket, data: RequestCastVote) {
     const userInfo = this.sessionManager.getUserInfo(server);
     if (!userInfo) return;
 
@@ -384,7 +355,7 @@ export class BrunchRoom extends DurableObject<Env> {
     }
   }
 
-  private handleAddCustomHint(server: WebSocket, data: AddCustomHintMessage) {
+  private handleAddCustomHint(server: WebSocket, data: RequestAddCustomHint) {
     if (!this.sessionManager.isPresenter(server)) return;
 
     const result = this.hintManager.addCustomHint(data.content);
@@ -399,7 +370,7 @@ export class BrunchRoom extends DurableObject<Env> {
     }
   }
 
-  private handleDeleteHint(server: WebSocket, data: DeleteHintMessage) {
+  private handleDeleteHint(server: WebSocket, data: RequestDeleteHint) {
     if (!this.sessionManager.isPresenter(server)) return;
 
     const activeHintCount = this.hintManager.getActiveHints().length;
@@ -412,16 +383,14 @@ export class BrunchRoom extends DurableObject<Env> {
     }
   }
 
-  private handleToggleHint(server: WebSocket, data: ToggleHintMessage) {
+  private handleToggleHint(
+    server: WebSocket,
+    data: RequestToggleHintVisibility,
+  ) {
     if (!this.sessionManager.isPresenter(server)) return;
 
     this.hintManager.toggleHint(data.hintId);
     this.notifyHintListToPresenter();
-    this.broadcastActiveHints();
-  }
-
-  private handleShowSelectedHints(server: WebSocket) {
-    if (!this.sessionManager.isPresenter(server)) return;
     this.broadcastActiveHints();
   }
 
@@ -497,15 +466,15 @@ export class BrunchRoom extends DurableObject<Env> {
     const presenter = this.sessionManager.getCurrentPresenter();
     if (presenter) {
       this.sendToClient(presenter.session, {
-        type: "hints_list",
-        hints: this.hintManager.hints,
+        type: "hints_list_snapshot",
+        hints: this.hintManager.getHintsClone(),
       });
     }
   }
 
   private broadcastActiveHints() {
     this.broadcast({
-      type: "active_hints",
+      type: "active_hints_snapshot",
       hints: this.hintManager.getActiveHints(),
     });
   }

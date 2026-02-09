@@ -2,45 +2,51 @@ import type { HintInfo, ServerQuestionInfo } from "./types";
 
 export class HintManager {
   private ai: Ai<AiModels>;
-  private _hints: HintInfo[] = [];
+  private hints: HintInfo[] = [];
   private readonly MAX_HINTS = 3;
 
   constructor(ai: Ai<AiModels>) {
     this.ai = ai;
   }
 
-  get hints() {
-    return this._hints;
+  *getHints() {
+    for (const hint of this.hints) {
+      yield hint;
+    }
+  }
+
+  getHintsClone() {
+    return [...this.hints];
   }
 
   getActiveHints() {
-    return this._hints.filter((h) => h.isVisible);
+    return this.hints.filter((h) => h.isVisible);
   }
 
   canAddHint() {
-    return this._hints.length < this.MAX_HINTS;
+    return this.hints.length < this.MAX_HINTS;
   }
 
   clearHints() {
-    this._hints = [];
+    this.hints = [];
   }
 
   addHint(hint: HintInfo) {
     if (!this.canAddHint()) {
       return false;
     }
-    this._hints.push(hint);
+    this.hints.push(hint);
     return true;
   }
 
   deleteHint(hintId: string) {
-    const initialLength = this._hints.length;
-    this._hints = this._hints.filter((h) => h.id !== hintId);
-    return this._hints.length < initialLength;
+    const initialLength = this.hints.length;
+    this.hints = this.hints.filter((h) => h.id !== hintId);
+    return this.hints.length < initialLength;
   }
 
   toggleHint(hintId: string) {
-    const hint = this._hints.find((h) => h.id === hintId);
+    const hint = this.hints.find((h) => h.id === hintId);
     if (hint) {
       hint.isVisible = !hint.isVisible;
       return true;
@@ -76,6 +82,10 @@ export class HintManager {
           ],
         },
       );
+
+      if (!this.canAddHint()) {
+        return { success: false, error: "Maximum number of hints reached" };
+      }
 
       const hintContent = response.response || "Unable to generate hint";
 

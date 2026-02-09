@@ -20,10 +20,10 @@ export default function useHints(onError: (message: string) => void) {
 
   function handleMessage(data: ServerMessage) {
     switch (data.type) {
-      case "hints_list":
+      case "hints_list_snapshot":
         setHints(data.hints);
         break;
-      case "active_hints":
+      case "active_hints_snapshot":
         setActiveHints(data.hints);
         break;
       case "hint_generating":
