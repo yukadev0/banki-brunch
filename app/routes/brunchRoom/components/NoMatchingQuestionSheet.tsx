@@ -6,10 +6,12 @@ import {
   HiUser,
   HiXMark,
 } from "react-icons/hi2";
-import type { QeueManager } from "../hooks/useQueue";
+import type QueueManager from "../managers/QueueManager";
+import type UserManager from "../managers/UserManager";
 
 type Props = {
-  queueManager: QeueManager;
+  usersManager: UserManager;
+  queueManager: QueueManager;
 
   onSkip: () => void;
   onClose: () => void;
@@ -21,11 +23,13 @@ export default function NoMatchingQuestionSheet({
   onSkip,
   onClose,
   queueManager,
+  usersManager,
   onResetQuestions,
   onRequestTagChange,
 }: Props) {
-  const nextUser = queueManager.getNextInQueue();
-  const hasUser = nextUser !== undefined;
+  const nextUser = queueManager.getNextUserId();
+  const user =
+    nextUser !== undefined ? usersManager.getUserInfo(nextUser) : null;
 
   return (
     <>
@@ -48,10 +52,10 @@ export default function NoMatchingQuestionSheet({
               <h2 className="text-lg font-bold text-white">
                 No Matching Question
               </h2>
-              {hasUser && (
+              {user && (
                 <p className="text-sm text-gray-400 flex items-center gap-1">
                   <HiUser className="w-4 h-4" />
-                  For {nextUser.name}
+                  For {user.name}
                 </p>
               )}
             </div>
@@ -65,36 +69,34 @@ export default function NoMatchingQuestionSheet({
         </div>
 
         <div className="px-6 py-4 overflow-y-auto max-h-[40vh]">
-          {hasUser &&
-            nextUser.preferredTags &&
-            nextUser.preferredTags.length > 0 && (
-              <>
-                <p className="text-sm text-gray-300 mb-3">
-                  No questions found matching the requested tags:
-                </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {nextUser.preferredTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
+          {user && user.preferredTags && user.preferredTags.length > 0 && (
+            <>
+              <p className="text-sm text-gray-300 mb-3">
+                No questions found matching the requested tags:
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {user.preferredTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
           <p className="text-sm text-gray-400">What would you like to do?</p>
         </div>
 
         <div className="px-6 py-4 border-t border-gray-700 space-y-2 bg-gray-800/50">
-          {hasUser && (
+          {user && (
             <button
               onClick={onRequestTagChange}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
             >
               <HiTag className="w-4 h-4" />
-              Ask {nextUser.name} to Change Tags
+              Ask {user.name} to Change Tags
             </button>
           )}
 
@@ -106,7 +108,7 @@ export default function NoMatchingQuestionSheet({
             Reset Asked Questions
           </button>
 
-          {hasUser && (
+          {user && (
             <button
               onClick={onSkip}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-400 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-600"

@@ -1,52 +1,50 @@
-import type { HintInfo, ServerQuestionInfo } from "./types";
+import type { HintInfo, ServerQuestionInfo } from "../types";
 
-export class HintManager {
-  private ai: Ai<AiModels>;
-  private hints: HintInfo[] = [];
+export default class HintManager {
+  private m_ai: Ai<AiModels>;
+  private m_hints: HintInfo[] = [];
   private readonly MAX_HINTS = 3;
 
   constructor(ai: Ai<AiModels>) {
-    this.ai = ai;
+    this.m_ai = ai;
   }
 
-  *getHints() {
-    for (const hint of this.hints) {
-      yield hint;
-    }
+  public getHints(): readonly HintInfo[] {
+    return this.m_hints;
   }
 
-  getHintsClone() {
-    return [...this.hints];
+  public getHintsClone() {
+    return [...this.m_hints];
   }
 
-  getActiveHints() {
-    return this.hints.filter((h) => h.isVisible);
+  public getActiveHints() {
+    return this.m_hints.filter((h) => h.isVisible);
   }
 
-  canAddHint() {
-    return this.hints.length < this.MAX_HINTS;
+  public canAddHint() {
+    return this.m_hints.length < this.MAX_HINTS;
   }
 
-  clearHints() {
-    this.hints = [];
+  public clearHints() {
+    this.m_hints = [];
   }
 
-  addHint(hint: HintInfo) {
+  public addHint(hint: HintInfo) {
     if (!this.canAddHint()) {
       return false;
     }
-    this.hints.push(hint);
+    this.m_hints.push(hint);
     return true;
   }
 
-  deleteHint(hintId: string) {
-    const initialLength = this.hints.length;
-    this.hints = this.hints.filter((h) => h.id !== hintId);
-    return this.hints.length < initialLength;
+  public deleteHint(hintId: string) {
+    const initialLength = this.m_hints.length;
+    this.m_hints = this.m_hints.filter((h) => h.id !== hintId);
+    return this.m_hints.length < initialLength;
   }
 
-  toggleHint(hintId: string) {
-    const hint = this.hints.find((h) => h.id === hintId);
+  public toggleHint(hintId: string) {
+    const hint = this.m_hints.find((h) => h.id === hintId);
     if (hint) {
       hint.isVisible = !hint.isVisible;
       return true;
@@ -54,8 +52,8 @@ export class HintManager {
     return false;
   }
 
-  async generateHint(currentQuestion: ServerQuestionInfo | null) {
-    if (!this.ai) {
+  public async generateHint(currentQuestion: ServerQuestionInfo | null) {
+    if (!this.m_ai) {
       return { success: false, error: "AI not configured" };
     }
     if (!currentQuestion) {
@@ -66,7 +64,7 @@ export class HintManager {
     }
 
     try {
-      const response = await this.ai.run(
+      const response = await this.m_ai.run(
         "@cf/mistral/mistral-7b-instruct-v0.1",
         {
           messages: [
@@ -106,7 +104,7 @@ export class HintManager {
     }
   }
 
-  addCustomHint(content: string) {
+  public addCustomHint(content: string) {
     if (!this.canAddHint()) {
       return { success: false, error: "Maximum number of hints reached" };
     }

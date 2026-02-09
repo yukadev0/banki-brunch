@@ -11,6 +11,9 @@ export * from "./types/serverToClient/queue";
 export * from "./types/serverToClient/user";
 
 export type UserId = string;
+export type UserRole = "viewer" | "presenter";
+
+export type RoleChangeRejectedReason = "presenter_exists";
 
 export type UserInfo = {
   id: UserId;
@@ -18,7 +21,7 @@ export type UserInfo = {
   isLurking: boolean;
   image: string | null;
   preferredTags: string[];
-  role: "viewer" | "presenter";
+  role: UserRole;
 };
 
 export type ServerQuestionInfo = {
@@ -40,7 +43,7 @@ export type PollInfo = {
   options: string[];
   totalVotes: number;
   userVote: string | null;
-  votes: Record<string, number>;
+  votes: Record<UserId, number>;
 };
 
 export type QueueInfo = {

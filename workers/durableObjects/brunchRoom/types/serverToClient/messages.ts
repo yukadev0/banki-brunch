@@ -15,6 +15,7 @@ import type { QueueUpdate } from "./queue";
 import type {
   RoleChangeRejected,
   TagChangeRequested,
+  UserRoleChanged,
   UserSnapshot,
 } from "./user";
 
@@ -27,6 +28,7 @@ export type ServerMessage =
   | UserSnapshot
   | HintGenerated
   | HintGenerating
+  | UserRoleChanged
   | TargetedQuestion
   | HintsListSnapshot
   | NoMatchingQuestion

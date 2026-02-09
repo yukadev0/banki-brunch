@@ -7,14 +7,14 @@ import {
   HiX,
 } from "react-icons/hi";
 
-type Toast = {
+export type Toast = {
   id: string;
   message: string;
   type: "info" | "success" | "warning" | "error";
   duration?: number;
 };
 
-type ToastContainerProps = {
+export type ToastContainerProps = {
   toasts: Toast[];
   onRemove: (id: string) => void;
 };

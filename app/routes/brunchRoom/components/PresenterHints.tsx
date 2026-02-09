@@ -11,10 +11,10 @@ import {
   FaTrash,
   FaUser,
 } from "react-icons/fa6";
-import type { HintInfo } from "workers/durableObjects/brunchRoom/types";
+import HintManager from "../managers/HintManager";
 
 type Props = {
-  hints: HintInfo[];
+  hintManager: HintManager;
   hasQuestion: boolean;
   isGenerating: boolean;
   maxHints: number;
@@ -25,8 +25,8 @@ type Props = {
   handleAddCustomHint: (content: string) => void;
 };
 
-export default function HintManager({
-  hints,
+export default function PresenterHints({
+  hintManager,
   hasQuestion,
   isGenerating,
   maxHints,
@@ -54,7 +54,7 @@ export default function HintManager({
     setCustomContent("");
   };
 
-  const canGenerateMore = hints.length < maxHints;
+  const canGenerateHint = hintManager.canGenerateHint();
 
   return (
     <div className="bg-gray-800 rounded-lg shadow-lg border p-4 border-gray-700">
@@ -65,7 +65,7 @@ export default function HintManager({
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-white">Presenter Hints</h3>
           <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded-full">
-            {hints.length}/{maxHints}
+            {hintManager.hintCount()}/{maxHints}
           </span>
         </div>
         <FaChevronDown
@@ -93,12 +93,12 @@ export default function HintManager({
             <div className="flex flex-col md:flex-row gap-3">
               <button
                 onClick={handleGenerateHint}
-                disabled={!canGenerateMore || isGenerating}
+                disabled={!canGenerateHint || isGenerating}
                 className={clsx(
                   "cursor-pointer flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors",
                   isGenerating
                     ? "bg-blue-700 text-white cursor-wait"
-                    : canGenerateMore
+                    : canGenerateHint
                       ? "bg-blue-600 hover:bg-blue-700 text-white"
                       : "bg-gray-700 text-gray-500 cursor-not-allowed",
                 )}
@@ -117,10 +117,10 @@ export default function HintManager({
               </button>
               <button
                 onClick={() => setIsAddingCustom(!isAddingCustom)}
-                disabled={!canGenerateMore}
+                disabled={!canGenerateHint}
                 className={clsx(
                   "cursor-pointer flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors",
-                  canGenerateMore
+                  canGenerateHint
                     ? "bg-green-600 hover:bg-green-700 text-white"
                     : "bg-gray-700 text-gray-500 cursor-not-allowed",
                 )}
@@ -182,7 +182,7 @@ export default function HintManager({
             )}
 
             <div className="space-y-3">
-              {hints.length === 0 ? (
+              {hintManager.hintCount() === 0 ? (
                 <div className="text-center py-8 bg-gray-900/30 rounded-lg border border-dashed border-gray-700">
                   <p className="text-sm text-gray-400 mb-1">No hints yet</p>
                   <p className="text-xs text-gray-500">
@@ -190,7 +190,7 @@ export default function HintManager({
                   </p>
                 </div>
               ) : (
-                hints.map((hint, index) => (
+                hintManager.getHints().map((hint, index) => (
                   <div
                     key={hint.id}
                     className={clsx(
@@ -255,7 +255,7 @@ export default function HintManager({
               )}
             </div>
 
-            {hints.length > 0 && (
+            {hintManager.hintCount() > 0 && (
               <p className="text-xs text-gray-500 mt-4 text-center">
                 Click the eye icon to show/hide hints from viewers
               </p>
