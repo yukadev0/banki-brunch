@@ -35,6 +35,9 @@ importers:
       react-router:
         specifier: ^7.10.0
         version: 7.12.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-use-websocket:
+        specifier: ^4.13.0
+        version: 4.13.0
     devDependencies:
       '@cloudflare/vite-plugin':
         specifier: ^1.13.5
@@ -1855,6 +1858,9 @@ packages:
       react-dom:
         optional: true
 
+  react-use-websocket@4.13.0:
+    resolution: {integrity: sha512-anMuVoV//g2N76Wxqvqjjo1X48r9Np3y1/gMl7arX84tAPXdy5R7sB5lO5hvCzQRYjqXwV8XMAiEBOUbyrZFrw==}
+
   react@19.2.3:
     resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
     engines: {node: '>=0.10.0'}
@@ -3398,6 +3404,8 @@ snapshots:
       set-cookie-parser: 2.7.2
     optionalDependencies:
       react-dom: 19.2.3(react@19.2.3)
+
+  react-use-websocket@4.13.0: {}
 
   react@19.2.3: {}
 
