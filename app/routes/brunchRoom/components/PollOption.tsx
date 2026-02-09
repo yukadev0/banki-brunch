@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { PollInfo } from "workers/durableObjects/brunchRoom/types";
 
 type Props = {
@@ -27,11 +28,12 @@ export default function PollOption({
     <button
       disabled={pollEnded}
       onClick={() => onCastVote(option)}
-      className={`relative overflow-hidden p-4 rounded-lg border-2 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={clsx(
+        "relative overflow-hidden p-4 rounded-lg border-2 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50",
         isSelected
           ? "border-blue-500 bg-blue-500/10"
-          : "border-gray-600 hover:border-gray-500 bg-gray-800/50"
-      }`}
+          : "border-gray-600 hover:border-gray-500 bg-gray-800/50",
+      )}
     >
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-2">

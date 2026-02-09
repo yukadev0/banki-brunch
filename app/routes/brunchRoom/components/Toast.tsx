@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useEffect, useState } from "react";
 import {
   HiCheckCircle,
@@ -63,9 +64,11 @@ function ToastItem({
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg backdrop-blur-sm max-w-md transition duration-300 ${bgMap[toast.type]} ${
-        isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
-      }`}
+      className={clsx(
+        "flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg backdrop-blur-sm max-w-md transition duration-300",
+        bgMap[toast.type],
+        isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
+      )}
     >
       {iconMap[toast.type]}
       <p className="text-sm text-white flex-1">{toast.message}</p>

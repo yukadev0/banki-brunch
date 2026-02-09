@@ -114,13 +114,14 @@ export default function HintManager({
               <button
                 onClick={handleGenerateHint}
                 disabled={!canGenerateMore || isGenerating}
-                className={`cursor-pointer flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                className={clsx(
+                  "cursor-pointer flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors",
                   isGenerating
                     ? "bg-blue-700 text-white cursor-wait"
                     : canGenerateMore
                       ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-gray-700 text-gray-500 cursor-not-allowed"
-                }`}
+                      : "bg-gray-700 text-gray-500 cursor-not-allowed",
+                )}
               >
                 {isGenerating ? (
                   <>
@@ -137,11 +138,12 @@ export default function HintManager({
               <button
                 onClick={() => setIsAddingCustom(!isAddingCustom)}
                 disabled={!canGenerateMore}
-                className={`cursor-pointer flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                className={clsx(
+                  "cursor-pointer flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors",
                   canGenerateMore
                     ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-gray-700 text-gray-500 cursor-not-allowed"
-                }`}
+                    : "bg-gray-700 text-gray-500 cursor-not-allowed",
+                )}
               >
                 {isAddingCustom ? (
                   <FaChevronUp className="w-4 h-4" />
@@ -185,11 +187,12 @@ export default function HintManager({
                     <button
                       onClick={handleAddCustomHint}
                       disabled={!customContent.trim()}
-                      className={`cursor-pointer px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      className={clsx(
+                        "cursor-pointer px-4 py-2 text-sm font-medium rounded-lg transition-colors",
                         customContent.trim()
                           ? "bg-green-600 hover:bg-green-700 text-white"
-                          : "bg-gray-700 text-gray-500 cursor-not-allowed"
-                      }`}
+                          : "bg-gray-700 text-gray-500 cursor-not-allowed",
+                      )}
                     >
                       Add Hint
                     </button>
@@ -210,11 +213,12 @@ export default function HintManager({
                 hints.map((hint, index) => (
                   <div
                     key={hint.id}
-                    className={`p-4 rounded-lg border transition-colors ${
+                    className={clsx(
+                      "p-4 rounded-lg border transition-colors",
                       hint.isVisible
                         ? "bg-blue-900/20 border-blue-500/50"
-                        : "bg-gray-700/30 border-gray-600"
-                    }`}
+                        : "bg-gray-700/30 border-gray-600",
+                    )}
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2">
@@ -236,11 +240,12 @@ export default function HintManager({
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleToggleHint(hint.id)}
-                          className={`cursor-pointer p-2 rounded-lg transition-colors ${
+                          className={clsx(
+                            "cursor-pointer p-2 rounded-lg transition-colors",
                             hint.isVisible
                               ? "text-blue-400 hover:bg-blue-900/30 bg-blue-900/20"
-                              : "text-gray-400 hover:bg-gray-700"
-                          }`}
+                              : "text-gray-400 hover:bg-gray-700",
+                          )}
                           title={
                             hint.isVisible
                               ? "Hide from viewers"
