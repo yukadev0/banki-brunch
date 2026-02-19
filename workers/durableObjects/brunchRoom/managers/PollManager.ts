@@ -1,9 +1,15 @@
-import type { PollUpdate, UserId } from "../types";
+import type { BrunchRoom } from "../index";
+import type { PollUpdate, RequestCastVote, UserId } from "../types";
 
 export default class PollManager {
+  private m_brunchRoom: BrunchRoom;
   private m_isPollActive: boolean = false;
   private m_pollVotes: Map<UserId, string> = new Map();
   private m_pollOptions: string[] = ["A", "B", "C", "D"];
+
+  constructor(brunchRoom: BrunchRoom) {
+    this.m_brunchRoom = brunchRoom;
+  }
 
   public isActive() {
     return this.m_isPollActive;
@@ -55,5 +61,33 @@ export default class PollManager {
         userVote: userId ? this.m_pollVotes.get(userId) || null : null,
       },
     };
+  }
+
+  public handleStartPoll(server: WebSocket) {
+    const sessionManager = this.m_brunchRoom.getSessionManager();
+    if (!sessionManager.isPresenter(server)) return;
+
+    const questionService = this.m_brunchRoom.getQuestionService();
+    if (!questionService.currentQuestion) return;
+
+    this.startPoll();
+    this.m_brunchRoom.broadcastPollUpdate();
+  }
+
+  public handleCastVote(server: WebSocket, data: RequestCastVote) {
+    const sessionManager = this.m_brunchRoom.getSessionManager();
+    const userInfo = sessionManager.getUserInfo(server);
+    if (!userInfo) return;
+
+    this.castVote(userInfo.id, data.option);
+    this.m_brunchRoom.broadcastPollUpdate();
+  }
+
+  public handleEndPoll(server: WebSocket) {
+    const sessionManager = this.m_brunchRoom.getSessionManager();
+    if (!sessionManager.isPresenter(server)) return;
+
+    this.endPoll();
+    this.m_brunchRoom.broadcast({ type: "poll_ended" });
   }
 }

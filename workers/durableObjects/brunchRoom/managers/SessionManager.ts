@@ -1,9 +1,18 @@
-import type { UserInfo } from "../types";
+import type { BrunchRoom } from "../index";
+import type {
+  Identify,
+  RequestSetTagPreferences,
+  RequestTagChange,
+  UserInfo,
+} from "../types";
 
 export default class SessionManager {
-  private m_viewerQueue: string[] = [];
-  private m_currentQueueIndex: number = 0;
+  private m_brunchRoom: BrunchRoom;
   private m_sessions: Map<WebSocket, UserInfo> = new Map();
+
+  constructor(brunchRoom: BrunchRoom) {
+    this.m_brunchRoom = brunchRoom;
+  }
 
   public get sessions() {
     return this.m_sessions;
@@ -53,64 +62,128 @@ export default class SessionManager {
     return Array.from(this.m_sessions.values());
   }
 
-  public updateViewerQueue() {
-    const activeViewers = Array.from(this.m_sessions.values())
-      .filter((user) => user.role === "viewer" && !user.isLurking)
-      .map((user) => user.id);
+  public handleIdentify(server: WebSocket, data: Identify) {
+    const existingSession = this.getSessionByUserId(data.id);
 
-    const newQueue = this.m_viewerQueue.filter((id) =>
-      activeViewers.includes(id),
-    );
-
-    for (const id of activeViewers) {
-      if (!newQueue.includes(id)) {
-        newQueue.push(id);
-      }
+    if (existingSession) {
+      try {
+        existingSession.close(1000, "Reconnected");
+      } catch {}
+      this.deleteSession(existingSession);
     }
 
-    const currentId = this.m_viewerQueue[this.m_currentQueueIndex];
-    this.m_viewerQueue = newQueue;
-    this.m_currentQueueIndex = this.m_viewerQueue.indexOf(currentId);
-    if (this.m_currentQueueIndex === -1) {
-      this.m_currentQueueIndex = 0;
-    }
-  }
-
-  public getNextViewer() {
-    if (this.m_viewerQueue.length === 0) return null;
-
-    const startIndex = this.m_currentQueueIndex;
-    let index = startIndex;
-
-    do {
-      const id = this.m_viewerQueue[index];
-      const user = this.getUserById(id);
-
-      if (user && user.role === "viewer" && !user.isLurking) {
-        this.m_currentQueueIndex = index;
-        return user;
-      }
-
-      index = (index + 1) % this.m_viewerQueue.length;
-    } while (index !== startIndex);
-
-    return null;
-  }
-
-  public advanceQueue() {
-    if (this.m_viewerQueue.length === 0) return;
-    this.m_currentQueueIndex =
-      (this.m_currentQueueIndex + 1) % this.m_viewerQueue.length;
-  }
-
-  public getQueueState() {
-    return {
-      queue: this.m_viewerQueue,
-      currentQueueIndex: this.m_currentQueueIndex,
+    const userInfo: UserInfo = {
+      id: data.id,
+      role: "viewer",
+      name: data.name,
+      image: data.image,
+      isLurking: true,
+      preferredTags: data.preferredTags || [],
     };
+
+    this.setUserInfo(server, userInfo);
+    this.m_brunchRoom.broadcastUserList();
+
+    this.m_brunchRoom.sendInitialStateToClient(server, userInfo);
   }
 
-  public hasQueue() {
-    return this.m_viewerQueue.length > 0;
+  public handleToggleLurking(server: WebSocket) {
+    const userInfo = this.getUserInfo(server);
+    if (!userInfo) return;
+
+    userInfo.isLurking = !userInfo.isLurking;
+    this.setUserInfo(server, userInfo);
+
+    if (userInfo.role !== "presenter") {
+      const queueManager = this.m_brunchRoom.getQueueManager();
+      queueManager.updateViewerQueue(this.getAllUsers());
+      this.m_brunchRoom.broadcastQueueUpdate();
+    }
+
+    this.m_brunchRoom.broadcastUserList();
+  }
+
+  public handleChangeRole(server: WebSocket) {
+    const userInfo = this.getUserInfo(server);
+    if (!userInfo) return;
+
+    if (userInfo.role === "viewer") {
+      const presenter = this.getCurrentPresenter();
+      if (presenter) {
+        this.m_brunchRoom.sendToClient(server, {
+          type: "role_change_rejected",
+          reason: "presenter_exists",
+        });
+        return;
+      }
+    }
+
+    const newRole = userInfo.role === "viewer" ? "presenter" : "viewer";
+    userInfo.role = newRole;
+
+    if (newRole === "presenter") {
+      this.m_brunchRoom.notifyHintListToPresenter();
+    }
+
+    this.setUserInfo(server, userInfo);
+
+    const queueManager = this.m_brunchRoom.getQueueManager();
+    queueManager.updateViewerQueue(this.getAllUsers());
+    this.m_brunchRoom.broadcastQueueUpdate();
+    this.m_brunchRoom.broadcast({
+      type: "user_role_changed",
+      id: userInfo.id,
+      role: newRole,
+    });
+  }
+
+  public handleSetTagPreferences(
+    server: WebSocket,
+    data: RequestSetTagPreferences,
+  ) {
+    const userInfo = this.getUserInfo(server);
+    if (!userInfo) return;
+
+    userInfo.preferredTags = data.tags;
+    this.setUserInfo(server, userInfo);
+    this.m_brunchRoom.broadcastUserList();
+  }
+
+  public handleRequestTagChange(server: WebSocket, data: RequestTagChange) {
+    if (!this.isPresenter(server)) return;
+
+    const targetSocket = this.getSessionByUserId(data.userId);
+    if (targetSocket) {
+      this.m_brunchRoom.sendToClient(targetSocket, {
+        type: "tag_change_requested",
+      });
+    }
+  }
+
+  public handleClose(server: WebSocket) {
+    const userInfo = this.getUserInfo(server);
+    this.deleteSession(server);
+
+    if (userInfo?.role === "presenter") {
+      this.m_brunchRoom.resetPresenterState();
+    }
+
+    const queueManager = this.m_brunchRoom.getQueueManager();
+    queueManager.updateViewerQueue(this.getAllUsers());
+    this.m_brunchRoom.broadcastUserList();
+  }
+
+  public handleError(server: WebSocket, error: Event) {
+    console.error("WebSocket error in DO:", error);
+    const userInfo = this.getUserInfo(server);
+    this.deleteSession(server);
+
+    if (userInfo?.role === "presenter") {
+      this.m_brunchRoom.resetPresenterState();
+    }
+
+    const queueManager = this.m_brunchRoom.getQueueManager();
+    queueManager.updateViewerQueue(this.getAllUsers());
+    this.m_brunchRoom.broadcastUserList();
   }
 }

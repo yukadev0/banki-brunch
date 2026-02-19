@@ -1,20 +1,25 @@
-import type { HintInfo, ServerQuestionInfo } from "../types";
+import type { BrunchRoom } from "../index";
+import type {
+  HintInfo,
+  RequestAddCustomHint,
+  RequestDeleteHint,
+  RequestToggleHintVisibility,
+  ServerQuestionInfo,
+} from "../types";
 
 export default class HintManager {
+  private m_brunchRoom: BrunchRoom;
   private m_ai: Ai<AiModels>;
   private m_hints: HintInfo[] = [];
   private readonly MAX_HINTS = 3;
 
-  constructor(ai: Ai<AiModels>) {
+  constructor(brunchRoom: BrunchRoom, ai: Ai<AiModels>) {
+    this.m_brunchRoom = brunchRoom;
     this.m_ai = ai;
   }
 
   public getHints(): readonly HintInfo[] {
     return this.m_hints;
-  }
-
-  public getHintsClone() {
-    return [...this.m_hints];
   }
 
   public getActiveHints() {
@@ -123,5 +128,67 @@ export default class HintManager {
 
     this.addHint(newHint);
     return { success: true, hint: newHint };
+  }
+
+  public async handleGenerateHint(server: WebSocket) {
+    const sessionManager = this.m_brunchRoom.getSessionManager();
+    if (!sessionManager.isPresenter(server)) return;
+
+    this.m_brunchRoom.sendToClient(server, { type: "hint_generating" });
+
+    const questionService = this.m_brunchRoom.getQuestionService();
+    const result = await this.generateHint(questionService.currentQuestion);
+
+    if (result.success) {
+      this.m_brunchRoom.notifyHintListToPresenter();
+      this.m_brunchRoom.sendToClient(server, { type: "hint_generated" });
+    } else {
+      this.m_brunchRoom.sendToClient(server, {
+        type: "hint_error",
+        error: result.error || "Failed to generate hint",
+      });
+    }
+  }
+
+  public handleAddCustomHint(server: WebSocket, data: RequestAddCustomHint) {
+    const sessionManager = this.m_brunchRoom.getSessionManager();
+    if (!sessionManager.isPresenter(server)) return;
+
+    const result = this.addCustomHint(data.content);
+
+    if (result.success) {
+      this.m_brunchRoom.notifyHintListToPresenter();
+    } else {
+      this.m_brunchRoom.sendToClient(server, {
+        type: "hint_error",
+        error: result.error || "Failed to add hint",
+      });
+    }
+  }
+
+  public handleDeleteHint(server: WebSocket, data: RequestDeleteHint) {
+    const sessionManager = this.m_brunchRoom.getSessionManager();
+    if (!sessionManager.isPresenter(server)) return;
+
+    const activeHintCount = this.getActiveHints().length;
+
+    this.deleteHint(data.hintId);
+    this.m_brunchRoom.notifyHintListToPresenter();
+
+    if (activeHintCount > 0) {
+      this.m_brunchRoom.broadcastActiveHints();
+    }
+  }
+
+  public handleToggleHint(
+    server: WebSocket,
+    data: RequestToggleHintVisibility,
+  ) {
+    const sessionManager = this.m_brunchRoom.getSessionManager();
+    if (!sessionManager.isPresenter(server)) return;
+
+    this.toggleHint(data.hintId);
+    this.m_brunchRoom.notifyHintListToPresenter();
+    this.m_brunchRoom.broadcastActiveHints();
   }
 }

@@ -73,14 +73,16 @@ export default function useBrunchRoomApp(
     selfUser,
     readyState,
     userManager,
+    sendMessage,
     targetUserName,
     isSelfPresenter,
     questionManager,
 
-    socket: getWebSocket(),
     pollManager,
     hintManager,
     queueManager,
+
+    socket: getWebSocket(),
 
     handleRequestSkipUser: queueManager.handleRequestSkipUser,
 

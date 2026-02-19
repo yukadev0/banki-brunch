@@ -52,6 +52,7 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
     readyState,
     hintManager,
     pollManager,
+    sendMessage,
     userManager,
     queueManager,
     targetUserName,
@@ -99,6 +100,16 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
     useState(false);
 
   const { toasts, addToast, removeToast } = useToast();
+
+  function handleSendEmote() {
+    sendMessage(
+      JSON.stringify({
+        type: "request_reaction",
+        reaction: "like",
+        userId: user.id,
+      }),
+    );
+  }
 
   if (!socket || !selfUser || readyState !== WebSocket.OPEN) {
     return (
@@ -155,6 +166,7 @@ export default function BrunchRoomPage({ loaderData }: Route.ComponentProps) {
 
           <ControlPanel
             user={selfUser}
+            handleSendEmote={handleSendEmote}
             handleChangeRole={handleRequestChangeRole}
             onOpenTagModal={() => setShowTagModal(true)}
             handleToggleLurking={handleRequestToggleLurking}

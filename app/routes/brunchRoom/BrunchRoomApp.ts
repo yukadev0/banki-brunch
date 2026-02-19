@@ -89,6 +89,10 @@ export default class BrunchRoomApp {
       const data = JSON.parse(event.data) as ServerMessage;
 
       switch (data.type) {
+        case "handle_reaction":
+          console.log(data);
+          break;
+
         case "queue_update":
           this.m_queueManager.setQueueData(data.queue);
           break;

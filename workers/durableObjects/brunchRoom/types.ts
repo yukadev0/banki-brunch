@@ -2,12 +2,15 @@ export * from "./types/clientToServer/hint";
 export * from "./types/clientToServer/messages";
 export * from "./types/clientToServer/poll";
 export * from "./types/clientToServer/question";
+export * from "./types/clientToServer/reaction";
 export * from "./types/clientToServer/user";
+
 export * from "./types/serverToClient/hint";
 export * from "./types/serverToClient/messages";
 export * from "./types/serverToClient/poll";
 export * from "./types/serverToClient/question";
 export * from "./types/serverToClient/queue";
+export * from "./types/serverToClient/reaction";
 export * from "./types/serverToClient/user";
 
 export type UserId = string;
@@ -50,3 +53,5 @@ export type QueueInfo = {
   queue: UserId[];
   currentQueueIndex: number;
 };
+
+export type Reaction = "like" | "dislike";

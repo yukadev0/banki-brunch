@@ -12,13 +12,15 @@ type Props = {
   user: UserInfo | null;
 
   onOpenTagModal: () => void;
-  handleToggleLurking: () => void;
+  handleSendEmote: () => void;
   handleChangeRole: () => void;
+  handleToggleLurking: () => void;
 };
 
 export default function ControlPanel({
   user,
   onOpenTagModal,
+  handleSendEmote,
   handleChangeRole,
   handleToggleLurking,
 }: Props) {
@@ -117,6 +119,12 @@ export default function ControlPanel({
               <span>Presenter</span>
             </>
           )}
+        </button>
+        <button
+          onClick={handleSendEmote}
+          className="w-full px-4 py-3 cursor-pointer rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+        >
+          Send Emote
         </button>
       </div>
     </div>

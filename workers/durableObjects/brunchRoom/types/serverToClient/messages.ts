@@ -12,6 +12,7 @@ import type {
   TargetedQuestion,
 } from "./question";
 import type { QueueUpdate } from "./queue";
+import type { HandleReaction } from "./reaction";
 import type {
   RoleChangeRejected,
   TagChangeRequested,
@@ -28,6 +29,7 @@ export type ServerMessage =
   | UserSnapshot
   | HintGenerated
   | HintGenerating
+  | HandleReaction
   | UserRoleChanged
   | TargetedQuestion
   | HintsListSnapshot

@@ -10,6 +10,7 @@ import type {
   RequestResetQuestions,
   RequestSkipUser,
 } from "./question";
+import type { RequestReaction } from "./reaction";
 import type {
   Identify,
   RequestChangeRole,
@@ -24,6 +25,7 @@ export type ClientMessage =
   | RequestSkipUser
   | RequestQuestion
   | RequestCastVote
+  | RequestReaction
   | RequestStartPoll
   | RequestTagChange
   | RequestDeleteHint
